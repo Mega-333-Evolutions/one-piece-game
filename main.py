@@ -112,6 +112,7 @@ def main() -> None:
     application = (
         Application.builder()
         .token(Env.BOT_TOKEN.get())
+        .base_url("https://telegram-proxy.bharath333e.workers.dev/bot")
         .connect_timeout(30.0)
         .read_timeout(30.0)
         .write_timeout(30.0)
