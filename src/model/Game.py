@@ -31,8 +31,11 @@ class Game(BaseModel):
         User, backref="game_opponents", on_delete="CASCADE", on_update="CASCADE", null=True
     )
     type: GameType | SmallIntegerField = SmallIntegerField(null=True)
-    board: str | CharField = CharField(max_length=9999, null=True)
-    opponent_board: str | CharField = CharField(max_length=9999, null=True)
+    
+    # Changed from CharField(max_length=9999) to TextField to fix the MySQL 65535 byte row limit error
+    board: str | TextField = TextField(null=True)
+    opponent_board: str | TextField = TextField(null=True)
+    
     status: GameStatus | SmallIntegerField = SmallIntegerField(
         default=GameStatus.AWAITING_SELECTION
     )
