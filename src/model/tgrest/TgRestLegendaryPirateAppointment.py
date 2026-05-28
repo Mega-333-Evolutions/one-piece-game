@@ -21,5 +21,5 @@ class TgRestLegendaryPirateAppointment(TgRest):
 
         super().__init__(bot_id, object_type)
 
-        self.user: User = User.get(User.tg_user_id == user_id)
+        self.user: User = User.get_by_id(user_id)
         self.legendary_pirate: LegendaryPirate = LegendaryPirate.get_by_id(legendary_pirate_id)
