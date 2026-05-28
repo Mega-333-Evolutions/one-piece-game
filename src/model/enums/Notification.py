@@ -20,6 +20,7 @@ from src.model.PredictionOption import PredictionOption
 from src.model.PredictionOptionUser import PredictionOptionUser
 from src.model.User import User
 from src.model.Warlord import Warlord
+from src.model.LegendaryPirate import LegendaryPirate
 from src.model.enums.Emoji import Emoji
 from src.model.enums.GameStatus import GameStatus
 from src.model.enums.Log import Log
@@ -58,6 +59,7 @@ class NotificationCategory(IntEnum):
     DAVY_BACK_FIGHT = 11
     FIGHT = 12
     PLUNDER = 13
+    LEGENDARY_PIRATE = 14
 
 
 NOTIFICATION_CATEGORY_DESCRIPTIONS = {
@@ -74,6 +76,7 @@ NOTIFICATION_CATEGORY_DESCRIPTIONS = {
     NotificationCategory.DAVY_BACK_FIGHT: phrases.NOTIFICATION_CATEGORY_DAVY_BACK_FIGHT,
     NotificationCategory.FIGHT: phrases.NOTIFICATION_CATEGORY_FIGHT,
     NotificationCategory.PLUNDER: phrases.NOTIFICATION_CATEGORY_PLUNDER,
+    NotificationCategory.LEGENDARY_PIRATE: phrases.NOTIFICATION_CATEGORY_LEGENDARY_PIRATE,
 }
 
 
@@ -121,6 +124,7 @@ class NotificationType(IntEnum):
     FIGHT_ATTACK = 39
     PLUNDER_ATTACK = 40
     GAME_OUTCOME = 41
+    LEGENDARY_PIRATE_APPOINTMENT = 42
 
 
 class Notification:
@@ -999,6 +1003,33 @@ class WarlordRevocationNotification(Notification):
         return self.text.format(escape_valid_markdown_chars(self.warlord.revoke_reason))
 
 
+class LegendaryPirateAppointmentNotification(Notification):
+    """Class for legendary pirate appointment notifications."""
+
+    def __init__(self, legendary_pirate: "LegendaryPirate" = None):
+        """
+        Constructor
+
+        :param legendary_pirate: The legendary pirate
+        """
+
+        self.legendary_pirate = legendary_pirate
+
+        super().__init__(
+            NotificationCategory.LEGENDARY_PIRATE,
+            NotificationType.LEGENDARY_PIRATE_APPOINTMENT,
+            phrases.LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION,
+            phrases.LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_DESCRIPTION,
+            phrases.LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_KEY,
+        )
+
+    def build(self) -> str:
+        return self.text.format(
+            escape_valid_markdown_chars(self.legendary_pirate.epithet),
+            escape_valid_markdown_chars(self.legendary_pirate.reason),
+        )
+
+
 class CrewAbilityActivatedNotification(Notification):
     """Class for crew ability activated notifications."""
 
@@ -1582,6 +1613,7 @@ NOTIFICATIONS = [
     BountyLoanExpiredNotification(),
     WarlordAppointmentNotification(),
     WarlordRevocationNotification(),
+    LegendaryPirateAppointmentNotification(),
     CrewAbilityActivatedNotification(),
     CrewFirstMatePromotionNotification(),
     CrewFirstMateDemotionNotification(),

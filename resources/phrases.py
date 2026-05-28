@@ -1850,6 +1850,20 @@ WARLORD_REVOCATION_NOTIFICATION_DESCRIPTION = (
 )
 WARLORD_REVOCATION_NOTIFICATION_KEY = "Warlord revocation"
 
+# Notification - Legendary Pirate appointment
+LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION = (
+    "Congratulations, you have been appointed as a Legendary Pirate!\n\n*Epithet*:"
+    " {}\n\n*Reason*: {}\n\n*Privileges*\n• Complete immunity from all combat-related"
+    " losses\n• Exemption from bounty taxes and income tax\n• Permanent boss status\n•"
+    " Immunity from Devil Fruit revocation\n\n_You are now a permanent Legendary"
+    " Pirate and will always appear at the top of all leaderboards_"
+)
+LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_DESCRIPTION = (
+    "If to be notified when you are appointed as a Legendary Pirate"
+)
+LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_KEY = "Legendary Pirate appointment"
+NOTIFICATION_CATEGORY_LEGENDARY_PIRATE = "Legendary Pirate"
+
 # Notification - Fight attack
 FIGHT_ATTACK_NOTIFICATION = "You {} in a fight against {}{}\n\nAmount {}: ฿*{}*"
 FIGHT_ATTACK_NOTIFICATION_DESCRIPTION = "If to be notified when you are fought by another player"
