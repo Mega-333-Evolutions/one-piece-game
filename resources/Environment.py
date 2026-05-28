@@ -1,6 +1,17 @@
 import os
 import sys
-from distutils.util import strtobool
+
+try:
+    from distutils.util import strtobool
+except ModuleNotFoundError:
+    # distutils was removed in Python 3.12+
+    def strtobool(value: str) -> int:
+        value = value.lower()
+        if value in ("y", "yes", "t", "true", "on", "1"):
+            return 1
+        if value in ("n", "no", "f", "false", "off", "0"):
+            return 0
+        raise ValueError(f"invalid truth value {value!r}")
 
 from dotenv import load_dotenv
 
