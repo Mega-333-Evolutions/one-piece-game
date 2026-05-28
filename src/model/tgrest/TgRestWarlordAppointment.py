@@ -23,6 +23,6 @@ class TgRestWarlordAppointment(TgRest):
 
         super().__init__(bot_id, object_type)
 
-        self.user: User = User.get(User.tg_user_id == user_id)
+        self.user: User = User.get_by_id(user_id)
         self.warlord: Warlord = Warlord.get_by_id(warlord_id)
         self.days: int = days
