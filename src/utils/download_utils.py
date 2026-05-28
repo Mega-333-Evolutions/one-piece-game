@@ -68,6 +68,9 @@ def generate_temp_file_path(extension: str) -> str:
     :return: path of temp file
     """
 
+    # Ensure temp directory exists before generating paths used by file writers.
+    os.makedirs(c.TEMP_DIR, exist_ok=True)
+
     # File name
     file_name = uuid.uuid4().hex + ("." if not extension.startswith(".") else "") + extension
 
