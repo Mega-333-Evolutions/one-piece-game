@@ -8,20 +8,32 @@ Example:
     python make_legendary_pirate.py .env 123456789 "Red-Haired" "Exceptional gameplay and contribution"
 """
 
+import os
 import sys
 import asyncio
 
 # Save the actual script arguments
 script_args = sys.argv[1:]
 
-# Set argv[1] to environment file for Environment.py import
-if len(sys.argv) < 3:
+if len(script_args) < 3:
     print("Usage: python make_legendary_pirate.py <env_file> <user_telegram_id> <epithet> <reason>")
+    print("       python make_legendary_pirate.py <user_telegram_id> <epithet> <reason>  # uses .env if present")
     print("\nExample:")
     print('  python make_legendary_pirate.py .env 123456789 "Red-Haired" "Exceptional gameplay"')
+    print('  python make_legendary_pirate.py 123456789 "Red-Haired" "Exceptional gameplay"')
     sys.exit(1)
 
-env_file = sys.argv[1]
+# Detect whether the first arg is an env file or a user ID.
+if os.path.isfile(script_args[0]):
+    env_file = script_args[0]
+    user_args = script_args[1:]
+elif os.path.isfile(".env"):
+    env_file = ".env"
+    user_args = script_args
+else:
+    print("Environment file not found. Provide the path to your env file as the first argument or create a .env file.")
+    sys.exit(1)
+
 sys.argv = [sys.argv[0], env_file]
 
 # Now import models after environment is set up
@@ -29,8 +41,8 @@ from src.model.User import User
 from src.model.LegendaryPirate import LegendaryPirate
 from resources.Database import Database
 
-# Restore script arguments
-sys.argv = [sys.argv[0]] + script_args
+# Save the user arguments for later
+script_args = user_args
 
 
 async def make_user_legendary_pirate(user_tg_id: str, epithet: str, reason: str) -> bool:
@@ -83,13 +95,15 @@ def main():
     
     if len(script_args) < 3:
         print("Usage: python make_legendary_pirate.py <env_file> <user_telegram_id> <epithet> <reason>")
+        print("       python make_legendary_pirate.py <user_telegram_id> <epithet> <reason>  # uses .env if present")
         print("\nExample:")
         print('  python make_legendary_pirate.py .env 123456789 "Red-Haired" "Exceptional gameplay"')
+        print('  python make_legendary_pirate.py 123456789 "Red-Haired" "Exceptional gameplay"')
         sys.exit(1)
     
-    user_tg_id = script_args[1]
-    epithet = script_args[2]
-    reason = " ".join(script_args[3:])
+    user_tg_id = script_args[0]
+    epithet = script_args[1]
+    reason = " ".join(script_args[2:])
     
     # Run the async function
     success = asyncio.run(make_user_legendary_pirate(user_tg_id, epithet, reason))
