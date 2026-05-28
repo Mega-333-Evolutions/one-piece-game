@@ -28,6 +28,6 @@ class TgRestDevilFruitAward(TgRest):
         super().__init__(bot_id, object_type)
 
         self.user_id: int = user_id
-        self.user = User.get(User.id == user_id)
+        self.user = User.get(User.tg_user_id == user_id)
         self.devil_fruit = DevilFruit.get(DevilFruit.id == devil_fruit_id)
         self.reason: str = reason

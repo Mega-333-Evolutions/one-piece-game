@@ -174,12 +174,12 @@ async def manage(
             extra_text += phrases.SHOW_USER_STATUS_RESTRICTIONS.format(
                 phrases.IMPEL_DOWN_RESTRICTIONS
             )
-            if not user.impel_down_is_permanent:
+            if not target_user.impel_down_is_permanent:
                 extra_text += phrases.IMPEL_DOWN_RESTRICTION_BAIL_GUIDE
 
-                inline_keyboard.append(
-                    [get_post_bail_deeplink_button(target_user.get_current_impel_down_log())]
-                )
+                bail_button = get_post_bail_deeplink_button(target_user.get_current_impel_down_log())
+                if bail_button is not None:
+                    inline_keyboard.append([bail_button])
 
         if not target_user.is_arrested():
             # Add fight immunity if active
