@@ -19,6 +19,7 @@ class Database:
             user=Env.DB_USER.get(),
             password=Env.DB_PASSWORD.get(),
             charset="utf8mb4",
+            ssl={'ssl': {}}  # <-- Added the SSL requirement for TiDB here
         )
 
     def get_db(self):
