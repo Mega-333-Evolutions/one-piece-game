@@ -123,7 +123,7 @@ BOT_USERNAME = Environment("BOT_USERNAME")
 
 # CONFIG
 # Which timezone to use
-TZ = Environment("TZ", default_value="Etc/UTC")
+TZ = Environment("TZ", default_value="Asia/Kolkata")
 # Log level
 LOG_LEVEL = Environment("LOG_LEVEL", default_value="INFO")
 
