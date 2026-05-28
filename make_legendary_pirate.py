@@ -2,17 +2,35 @@
 Helper script to make a user a legendary pirate.
 
 Usage:
-    python make_legendary_pirate.py <user_telegram_id> <epithet> <reason>
+    python make_legendary_pirate.py <env_file> <user_telegram_id> <epithet> <reason>
 
 Example:
-    python make_legendary_pirate.py 123456789 "Red-Haired" "Exceptional gameplay and contribution"
+    python make_legendary_pirate.py .env 123456789 "Red-Haired" "Exceptional gameplay and contribution"
 """
 
 import sys
 import asyncio
+
+# Save the actual script arguments
+script_args = sys.argv[1:]
+
+# Set argv[1] to environment file for Environment.py import
+if len(sys.argv) < 3:
+    print("Usage: python make_legendary_pirate.py <env_file> <user_telegram_id> <epithet> <reason>")
+    print("\nExample:")
+    print('  python make_legendary_pirate.py .env 123456789 "Red-Haired" "Exceptional gameplay"')
+    sys.exit(1)
+
+env_file = sys.argv[1]
+sys.argv = [sys.argv[0], env_file]
+
+# Now import models after environment is set up
 from src.model.User import User
 from src.model.LegendaryPirate import LegendaryPirate
 from resources.Database import Database
+
+# Restore script arguments
+sys.argv = [sys.argv[0]] + script_args
 
 
 async def make_user_legendary_pirate(user_tg_id: str, epithet: str, reason: str) -> bool:
@@ -63,15 +81,15 @@ async def make_user_legendary_pirate(user_tg_id: str, epithet: str, reason: str)
 def main():
     """Main entry point for the script."""
     
-    if len(sys.argv) < 4:
-        print("Usage: python make_legendary_pirate.py <user_telegram_id> <epithet> <reason>")
+    if len(script_args) < 3:
+        print("Usage: python make_legendary_pirate.py <env_file> <user_telegram_id> <epithet> <reason>")
         print("\nExample:")
-        print('  python make_legendary_pirate.py 123456789 "Red-Haired" "Exceptional gameplay"')
+        print('  python make_legendary_pirate.py .env 123456789 "Red-Haired" "Exceptional gameplay"')
         sys.exit(1)
     
-    user_tg_id = sys.argv[1]
-    epithet = sys.argv[2]
-    reason = " ".join(sys.argv[3:])
+    user_tg_id = script_args[1]
+    epithet = script_args[2]
+    reason = " ".join(script_args[3:])
     
     # Run the async function
     success = asyncio.run(make_user_legendary_pirate(user_tg_id, epithet, reason))
