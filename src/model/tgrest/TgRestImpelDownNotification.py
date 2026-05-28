@@ -36,7 +36,7 @@ class TgRestImpelDownNotification(TgRest):
 
         super().__init__(bot_id, object_type)
 
-        self.user = User.get(User.tg_user_id == user_id)
+        self.user = User.get(User.id == user_id)
         self.sentence_type: ImpelDownSentenceType = ImpelDownSentenceType(sentence_type)
         self.release_date_time = (
             datetime.strptime(release_date_time, "%Y-%m-%d %H:%M:%S")
