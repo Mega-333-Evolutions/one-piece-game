@@ -115,6 +115,11 @@ def main() -> None:
         .post_init(post_init)
         .defaults(defaults)
         .rate_limiter(AIORateLimiter())
+        .connect_timeout(20)
+        .read_timeout(60)
+        .write_timeout(60)
+        .media_write_timeout(90)
+        .pool_timeout(15)
         .build()
     )
 
