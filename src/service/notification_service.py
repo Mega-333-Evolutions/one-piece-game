@@ -2,7 +2,7 @@ import logging
 import traceback
 
 from telegram import Update, Message
-from telegram.error import Forbidden
+from telegram.error import Forbidden, BadRequest
 from telegram.ext import ContextTypes
 
 import resources.Environment as Env
@@ -116,10 +116,16 @@ async def send_notification_execute(
     try:
         quote_message_id = None
         if should_forward_message:
-            message: Message = await update.message.forward(
-                user.tg_user_id, disable_notification=True
-            )
-            quote_message_id = message.message_id
+            try:
+                if update is not None and getattr(update, "message", None) is not None:
+                    message: Message = await update.message.forward(
+                        user.tg_user_id, disable_notification=True
+                    )
+                    quote_message_id = message.message_id
+            except BadRequest as e:
+                logging.warning(f"Could not forward message: {e}")
+            except Exception:
+                logging.error("Unexpected error while forwarding message", exc_info=True)
 
         await full_message_send(
             context,
