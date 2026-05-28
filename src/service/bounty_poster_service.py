@@ -27,10 +27,15 @@ async def get_bounty_poster(update: Update, user: User) -> str:
 
     from src.service.user_service import get_user_profile_photo, get_boss_type
 
+    # The underlying poster generator renders names as "LAST FIRST".
+    # Swap inputs so the poster displays "FIRST LAST".
+    poster_first_name = (user.tg_first_name or "").strip()
+    poster_last_name = (user.tg_last_name or "").strip()
+
     wanted_poster = WantedPoster(
         portrait=await get_user_profile_photo(update),
-        first_name=user.tg_first_name,
-        last_name=user.tg_last_name,
+        first_name=poster_last_name,
+        last_name=poster_first_name,
         bounty=user.bounty,
     )
 
