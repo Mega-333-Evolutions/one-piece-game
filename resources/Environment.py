@@ -159,7 +159,7 @@ OPMA_BOT_ID = Environment("OPMA_BOT_ID", default_value="921260484")
 # Updates channel id
 UPDATES_CHAT_ID = Environment("UPDATES_CHAT_ID")
 # Support group id
-SUPPORT_GROUP_LINK = Environment("SUPPORT_GROUP_LINK", default_value="https://t.me/bountysystem")
+SUPPORT_GROUP_LINK = Environment("SUPPORT_GROUP_LINK", default_value="https://t.me/One_Piece_chats")
 
 # TgRest Channel ID
 TG_REST_CHANNEL_ID = Environment("TG_REST_CHANNEL_ID", can_be_empty=True)
@@ -180,7 +180,7 @@ ANTI_SPAM_TIME_INTERVAL_SECONDS = Environment(
 
 # REDDIT
 # Enable reddit posts from r/onepiece and r/memepiece
-ENABLE_REDDIT_POSTS = Environment("ENABLE_REDDIT_POSTS", default_value="False")
+ENABLE_REDDIT_POSTS = Environment("ENABLE_REDDIT_POSTS", default_value="True")
 # Reddit client id
 REDDIT_CLIENT_ID = Environment("REDDIT_CLIENT_ID", can_be_empty=True)
 # Reddit client secret
