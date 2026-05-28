@@ -122,6 +122,12 @@ async def send_notification_execute(
                         user.tg_user_id, disable_notification=True
                     )
                     quote_message_id = message.message_id
+            
+            # --- CRITICAL FIX: Catching Forbidden during forward ---
+            except Forbidden: 
+                logging.warning(f"Could not forward message to {user.tg_user_id}: User has not started bot in DM or blocked it.")
+            # --------------------------------------------------------
+            
             except BadRequest as e:
                 logging.warning(f"Could not forward message: {e}")
             except Exception:
@@ -139,7 +145,7 @@ async def send_notification_execute(
             should_auto_delete=False,
             authorized_users=[user],
         )
-    except Forbidden:  # User has blocked the bot
+    except Forbidden:  # User has blocked the bot or hasn't started it
         pass
 
 
