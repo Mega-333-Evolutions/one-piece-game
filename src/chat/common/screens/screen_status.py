@@ -353,17 +353,7 @@ def should_send_poster(user: User, group_chat: GroupChat, is_own_status: bool) -
     :return: True if the user should send a bounty poster
     """
 
-    if not is_own_status:
-        return False
-
     if user.is_arrested():
-        return False
-
-    boss_type = get_boss_type(user, group_chat=group_chat)
-    if boss_type in (BossType.ADMIN, BossType.PIRATE_KING, BossType.LEGENDARY_PIRATE):
-        return True
-
-    if user.bounty_poster_limit == 0:
         return False
 
     return True
