@@ -643,8 +643,8 @@ async def get_user(
     # Update name only if not anonymous
     if effective_user.id == int(tg_user_id):
         user.tg_first_name = effective_user.first_name
-        user.tg_last_name = effective_user.last_name
-        user.tg_username = effective_user.username
+        user.tg_last_name = effective_user.last_name or ""
+        user.tg_username = effective_user.username or ""
 
     user.last_message_date = datetime.now()
     user.is_active = True
