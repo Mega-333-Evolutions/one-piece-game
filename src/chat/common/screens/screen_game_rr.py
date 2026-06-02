@@ -441,6 +441,9 @@ async def auto_move(
     :return: None
     """
 
+    if update is not None and update.callback_query is not None:
+        update.callback_query = None
+
     if not game.is_global() or game.is_challenger(player):
         board: RussianRoulette = get_board_challenger(game)
         previous_board = get_board_challenger(previous_game)

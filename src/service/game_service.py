@@ -1261,8 +1261,13 @@ async def enqueue_auto_move(
     updated_game = Game.get_by_id(game.id)
 
     # Game already ended
-    if game.is_finished():
+    if updated_game.is_finished():
         return
+
+    # Auto moves run in the background after the callback query has expired.
+    # Do not keep an old callback query alive for background processing.
+    if update is not None and update.callback_query is not None:
+        update.callback_query = None
 
     await auto_move_function(update, context, updated_game, user, message_id, game)
 
