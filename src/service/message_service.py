@@ -934,11 +934,7 @@ async def full_message_or_media_send_or_edit(
             previous_screen_list_keyboard_info=previous_screen_list_keyboard_info,
             should_auto_delete=should_auto_delete,
         )
-    except BadRequest as e:
-        if "Message is not modified" in str(e):
-            logging.info("Ignored no-op edit because message content and markup were unchanged.")
-            return False
-
+    except BadRequest:
         return await full_media_send(
             context,
             caption=text,
