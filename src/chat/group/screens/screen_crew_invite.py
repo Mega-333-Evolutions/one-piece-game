@@ -16,6 +16,7 @@ from src.service.message_service import (
     get_yes_no_keyboard,
     full_media_send,
 )
+from src.model.error.CustomException import CrewValidationException
 
 
 async def manage(
@@ -64,7 +65,15 @@ async def send_request(
     :return: None
     """
 
-    validate(target_user, crew, specific_user_error=True, specific_crew_error=True)
+    try:
+        validate(target_user, crew, specific_user_error=True, specific_crew_error=True)
+    except CrewValidationException as e:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=str(e),
+            reply_to_message_id=update.message.message_id
+        )
+        return
 
     caption = phrases.CREW_INVITE_REQUEST_CAPTION.format(
         mention_markdown_user(captain), mention_markdown_user(target_user)
@@ -128,7 +137,18 @@ async def keyboard_interaction(
         )
         return
 
-    validate(invited_user, crew, specific_user_error=True)
+    try:
+        validate(invited_user, crew, specific_user_error=True)
+    except CrewValidationException as e:
+        await full_media_send(
+            context,
+            caption=str(e),
+            update=update,
+            add_delete_button=True,
+            authorized_users=[captain, invited_user],
+            edit_only_caption_and_keyboard=True,
+        )
+        return
 
     # Add invited user to crew
     await add_member(invited_user, crew)
