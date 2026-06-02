@@ -64,7 +64,7 @@ async def send_request(
     :return: None
     """
 
-    validate(target_user, crew, specific_crew_error=True)
+    validate(target_user, crew, specific_user_error=True, specific_crew_error=True)
 
     caption = phrases.CREW_INVITE_REQUEST_CAPTION.format(
         mention_markdown_user(captain), mention_markdown_user(target_user)
