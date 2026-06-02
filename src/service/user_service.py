@@ -19,22 +19,30 @@ from src.service.leaderboard_service import get_current_leaderboard_rank
 from src.utils.download_utils import generate_temp_file_path
 
 
-async def get_user_profile_photo(update: Update) -> str | None:
+async def get_user_profile_photo(
+    update: Update, telegram_user: TelegramUser = None
+) -> str | None:
     """
     Gets the user's profile photo
     :param update: Telegram update
+    :param telegram_user: Optional Telegram user to fetch the photo for
     :return: The path of the user's profile photo
     """
 
-    # Anonymous admin, no photo available
-    if update.effective_message.sender_chat is not None:
+    if telegram_user is None:
+        # Anonymous admin, no photo available
+        if update.effective_message.sender_chat is not None:
+            return None
+        telegram_user = update.effective_user
+
+    if telegram_user is None:
         return None
 
-    # Get users last photo
+    # Get user's last photo
     photo_path: Optional[Path] = None
     try:
         # More verbose to get IDE hints
-        user_profile_photos: UserProfilePhotos = await update.effective_user.get_profile_photos(
+        user_profile_photos: UserProfilePhotos = await telegram_user.get_profile_photos(
             limit=1
         )
         last_set_photos: Sequence[PhotoSize] = user_profile_photos.photos[0]

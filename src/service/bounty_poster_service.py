@@ -17,11 +17,14 @@ from src.service.devil_fruit_service import user_has_eaten_devil_fruit
 from src.utils.download_utils import generate_temp_file_path
 
 
-async def get_bounty_poster(update: Update, user: User) -> str:
+async def get_bounty_poster(
+    update: Update, user: User, telegram_user=None
+) -> str:
     """
     Gets the bounty poster of a user
     :param update: Telegram update
     :param user: The user to get the poster of
+    :param telegram_user: Optional Telegram user to fetch the portrait for
     :return: The path to the poster
     """
 
@@ -33,7 +36,7 @@ async def get_bounty_poster(update: Update, user: User) -> str:
     poster_last_name = (user.tg_last_name or "").strip()
 
     wanted_poster = WantedPoster(
-        portrait=await get_user_profile_photo(update),
+        portrait=await get_user_profile_photo(update, telegram_user),
         first_name=poster_last_name,
         last_name=poster_first_name,
         bounty=user.bounty,

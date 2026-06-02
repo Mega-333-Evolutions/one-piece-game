@@ -327,7 +327,14 @@ async def send_bounty_poster(
     reply_to_message_id: int = None,
     send_in_private_chat=False,
 ) -> None:
-    poster_path = await get_bounty_poster(update, user)
+    replied_telegram_user = None
+    try:
+        if update.effective_message.reply_to_message is not None:
+            replied_telegram_user = update.effective_message.reply_to_message.from_user
+    except AttributeError:
+        replied_telegram_user = None
+
+    poster_path = await get_bounty_poster(update, user, telegram_user=replied_telegram_user)
     poster: SavedMedia = SavedMedia(media_type=SavedMediaType.PHOTO)
     with open(poster_path, "rb") as media_id:
         poster.media_id = media_id.read()
