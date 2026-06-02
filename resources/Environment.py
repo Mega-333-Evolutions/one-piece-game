@@ -723,8 +723,7 @@ LOCATION_WANO_COUNTRY_IMAGE_URL = Environment(
 # For some reason, imgur link preview was showing whole post instead on only image
 LOCATION_EGGHEAD_IMAGE_URL = Environment(
     "LOCATION_EGGHEAD_IMAGE_URL",
-    default_value="https://api.grouphelp.top/chelp/index.php?f=AgACAgEAAxkBMjPmtWbDLnZbY5xmMdybNxcwAZYkAAFhZAACY64xG-Wj"
-                  "GEZP3shweOhqeAEAAwIAA3kAAzUE",
+    default_value="https://static.wikia.nocookie.net/onepiece/images/0/07/Egghead_Infobox.png/revision/latest/scale-to-width-down/228?cb=20250428024126"
 )
 
 # How long fight immunity lasts in hours. Default: 6 hours
