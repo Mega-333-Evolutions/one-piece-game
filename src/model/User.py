@@ -237,11 +237,15 @@ class User(BaseModel):
         :return: The private screen list
         """
 
-        if self.private_screen_list is None:
+        # OPTION 1 FIX: Safely check if string is completely empty or None
+        if not self.private_screen_list:
             return []
 
+        # OPTION 1 FIX: Filter out empty strings during the split loop
         return [
-            Screen(str(screen)) for screen in self.private_screen_list.split(c.STANDARD_SPLIT_CHAR)
+            Screen(str(screen)) 
+            for screen in self.private_screen_list.split(c.STANDARD_SPLIT_CHAR) 
+            if screen.strip()
         ]
 
     def get_current_private_screen(self) -> Screen:
