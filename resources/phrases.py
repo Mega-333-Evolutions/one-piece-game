@@ -569,7 +569,7 @@ GAME_GLOBAL_OPPONENT_CONFIRMATION_REQUEST = (
 )
 GAME_GLOBAL_CHALLENGE_ACCEPTED_ALERT = "Challenge accepted"
 GAME_GLOBAL_CHALLENGE_ITEM_TEXT_FILL_IN = "Global Challenge"
-GAME_AUTO_MOVE_WARNING = "\n\n>In case of no selection, a move will be automatically made after {}"
+GAME_AUTO_MOVE_WARNING = "\n\n>In case of no selection, a worst possible move will be automatically made after {}"
 GAME_POINTS = "{} points: *{}/{}*"
 GAME_POINTS_FINISHED = " \\(Finished\\)"
 GAME_OPPONENT_AND_WAGER = "\n\n*Opponent*: {}" "\n*Wager*: ฿{}"
