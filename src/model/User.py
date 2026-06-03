@@ -212,17 +212,17 @@ class User(BaseModel):
         else:
             private_screen_list = self.get_private_screen_list()
 
-        if len(private_screen_list) == 0:
-            self.private_screen_list = screen
-            return
+            if len(private_screen_list) == 0:
+                self.private_screen_list = screen
+                return
 
-        # Back button, remove last screen
-        if len(private_screen_list) > 2 and private_screen_list[-2] is screen:
-            private_screen_list.pop()
-        elif private_screen_list[-1] is not screen:  # Add screen
-            private_screen_list.append(screen)
+            # Back button, remove last screen
+            if len(private_screen_list) > 2 and private_screen_list[-2] is screen:
+                private_screen_list.pop()
+            elif private_screen_list[-1] is not screen:  # Add screen
+                private_screen_list.append(screen)
 
-        self.private_screen_list = c.STANDARD_SPLIT_CHAR.join(private_screen_list)
+            self.private_screen_list = c.STANDARD_SPLIT_CHAR.join(private_screen_list)
 
         if len(self.private_screen_list) == 0:
             self.private_screen_list = None
