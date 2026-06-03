@@ -1642,7 +1642,16 @@ async def guess_game_should_end_after_answer(
     except AttributeError:
         return False
 
+    if answer is None:
+        return False
+
+    answer = answer.strip()
+    if not answer:
+        return False
+
     terminology = game.get_terminology()
+    if terminology is None or terminology.name is None:
+        return False
 
     if not terminology.name.lower() == answer.lower():
         return False
