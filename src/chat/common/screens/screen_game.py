@@ -58,7 +58,7 @@ async def validate(
 
     global_challenges_text = get_global_challenges_section_text(challenger)
     # Command does not have wager amount
-    if len(command.parameters) == 0:
+    if command is None or len(command.parameters) == 0:
         await full_message_send(
             context,
             phrases.GAME_NO_WAGER_AMOUNT + global_challenges_text,

@@ -34,9 +34,15 @@ async def manage(
     :return: None
     """
 
+    # This screen requires callback keyboard context.
+    if inbound_keyboard is None or not inbound_keyboard.has_key(
+        ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY
+    ):
+        return
+
     # Get prisoner
     prisoner: User = User.get_by_id(
-        inbound_keyboard.info[ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY]
+        inbound_keyboard.get_int(ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY)
     )
 
     if not await validate(update, context, user, prisoner):
