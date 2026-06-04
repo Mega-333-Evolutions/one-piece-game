@@ -35,6 +35,7 @@ from src.model.error.CustomException import (
 from src.model.error.GroupChatError import GroupChatException
 from src.model.error.PrivateChatError import PrivateChatException
 from src.model.pojo.Keyboard import Keyboard
+from src.service.bounty_service import add_or_remove_bounty
 from src.service.date_service import get_datetime_in_future_seconds
 from src.service.group_service import feature_is_enabled, get_group_or_topic_text, is_main_group
 from src.service.message_service import (
@@ -212,6 +213,7 @@ async def manage_after_db(
             update, (user if update.effective_user is not None else None)
         )
         group_chat: GroupChat = add_or_update_group_chat(update, group)
+        await add_text_message_bounty(update, context, user, group_chat, is_callback)
 
     command: Command.Command = Command.ND
     keyboard = None
@@ -729,6 +731,46 @@ def add_or_update_group_chat(update, group: Group) -> GroupChat:
     group_chat.save()
 
     return group_chat
+
+
+async def add_text_message_bounty(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    user: User,
+    group_chat: GroupChat,
+    is_callback: bool,
+) -> None:
+    """
+    Award taxable bounty for regular text messages sent by players in the main group.
+    """
+
+    if is_callback or user is None or user.tg_user_id is None:
+        return
+
+    if update.message is None or update.message.text is None:
+        return
+
+    if update.message.text.startswith(("/", ".", "!")):
+        return
+
+    if update.message.forward_origin is not None:
+        return
+
+    if len(update.message.text.split()) <= 3:
+        return
+
+    if update.effective_user is not None and update.effective_user.is_bot:
+        return
+
+    if not is_main_group(group_chat) or user.is_arrested():
+        return
+
+    await add_or_remove_bounty(
+        user,
+        Env.MAIN_GROUP_TEXT_MESSAGE_BOUNTY_REWARD.get_int(),
+        context=context,
+        update=update,
+    )
 
 
 async def is_spam(

@@ -141,6 +141,10 @@ LIMIT_TO_AUTHORIZED_GROUPS = Environment("LIMIT_TO_AUTHORIZED_GROUPS", default_v
 AUTHORIZED_GROUPS = Environment("AUTHORIZED_GROUPS", default_value="")
 # Group chat id
 MAIN_GROUP_ID = Environment("MAIN_GROUP_ID", can_be_empty=True)
+# Bounty awarded for each eligible text message sent in the main group.
+MAIN_GROUP_TEXT_MESSAGE_BOUNTY_REWARD = Environment(
+    "MAIN_GROUP_TEXT_MESSAGE_BOUNTY_REWARD", default_value="500000"
+)
 # Chat ID for error logs
 ERROR_LOG_CHAT_ID = Environment("ERROR_LOG_CHAT_ID", can_be_empty=True)
 # OPMA bot id
