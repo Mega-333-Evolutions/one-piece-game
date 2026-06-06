@@ -540,13 +540,12 @@ class GameLog(Log):
                 get_message_url(self.object.message_id, self.object.group_chat)
             )
 
-        bet_amount = self.object.wager // 2
         return phrases.GAME_LOG_ITEM_DETAIL_TEXT.format(
             challenger_text,
             self.opponent.get_markdown_mention(),
             game_name,
             date,
-            get_belly_formatted(bet_amount),
+            get_belly_formatted(self.object.wager),
             outcome_text,
             go_to_message_text,
         )
