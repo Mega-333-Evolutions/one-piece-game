@@ -324,7 +324,7 @@ TXT_SETTINGS = "Which setting would you like to change?"
 
 # Private chat
 PVT_TXT_START = (
-    "Welcome to One Piece Group Bot, a Bot that brings the Bounty System to any Chat Group!"
+    "Welcome to One Piece Bounty Bot, a Bot that brings the Bounty System to any Chat Group!"
     f"\n\n{JOIN_SUPPORT_GROUP}"
 )
 PVT_KEY_SETTINGS = Emoji.SETTINGS + " Settings"
