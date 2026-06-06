@@ -119,6 +119,3 @@ async def manage(
             await validate_answer_pr(update, context, game, user)
         case _:
             await guess_game_validate_answer(update, context, game, user)
-
-    # Try restarting the run game thread if it's down
-    context.application.create_task(restart_hint_thread_if_down(context, game, user))
