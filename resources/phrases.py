@@ -75,6 +75,8 @@ COMMAND_FEATURE_DISABLED_ERROR = (
     f" {CommandName.SETTINGS.get_formatted()}"
 )
 COMMAND_NOT_ALLOWED_FROM_DEEPLINK_ERROR = "This command is not allowed from a deeplink"
+COMMAND_START_IN_GROUP_ERROR = "You can't use this command here\n\nClick the button below to start the bot in DM"
+COMMAND_START_IN_GROUP_BUTTON = "Start"
 
 SHOW_USER_STATUS = "User: {}\nBounty: ฿*{}*{}\nRank: {}{}{}"
 SHOW_USER_STATUS_LOCATION = "\nLocation: {}"

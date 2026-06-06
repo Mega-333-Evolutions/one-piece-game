@@ -280,6 +280,25 @@ async def manage_after_db(
 
         # Start command, reset private screen
         if command is Command.PVT_START:
+            # If /start is used in a group, send warning message with button to start in DM
+            if message_source is MessageSource.GROUP:
+                bot_username = Env.BOT_USERNAME.get()
+                start_url = f"https://t.me/{bot_username}?start"
+                inline_keyboard = [
+                    [
+                        Keyboard(
+                            phrases.COMMAND_START_IN_GROUP_BUTTON,
+                            url=start_url,
+                        )
+                    ]
+                ]
+                await full_message_send(
+                    context,
+                    phrases.COMMAND_START_IN_GROUP_ERROR,
+                    update=update,
+                    keyboard=inline_keyboard,
+                )
+                return
             user.private_screen_list = None
             user.reset_private_screen()
 
