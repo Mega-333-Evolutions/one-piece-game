@@ -1,3 +1,5 @@
+import logging
+import urllib.error
 from PIL import Image, ImageFilter
 
 from src.model.game.GameBoard import GameBoard
@@ -36,9 +38,9 @@ class WhosWho(GameBoard):
                 with Image.open(self.image_path):
                     pass
             except FileNotFoundError:
-                self.image_path = download_temp_file(self.character.anime_image_url, "jpg")
+                self._safe_download_image()
         else:
-            self.image_path = download_temp_file(self.character.anime_image_url, "jpg")
+            self._safe_download_image()
 
         # Reset the blurred image if it doesn't exist because it was deleted
         if self.latest_blurred_image is not None:
@@ -50,6 +52,20 @@ class WhosWho(GameBoard):
 
         if self.latest_blurred_image is None:
             self.set_blurred_image()
+
+    def _safe_download_image(self):
+        """
+        Safely attempts to download the character image.
+        Raises ValueError if the download fails (e.g., 404 Not Found)
+        """
+        try:
+            self.image_path = download_temp_file(self.character.anime_image_url, "jpg")
+        except (urllib.error.HTTPError, urllib.error.URLError) as e:
+            logging.warning(f"Dead image link for {self.character.name}: {e}")
+            raise ValueError(f"Image unavailable for {self.character.name}")
+        except Exception as e:
+            logging.warning(f"Failed to process image for {self.character.name}: {e}")
+            raise ValueError(f"Image processing failed for {self.character.name}")
 
     def set_blurred_image(self):
         """

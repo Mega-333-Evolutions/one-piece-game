@@ -1509,20 +1509,34 @@ def get_generic_boards_for_guess_game(
 
     # Create if not existing board
     if game.board is None:
-        if terminology_type == Character:
-            random_terminology: Character = SupabaseRest.get_random_character(
-                game.get_difficulty()
-            )
-        else:
-            random_terminology: Terminology = SupabaseRest.get_random_terminology(
-                max_len=max_len, only_letters=only_letters
-            )
-        match game.get_type():
-            case GameType.SHAMBLES:
-                board = Shambles(random_terminology, grid_size=max_len)
+        board = None
+        max_retries = 10
+        attempts = 0
+        
+        while board is None and attempts < max_retries:
+            try:
+                if terminology_type == Character:
+                    random_terminology: Character = SupabaseRest.get_random_character(
+                        game.get_difficulty()
+                    )
+                else:
+                    random_terminology: Terminology = SupabaseRest.get_random_terminology(
+                        max_len=max_len, only_letters=only_letters
+                    )
+                
+                match game.get_type():
+                    case GameType.SHAMBLES:
+                        board = Shambles(random_terminology, grid_size=max_len)
 
-            case _:
-                board = board_class(random_terminology)
+                    case _:
+                        board = board_class(random_terminology)
+            except ValueError as e:
+                logging.warning(f"Retrying board creation... ({e})")
+                attempts += 1
+                board = None # Ensure it stays None to retry
+        
+        if board is None:
+            raise CommonChatException("Failed to generate a valid game board after multiple attempts due to missing resources.")
 
         save_game(game, board.get_as_json_string(), hint_was_issued=True)
 
