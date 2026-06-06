@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from peewee import DoesNotExist
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -25,6 +26,7 @@ from src.service.game_service import (
     challenger_has_finished_or_opponent_timeout,
 )
 from src.service.message_service import full_message_send
+from src.model.error.CommonChatError import CommonChatException
 
 
 async def manage(
@@ -39,10 +41,15 @@ async def manage(
     :return: None
     """
 
-    if inbound_keyboard is not None:  # From deep link
-        game: Game = get_game_from_keyboard(inbound_keyboard)
-    else:  # From private chat
-        game: Game = Game.get_by_id(user.private_screen_in_edit_id)
+    try:
+        if inbound_keyboard is not None:  # From deep link
+            game: Game = get_game_from_keyboard(inbound_keyboard)
+        else:  # From private chat
+            game: Game = Game.get_by_id(user.private_screen_in_edit_id)
+    except (CommonChatException, DoesNotExist):
+        user.reset_private_screen()
+        await full_message_send(context, phrases.GAME_NOT_FOUND, update=update)
+        return
 
     # User is not a player of the game
     if not game.is_player(user):
