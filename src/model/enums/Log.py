@@ -488,11 +488,7 @@ class GameLog(Log):
         self.opponent = self.object.opponent if self.user_is_challenger else self.object.challenger
         self.legend = self.get_emoji_legend()
         self.effective_status = self.legend.get_game_status()
-        self.effective_wager = (
-            self.object.wager // 2
-            if self.effective_status is GameStatus.LOST
-            else self.object.wager
-        )
+        self.effective_wager = self.object.wager // 2
 
     def get_items(self, page, limit=ListPage.DEFAULT_LIMIT) -> list[Game]:
         return (
@@ -508,10 +504,11 @@ class GameLog(Log):
         )
 
     def get_item_text(self) -> str:
+        bet_amount = self.object.wager // 2
         return phrases.GAME_LOG_ITEM_TEXT.format(
             self.legend.get_formatted(),
             self.opponent.get_markdown_mention(),
-            get_belly_formatted(self.object.wager),
+            get_belly_formatted(bet_amount),
         )
 
     def get_item_detail_text(self) -> str:
@@ -543,12 +540,13 @@ class GameLog(Log):
                 get_message_url(self.object.message_id, self.object.group_chat)
             )
 
+        bet_amount = self.object.wager // 2
         return phrases.GAME_LOG_ITEM_DETAIL_TEXT.format(
             challenger_text,
             self.opponent.get_markdown_mention(),
             game_name,
             date,
-            get_belly_formatted(self.object.wager),
+            get_belly_formatted(bet_amount),
             outcome_text,
             go_to_message_text,
         )
