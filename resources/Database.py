@@ -1,12 +1,10 @@
-from abc import ABC
-
-from peewee import *
+from peewee import MySQLDatabase
 from playhouse.shortcuts import ReconnectMixin
 
 import resources.Environment as Env
 
-
-class ReconnectMySQLDatabase(ReconnectMixin, MySQLDatabase, ABC):
+# Removed the ABC inheritance as it is unnecessary here
+class ReconnectMySQLDatabase(ReconnectMixin, MySQLDatabase):
     pass
 
 
@@ -23,14 +21,14 @@ class Database:
         )
 
     def get_db(self):
-        if self.db.is_connection_usable():
-            return self.db
-
-        self.db.connect()
+        # Let Peewee and ReconnectMixin manage the connection lifecycle automatically!
+        # Do NOT manually check usability or force .connect() here.
         return self.db
 
     def close(self):
-        self.db.close()
+        # Safely check if the connection is already closed before closing
+        if not self.db.is_closed():
+            self.db.close()
 
     def __del__(self):
         self.close()
