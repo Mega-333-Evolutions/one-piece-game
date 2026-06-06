@@ -893,10 +893,12 @@ async def guess_game_validate_answer(
 
     # Send message to winner
     await set_user_private_screen(user, should_reset=True)
+    bet_amount = game.wager // 2
+    logging.info(f"WAGER RESULT - Winner: user_id={user.id}, original_bet_amount={bet_amount}, total_wager_pool={game.wager}, amount_displayed={bet_amount}")
     winner_caption: str = (
         phrases.GUESS_GAME_CORRECT_ANSWER.format(term_text_addition)
         + "\n\n"
-        + get_outcome_text(True, game.wager)
+        + get_outcome_text(True, bet_amount)
     )
     await full_media_send(
         context,
@@ -914,10 +916,11 @@ async def guess_game_validate_answer(
 
     # Send message to loser
     await set_user_private_screen(loser, should_reset=True)
+    logging.info(f"WAGER RESULT - Loser: user_id={loser.id}, original_bet_amount={bet_amount}, total_wager_pool={game.wager}, amount_displayed={bet_amount}")
     loser_caption: str = (
         phrases.GUESS_GAME_OPPONENT_CORRECT_ANSWER.format(term_text_addition)
         + "\n\n"
-        + get_outcome_text(True, game.wager)
+        + get_outcome_text(False, bet_amount)
     )
     await full_media_send(
         context,
@@ -1619,16 +1622,17 @@ def get_winner_loser_text(
     if specific_loser_text is None:
         specific_loser_text = specific_winner_text
 
+    bet_amount = game.wager // 2
     winner_text = (
         phrases.GUESS_GAME_CORRECT_ANSWER.format(specific_winner_text)
         + "\n\n"
-        + get_outcome_text(True, game.wager)
+        + get_outcome_text(True, bet_amount)
     )
 
     loser_text: str = (
         phrases.GUESS_GAME_OPPONENT_CORRECT_ANSWER.format(specific_loser_text)
         + "\n\n"
-        + get_outcome_text(True, game.wager)
+        + get_outcome_text(False, bet_amount)
     )
 
     return winner_text, loser_text
