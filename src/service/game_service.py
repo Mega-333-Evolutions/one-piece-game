@@ -774,6 +774,13 @@ async def guess_game_countdown_to_start(
     :return: None
     """
 
+    # Check if game still exists (might have been deleted)
+    try:
+        game = Game.get_by_id(game.id)
+    except Game.DoesNotExist:
+        logging.warning(f"Game {game.id} no longer exists, skipping countdown")
+        return
+
     play_deeplink_button = [[get_guess_game_play_deeplink_button(game)]]
 
     if remaining_seconds <= 0:

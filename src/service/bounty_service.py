@@ -252,6 +252,8 @@ async def add_or_remove_bounty(
                     f"\n{traceback.print_stack()}"
                 )
 
+                raise CommonChatException("Negative pending bounty after requested action")
+
             if should_save:
                 user.save()
 

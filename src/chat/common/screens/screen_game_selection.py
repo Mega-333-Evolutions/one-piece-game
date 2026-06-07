@@ -128,6 +128,7 @@ async def manage(
         update=update,
         keyboard=outbound_keyboard,
         saved_media_name=game.get_saved_media_name(),
+        ignore_bad_request_exception=True,
     )
 
     # Enqueue the game for timeout
