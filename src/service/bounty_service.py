@@ -244,15 +244,15 @@ async def add_or_remove_bounty(
             user.pending_bounty -= amount if pending_belly_amount is None else pending_belly_amount
 
             if user.pending_bounty < 0 and previous_pending_bounty >= 0:
-                logging.exception(
-                    f"User {user.id} has negative pending bounty: {user.pending_bounty}"
-                    f"(previous was {previous_pending_bounty} after removing"
-                    f" {amount} pending bounty in event "
-                    f"{update.to_dict() if update is not None else 'None'}"
-                    f"\n{traceback.print_stack()}"
+                logging.error(
+                    f"⚠️ NEGATIVE PENDING BOUNTY CLAMPED ⚠️\n"
+                    f"User {user.id} had pending bounty {previous_pending_bounty}, "
+                    f"attempted to remove {amount if pending_belly_amount is None else pending_belly_amount}, "
+                    f"result would be {user.pending_bounty}. Clamped to 0.\n"
+                    f"Event: {update.to_dict() if update is not None else 'None'}\n"
+                    f"Stack trace:\n{traceback.format_stack()}"
                 )
-
-                raise CommonChatException("Negative pending bounty after requested action")
+                user.pending_bounty = 0
 
             if should_save:
                 user.save()

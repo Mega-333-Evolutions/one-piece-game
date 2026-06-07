@@ -98,6 +98,19 @@ async def end_game(
     :return: None
     """
 
+    # Idempotent check: fetch latest game status from database to prevent race conditions
+    try:
+        latest_game = Game.get_by_id(game.id)
+        if latest_game.get_status() != GameStatus.IN_PROGRESS:
+            logging.warning(
+                f"Game {game.id} is not IN_PROGRESS (status: {latest_game.get_status()}), "
+                f"skipping end_game to prevent double processing"
+            )
+            return
+    except Game.DoesNotExist:
+        logging.warning(f"Game {game.id} no longer exists, skipping end_game")
+        return
+
     challenger: User = game.challenger
     opponent: User = game.opponent
     half_wager: int = int(game.wager / 2)
@@ -1129,6 +1142,7 @@ async def collect_game_wagers_and_set_in_progress(
             update=update,
             should_affect_pending_bounty=True,
             should_save=should_save_opponent,
+            pending_belly_amount=int(game.wager / 2),  # Only half-wager goes to pending bounty
         )
     if should_set_global_cooldown_opponent:
         opponent.should_set_global_cooldown_opponent = get_ability_adjusted_datetime(
@@ -1144,6 +1158,7 @@ async def collect_game_wagers_and_set_in_progress(
             add=False,
             should_affect_pending_bounty=True,
             update=update,
+            pending_belly_amount=int(game.wager / 2),  # Only half-wager goes to pending bounty
             should_save=should_save_challenger,
         )
     if should_set_cooldown_challenger:
