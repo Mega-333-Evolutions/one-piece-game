@@ -1142,7 +1142,7 @@ async def collect_game_wagers_and_set_in_progress(
             update=update,
             should_affect_pending_bounty=True,
             should_save=should_save_opponent,
-            pending_belly_amount=int(game.wager / 2),  # Only half-wager goes to pending bounty
+            pending_belly_amount=game.wager,  # Full wager (will be doubled later)
         )
     if should_set_global_cooldown_opponent:
         opponent.should_set_global_cooldown_opponent = get_ability_adjusted_datetime(
@@ -1158,7 +1158,7 @@ async def collect_game_wagers_and_set_in_progress(
             add=False,
             should_affect_pending_bounty=True,
             update=update,
-            pending_belly_amount=int(game.wager / 2),  # Only half-wager goes to pending bounty
+            pending_belly_amount=game.wager,  # Full wager (will be doubled later)
             should_save=should_save_challenger,
         )
     if should_set_cooldown_challenger:
