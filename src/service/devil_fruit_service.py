@@ -198,12 +198,13 @@ async def schedule_devil_fruit_release(context: ContextTypes.DEFAULT_TYPE) -> No
     if not should_release_devil_fruit():
         return
 
-    # Get a fruit to release that is ENABLED and NOT a MYTHICAL_ZOAN
+    # Get a fruit to release that is ENABLED and NOT a MYTHICAL_ZOAN or SMILE
     devil_fruit: DevilFruit = (
         DevilFruit.select()
         .where(
             (DevilFruit.status == DevilFruitStatus.ENABLED) & 
-            (DevilFruit.category != DevilFruitCategory.MYTHICAL_ZOAN)
+            (DevilFruit.category != DevilFruitCategory.MYTHICAL_ZOAN) &
+            (DevilFruit.category != DevilFruitCategory.SMILE)
         )
         .order_by(DevilFruit.id.asc())
         .get_or_none()
@@ -211,7 +212,7 @@ async def schedule_devil_fruit_release(context: ContextTypes.DEFAULT_TYPE) -> No
 
     # If there are no devil fruits to release, send error message to admin chat
     if not devil_fruit:
-        ot_text = phrases.NO_DEVIL_FRUIT_TO_SCHEDULE.format("Any (non-Mythical Zoan)")
+        ot_text = phrases.NO_DEVIL_FRUIT_TO_SCHEDULE.format("Any (non-Mythical Zoan, non-Smile)")
         await log_error(context, ot_text)
         logging.error(ot_text)
         return
@@ -501,7 +502,7 @@ def get_inactive_users_with_eaten_devil_fruits(
     # Have to first get inactive ones else, by using "not in", it will return records for previous
     # leaderboards too since the user might have been in a leaderboard before N, so it will not be
     # in the latest N leaderboards
-    # Exclude admins and those exempt from global leaderboard requirement
+    # Exclude admins and reductions from global leaderboard requirement
     inactive_devil_fruits: list[DevilFruit] = (
         DevilFruit.select()
         .distinct()
