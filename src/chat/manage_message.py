@@ -227,7 +227,7 @@ async def manage_after_db(
         and update.message.text.startswith("/start")
     ):
         bot_username = Env.BOT_USERNAME.get()
-        start_url = f"https://t.me/{bot_username}?start"
+        start_url = f"https://t.me/{bot_username}?start=start"
         inline_keyboard = [
             [
                 Keyboard(
