@@ -186,19 +186,8 @@ def should_release_devil_fruit() -> bool:
     :return: Whether a Devil Fruit should be released
     """
 
-    # Get count of all devil fruits in circulation
-    devil_fruits_in_circulation_count = len(get_devil_fruits_in_circulation())
-    # Get count of active users
-    active_users_count = len(User.get_active_interactive_users())
-
-    if active_users_count == 0:
-        return False
-
-    max_devil_fruits_in_circulation = int(
-        active_users_count / Env.DEVIL_FRUIT_MIN_ACTIVE_USERS_PER_DEVIL_FRUIT.get_int()
-    )
-
-    return devil_fruits_in_circulation_count < max_devil_fruits_in_circulation
+    # Bypassed restriction to always allow scheduling
+    return True
 
 
 async def schedule_devil_fruit_release(context: ContextTypes.DEFAULT_TYPE) -> None:
