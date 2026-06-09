@@ -77,19 +77,15 @@ async def send_request(
     try:
         validate(user, crew, specific_user_error=True)
     except CrewValidationException as e:
-        # Check if error is "user already in crew"
-        if e.message == phrases.CREW_USER_ALREADY_IN_CREW:
-            # Send warning message with existing delete button system
-            await full_message_send(
-                context,
-                phrases.CREW_USER_ALREADY_IN_CREW,
-                update=update,
-                add_delete_button=True,
-                authorized_users=[user],
-            )
-            return
-        # Re-raise other crew validation exceptions
-        raise
+        # Send error message with existing delete button system
+        await full_message_send(
+            context,
+            e.message,
+            update=update,
+            add_delete_button=True,
+            authorized_users=[user],
+        )
+        return
 
     # Get captain and first mate
     captain: User = crew.get_captain()
