@@ -7,6 +7,7 @@ import resources.phrases as phrases
 from src.chat.common.screens.screen_crew_join import validate
 from src.model.Crew import Crew
 from src.model.User import User
+from src.model.error.CustomException import CrewValidationException
 from src.model.enums.ReservedKeyboardKeys import ReservedKeyboardKeys
 from src.model.enums.SavedMediaName import SavedMediaName
 from src.model.enums.Screen import Screen
@@ -16,6 +17,7 @@ from src.service.message_service import (
     mention_markdown_user,
     get_yes_no_keyboard,
     full_media_send,
+    full_message_send,
 )
 
 
@@ -72,7 +74,22 @@ async def send_request(
     :return: None
     """
 
-    validate(user, crew, specific_user_error=True)
+    try:
+        validate(user, crew, specific_user_error=True)
+    except CrewValidationException as e:
+        # Check if error is "user already in crew"
+        if e.message == phrases.CREW_USER_ALREADY_IN_CREW:
+            # Send warning message with existing delete button system
+            await full_message_send(
+                context,
+                phrases.CREW_USER_ALREADY_IN_CREW,
+                update=update,
+                add_delete_button=True,
+                authorized_users=[user],
+            )
+            return
+        # Re-raise other crew validation exceptions
+        raise
 
     # Get captain and first mate
     captain: User = crew.get_captain()
