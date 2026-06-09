@@ -186,7 +186,6 @@ def should_release_devil_fruit() -> bool:
     :return: Whether a Devil Fruit should be released
     """
 
-    # Bypassed restriction to always allow scheduling
     return True
 
 
@@ -199,37 +198,20 @@ async def schedule_devil_fruit_release(context: ContextTypes.DEFAULT_TYPE) -> No
     if not should_release_devil_fruit():
         return
 
-    # Get all regular zoans in circulation count
-    active_regular_zoans: int = len(
-        get_devil_fruits_in_circulation(category=DevilFruitCategory.ZOAN)
-    )
-    # Get all ancient zoans in circulation count
-    active_ancient_zoans: int = len(
-        get_devil_fruits_in_circulation(category=DevilFruitCategory.ANCIENT_ZOAN)
-    )
-
-    # Check if we should release a regular zoan or an ancient zoan based on the ratio
-    try:
-        current_ratio: int = int(active_regular_zoans / active_ancient_zoans)
-        category: DevilFruitCategory = (
-            DevilFruitCategory.ZOAN
-            if current_ratio < Env.DEVIL_FRUIT_REGULAR_ZOAN_TO_ANCIENT_ZOAN_RATIO.get_int()
-            else DevilFruitCategory.ANCIENT_ZOAN
-        )
-    except ZeroDivisionError:
-        category = DevilFruitCategory.ZOAN
-
-    # Get a fruit to release
+    # Get a fruit to release that is ENABLED and NOT a MYTHICAL_ZOAN
     devil_fruit: DevilFruit = (
         DevilFruit.select()
-        .where((DevilFruit.status == DevilFruitStatus.ENABLED) & (DevilFruit.category == category))
+        .where(
+            (DevilFruit.status == DevilFruitStatus.ENABLED) & 
+            (DevilFruit.category != DevilFruitCategory.MYTHICAL_ZOAN)
+        )
         .order_by(DevilFruit.id.asc())
         .get_or_none()
     )
 
     # If there are no devil fruits to release, send error message to admin chat
     if not devil_fruit:
-        ot_text = phrases.NO_DEVIL_FRUIT_TO_SCHEDULE.format(category.get_description())
+        ot_text = phrases.NO_DEVIL_FRUIT_TO_SCHEDULE.format("Any (non-Mythical Zoan)")
         await log_error(context, ot_text)
         logging.error(ot_text)
         return
