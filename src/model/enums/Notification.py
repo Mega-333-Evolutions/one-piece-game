@@ -412,13 +412,16 @@ class ImpelDownNotificationRestrictionPlaced(Notification):
         self.reason = reason
         self.impel_down_log = impel_down_log
 
+        post_bail_button = get_post_bail_deeplink_button(impel_down_log)
+        keyboard = [[post_bail_button]] if post_bail_button is not None else []
+
         super().__init__(
             NotificationCategory.IMPEL_DOWN,
             NotificationType.IMPEL_DOWN_RESTRICTION_PLACED,
             phrases.IMPEL_DOWN_RESTRICTION_PLACED_NOTIFICATION,
             phrases.IMPEL_DOWN_RESTRICTION_PLACED_NOTIFICATION_DESCRIPTION,
             phrases.IMPEL_DOWN_RESTRICTION_PLACED_NOTIFICATION_KEY,
-            keyboard=[[get_post_bail_deeplink_button(impel_down_log)]],
+            keyboard=keyboard,
         )
 
     def build(self) -> str:
