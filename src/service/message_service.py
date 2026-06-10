@@ -228,12 +228,15 @@ async def get_keyboard(
                             button.refresh_callback_data()
 
                         try:
+                            inline_kwargs = {
+                                "callback_data": button.set_and_get_callback_data_in_context(context)
+                            }
+                            if getattr(button, "style", None) is not None:
+                                inline_kwargs["style"] = button.style
                             keyboard_row.append(
                                 InlineKeyboardButton(
                                     button.text,
-                                    callback_data=button.set_and_get_callback_data_in_context(
-                                        context
-                                    ),
+                                    **inline_kwargs
                                 )
                             )
                         except AttributeError:
@@ -1063,6 +1066,8 @@ def get_yes_no_keyboard(
     authorized_users: list[User] = None,
     yes_keys_to_exclude: list[str] = None,
     no_keys_to_exclude: list[str] = None,
+    yes_style: str = None,
+    no_style: str = None,
 ) -> list[Keyboard]:
     """
     Create a yes/no keyboard
@@ -1173,6 +1178,7 @@ def get_yes_no_keyboard(
                     screen=yes_screen,
                     authorized_users=authorized_users,
                     inherit_authorized_users=False,
+                    style=yes_style,
                 )
             )
 
@@ -1210,6 +1216,7 @@ def get_yes_no_keyboard(
                     screen=no_screen,
                     authorized_users=authorized_users,
                     inherit_authorized_users=False,
+                    style=no_style,
                 )
             )
 
