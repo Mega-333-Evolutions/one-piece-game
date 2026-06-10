@@ -328,6 +328,9 @@ def create_leaderboard_users(
         # Add warlords
         excluded_user_ids.extend(Warlord.get_active_user_ids())
 
+        # Add legendary pirates
+        excluded_user_ids.extend(LegendaryPirate.get_active_user_ids())
+
     # Get previous leaderboard users who were Emperors or higher
     previous_leaderboard: Leaderboard = get_leaderboard(1, group)
     if previous_leaderboard is None:
@@ -368,7 +371,6 @@ def create_leaderboard_users(
     )
 
     # Save Pirate King, if available
-    pirate_king_assigned = False
     for user in new_world_users:
         if user in eligible_pk_users:
             leaderboard_user: LeaderboardUser = save_leaderboard_user(
@@ -376,19 +378,7 @@ def create_leaderboard_users(
             )
             leaderboard_users.append(leaderboard_user)
             position += 1
-            pirate_king_assigned = True
             break
-
-    # Legendary Pirates with the highest New World bounty can become Pirate King even without a
-    # previous Emperor or Pirate King rank
-    if not pirate_king_assigned and len(new_world_users) > 0:
-        top_new_world_user: User = new_world_users[0]
-        if top_new_world_user.is_legendary_pirate():
-            leaderboard_user: LeaderboardUser = save_leaderboard_user(
-                leaderboard, top_new_world_user, position, LeaderboardRank.PIRATE_KING
-            )
-            leaderboard_users.append(leaderboard_user)
-            position += 1
 
     # Save Emperors, next 4 users
     added_users_count = 0

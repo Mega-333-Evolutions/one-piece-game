@@ -1859,8 +1859,7 @@ LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION = (
     "Congratulations, you have been appointed as a Legendary Pirate!\n\n*Epithet*: {}\n\n"
     "*Duration*: {}\n\n*Reason*: {}\n\n*Privileges*\n• Complete immunity from all combat-related"
     " losses\n• Exemption from bounty taxes and income tax\n• Permanent boss status\n•"
-    " Immunity from Devil Fruit revocation\n• Eligible to become Pirate King with the highest New"
-    " World bounty, regardless of previous leaderboard rank"
+    " Immunity from Devil Fruit revocation"
 )
 LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_PERMANENT_FOOTER = (
     "\n\n_You are now a permanent Legendary Pirate and will always appear on all global"
