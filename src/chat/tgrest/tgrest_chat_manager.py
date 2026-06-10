@@ -79,12 +79,18 @@ async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 if tg_rest_impel_down_notification.restriction_removed():
                     notification = ImpelDownNotificationRestrictionRemoved()
                 else:
+                    impel_down_log = None
+                    if tg_rest_impel_down_notification.log_id is not None:
+                        impel_down_log = ImpelDownLog.get_by_id(
+                            tg_rest_impel_down_notification.log_id
+                        )
+
                     notification = ImpelDownNotificationRestrictionPlaced(
                         tg_rest_impel_down_notification.sentence_type,
                         tg_rest_impel_down_notification.release_date_time,
                         tg_rest_impel_down_notification.bounty_action,
                         tg_rest_impel_down_notification.reason,
-                        ImpelDownLog.get_by_id(tg_rest_impel_down_notification.log_id),
+                        impel_down_log,
                     )
 
                 await send_notification(

@@ -21,7 +21,7 @@ class TgRestImpelDownNotification(TgRest):
         release_date_time: str,
         bounty_action: ImpelDownBountyAction,
         reason: str,
-        log_id: int,
+        log_id: int | None = None,
     ):
         """
         Constructor
