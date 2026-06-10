@@ -14,6 +14,7 @@ from src.model.enums.Notification import (
     WarlordAppointmentNotification,
     WarlordRevocationNotification,
     LegendaryPirateAppointmentNotification,
+    LegendaryPirateRevocationNotification,
 )
 from src.model.enums.Notification import ImpelDownNotificationRestrictionRemoved
 from src.model.enums.devil_fruit.DevilFruitSource import DevilFruitSource
@@ -28,6 +29,7 @@ from src.model.tgrest.TgRestPrivateMessage import TgRestPrivateMessage
 from src.model.tgrest.TgRestWarlordAppointment import TgRestWarlordAppointment
 from src.model.tgrest.TgRestWarlordRevocation import TgRestWarlordRevocation
 from src.model.tgrest.TgRestLegendaryPirateAppointment import TgRestLegendaryPirateAppointment
+from src.model.tgrest.TgRestLegendaryPirateRevocation import TgRestLegendaryPirateRevocation
 from src.service.devil_fruit_service import give_devil_fruit_to_user, force_schedule_devil_fruit
 from src.service.message_service import full_message_send, escape_valid_markdown_chars
 from src.service.notification_service import send_notification
@@ -134,9 +136,18 @@ async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             case TgRestObjectType.LEGENDARY_PIRATE_APPOINTMENT:
                 tg_rest_lpa = TgRestLegendaryPirateAppointment(**tg_rest_dict)
 
-                # Send notification
-                notification = LegendaryPirateAppointmentNotification(tg_rest_lpa.legendary_pirate)
+                notification = LegendaryPirateAppointmentNotification(
+                    tg_rest_lpa.legendary_pirate,
+                    tg_rest_lpa.days,
+                    tg_rest_lpa.is_permanent,
+                )
                 await send_notification(context, tg_rest_lpa.user, notification)
+
+            case TgRestObjectType.LEGENDARY_PIRATE_REVOCATION:
+                tg_rest_lpr = TgRestLegendaryPirateRevocation(**tg_rest_dict)
+
+                notification = LegendaryPirateRevocationNotification(tg_rest_lpr.legendary_pirate)
+                await send_notification(context, tg_rest_lpr.user, notification)
 
             case _:
                 raise TgRestException("Unknown object type")

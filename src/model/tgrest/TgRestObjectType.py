@@ -14,3 +14,4 @@ class TgRestObjectType(StrEnum):
     WARLORD_APPOINTMENT = "warlord_appointment"
     WARLORD_REVOCATION = "warlord_revocation"
     LEGENDARY_PIRATE_APPOINTMENT = "legendary_pirate_appointment"
+    LEGENDARY_PIRATE_REVOCATION = "legendary_pirate_revocation"

@@ -71,7 +71,8 @@ async def make_user_legendary_pirate(user_tg_id: str, epithet: str, reason: str)
         legendary_pirate = LegendaryPirate.create(
             user=user,
             epithet=epithet,
-            reason=reason
+            reason=reason,
+            is_permanent=True,
         )
         
         print(f"✅ Successfully made {user.tg_user_id} (@{user.tg_username}) a Legendary Pirate!")

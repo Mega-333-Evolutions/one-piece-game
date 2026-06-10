@@ -290,6 +290,16 @@ def get_remaining_time_in_minutes(end_datetime: datetime, start_datetime: dateti
     return get_remaining_time_in_seconds(end_datetime, start_datetime) // 60
 
 
+def get_remaining_time_in_days(end_datetime: datetime, start_datetime: datetime = None) -> int:
+    """
+    Get the remaining time in days until the end_datetime
+    :param end_datetime: The end datetime
+    :param start_datetime: The start datetime. If None, the current datetime is used
+    :return: The remaining time in days
+    """
+    return get_remaining_time_in_seconds(end_datetime, start_datetime) // 86400
+
+
 def get_datetime_in_future_seconds(seconds: int, start_time: datetime.datetime = None) -> datetime:
     """
     Get the datetime in the future

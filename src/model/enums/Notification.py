@@ -31,7 +31,11 @@ from src.model.enums.impel_down.ImpelDownBountyAction import ImpelDownBountyActi
 from src.model.enums.impel_down.ImpelDownSentenceType import ImpelDownSentenceType
 from src.model.game.GameType import GameType
 from src.model.pojo.Keyboard import Keyboard
-from src.service.date_service import default_datetime_format, convert_days_to_duration
+from src.service.date_service import (
+    default_datetime_format,
+    convert_days_to_duration,
+    get_remaining_time_in_days,
+)
 from src.service.date_service import get_remaining_duration
 from src.service.message_service import (
     get_image_preview,
@@ -125,6 +129,7 @@ class NotificationType(IntEnum):
     PLUNDER_ATTACK = 40
     GAME_OUTCOME = 41
     LEGENDARY_PIRATE_APPOINTMENT = 42
+    LEGENDARY_PIRATE_REVOCATION = 43
 
 
 class Notification:
@@ -1006,6 +1011,60 @@ class WarlordRevocationNotification(Notification):
 class LegendaryPirateAppointmentNotification(Notification):
     """Class for legendary pirate appointment notifications."""
 
+    def __init__(
+        self,
+        legendary_pirate: "LegendaryPirate" = None,
+        days: int = None,
+        is_permanent: bool = False,
+    ):
+        """
+        Constructor
+
+        :param legendary_pirate: The legendary pirate
+        :param days: The appointment duration in days
+        :param is_permanent: Whether the appointment is permanent
+        """
+
+        self.legendary_pirate = legendary_pirate
+        self.days = days
+        self.is_permanent = is_permanent or (
+            legendary_pirate is not None and legendary_pirate.is_permanent
+        )
+
+        super().__init__(
+            NotificationCategory.LEGENDARY_PIRATE,
+            NotificationType.LEGENDARY_PIRATE_APPOINTMENT,
+            phrases.LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION,
+            phrases.LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_DESCRIPTION,
+            phrases.LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_KEY,
+        )
+
+    def build(self) -> str:
+        if self.is_permanent or self.legendary_pirate.end_date is None:
+            duration_text = "Permanent"
+        else:
+            days = self.days
+            if days is None:
+                days = get_remaining_time_in_days(
+                    self.legendary_pirate.end_date, self.legendary_pirate.date
+                )
+            duration_text = convert_days_to_duration(days)
+
+        text = self.text.format(
+            escape_valid_markdown_chars(self.legendary_pirate.epithet),
+            duration_text,
+            escape_valid_markdown_chars(self.legendary_pirate.reason),
+        )
+
+        if self.is_permanent or self.legendary_pirate.end_date is None:
+            text += phrases.LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_PERMANENT_FOOTER
+
+        return text
+
+
+class LegendaryPirateRevocationNotification(Notification):
+    """Class for legendary pirate revocation notifications."""
+
     def __init__(self, legendary_pirate: "LegendaryPirate" = None):
         """
         Constructor
@@ -1017,17 +1076,14 @@ class LegendaryPirateAppointmentNotification(Notification):
 
         super().__init__(
             NotificationCategory.LEGENDARY_PIRATE,
-            NotificationType.LEGENDARY_PIRATE_APPOINTMENT,
-            phrases.LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION,
-            phrases.LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_DESCRIPTION,
-            phrases.LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_KEY,
+            NotificationType.LEGENDARY_PIRATE_REVOCATION,
+            phrases.LEGENDARY_PIRATE_REVOCATION_NOTIFICATION,
+            phrases.LEGENDARY_PIRATE_REVOCATION_NOTIFICATION_DESCRIPTION,
+            phrases.LEGENDARY_PIRATE_REVOCATION_NOTIFICATION_KEY,
         )
 
     def build(self) -> str:
-        return self.text.format(
-            escape_valid_markdown_chars(self.legendary_pirate.epithet),
-            escape_valid_markdown_chars(self.legendary_pirate.reason),
-        )
+        return self.text.format(escape_valid_markdown_chars(self.legendary_pirate.revoke_reason))
 
 
 class CrewAbilityActivatedNotification(Notification):
@@ -1614,6 +1670,7 @@ NOTIFICATIONS = [
     WarlordAppointmentNotification(),
     WarlordRevocationNotification(),
     LegendaryPirateAppointmentNotification(),
+    LegendaryPirateRevocationNotification(),
     CrewAbilityActivatedNotification(),
     CrewFirstMatePromotionNotification(),
     CrewFirstMateDemotionNotification(),

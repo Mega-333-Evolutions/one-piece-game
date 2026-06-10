@@ -782,8 +782,12 @@ class User(BaseModel):
         Returns True if the user is a Legendary Pirate
         :return: True if the user is a Legendary Pirate
         """
+        from src.model.LegendaryPirate import LegendaryPirate
 
-        return self.legendary_pirates.count() > 0
+        now = datetime.datetime.now()
+        return self.legendary_pirates.where(
+            (LegendaryPirate.end_date.is_null()) | (LegendaryPirate.end_date > now)
+        ).count() > 0
 
     def is_warlord(self) -> bool:
         """
