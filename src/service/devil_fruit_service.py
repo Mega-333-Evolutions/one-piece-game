@@ -300,6 +300,26 @@ async def release_devil_fruit_to_user(
             logging.error(f"Error giving devil fruit to user {user.tg_user_id}: {e}")
 
 
+def force_schedule_devil_fruit(devil_fruit: DevilFruit) -> None:
+    """
+    Force schedule a devil fruit for release
+    :param devil_fruit: The devil fruit
+    :return: None
+    """
+
+    if devil_fruit.get_status() is not DevilFruitStatus.ENABLED:
+        raise DevilFruitValidationException(
+            f"Devil fruit {devil_fruit.get_full_name()} must be in ENABLED status to force schedule"
+        )
+
+    if devil_fruit.get_category() in [DevilFruitCategory.MYTHICAL_ZOAN, DevilFruitCategory.SMILE]:
+        raise DevilFruitValidationException(
+            f"Devil fruit {devil_fruit.get_full_name()} cannot be force scheduled"
+        )
+
+    set_devil_fruit_release_date(devil_fruit, is_new_release=True)
+
+
 def set_devil_fruit_release_date(devil_fruit: DevilFruit, is_new_release: bool = False) -> None:
     """
     Set the release date of a devil fruit
