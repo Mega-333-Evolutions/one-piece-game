@@ -30,6 +30,7 @@ class Keyboard:
         switch_inline_query: str = None,
         exclude_key_from_inbound_info: list[str] = None,
         message_source: MessageSource = None,
+        style: str = None,
     ):
         """
         Creates a keyboard object
@@ -49,8 +50,10 @@ class Keyboard:
         :param switch_inline_query: The switch inline query
         :param exclude_key_from_inbound_info: The keys to be excluded from the inbound info
         :param message_source: The source of the message
+        :param style: The style of the button (e.g. success, danger, primary)
         """
         self.text = text
+        self.style = style
         self.info: dict = info if info is not None else {}
         self.screen: Screen = screen
         self.previous_screen_list: list[Screen] = (
