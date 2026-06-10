@@ -13,6 +13,7 @@ from src.model.GroupChat import GroupChat
 from src.model.Leaderboard import Leaderboard
 from src.model.LeaderboardCrew import LeaderboardCrew
 from src.model.LeaderboardUser import LeaderboardUser
+from src.model.LegendaryPirate import LegendaryPirate
 from src.model.User import User
 from src.model.Warlord import Warlord
 from src.model.enums.Feature import Feature
@@ -312,6 +313,13 @@ def create_leaderboard_users(
         # Add warlords
         excluded_user_ids.extend(Warlord.get_active_user_ids())
 
+        # Add permanent legendary pirates
+        permanent_legendary_pirate_user_ids = [
+            legendary_pirate.user.id
+            for legendary_pirate in LegendaryPirate.get_active_permanent_order_by_bounty()
+        ]
+        excluded_user_ids.extend(permanent_legendary_pirate_user_ids)
+
     # Get previous leaderboard users who were Emperors or higher
     previous_leaderboard: Leaderboard = get_leaderboard(1, group)
     if previous_leaderboard is None:
@@ -336,6 +344,21 @@ def create_leaderboard_users(
         for leaderboard_user in previous_leaderboard_users
         if leaderboard_user.rank_index <= LeaderboardRank.EMPEROR.index
     ]
+
+    # Save permanent legendary pirates at the top of the global leaderboard
+    if group is None:
+        for legendary_pirate in LegendaryPirate.get_active_permanent_order_by_bounty():
+            if not legendary_pirate.user.is_active:
+                continue
+
+            leaderboard_user: LeaderboardUser = save_leaderboard_user(
+                leaderboard,
+                legendary_pirate.user,
+                position,
+                LeaderboardRank.LEGENDARY_PIRATE,
+            )
+            leaderboard_users.append(leaderboard_user)
+            position += 1
 
     # Get current New World users, excluding arrested users and Admins
     new_world_users: list[User] = list(

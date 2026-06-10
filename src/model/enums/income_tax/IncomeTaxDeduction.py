@@ -8,6 +8,7 @@ class IncomeTaxDeductionType(StrEnum):
     ADMIN = "admin"
     CREW_ability = "crew"
     DEVIL_FRUIT = "devil_fruit"
+    LEGENDARY_PIRATE = "legendary_pirate"
 
 
 class IncomeTaxDeduction:
@@ -54,4 +55,5 @@ INCOME_TAX_DEDUCTION_TYPE_DESCRIPTIONS = {
     IncomeTaxDeductionType.ADMIN: phrases.INCOME_TAX_DEDUCTION_TYPE_ADMIN,
     IncomeTaxDeductionType.CREW_ability: phrases.INCOME_TAX_DEDUCTION_TYPE_CREW_ABILITY,
     IncomeTaxDeductionType.DEVIL_FRUIT: phrases.INCOME_TAX_DEDUCTION_TYPE_DEVIL_FRUIT,
+    IncomeTaxDeductionType.LEGENDARY_PIRATE: phrases.INCOME_TAX_DEDUCTION_TYPE_LEGENDARY_PIRATE,
 }

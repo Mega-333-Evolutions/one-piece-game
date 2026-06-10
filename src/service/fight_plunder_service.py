@@ -43,6 +43,7 @@ from src.service.date_service import (
 from src.service.devil_fruit_service import get_ability_value, get_ability_adjusted_datetime
 from src.service.impel_down_service import add_sentence
 from src.service.leaderboard_service import get_current_leaderboard_user
+from src.service.user_service import user_has_combat_loss_immunity
 from src.service.message_service import (
     get_yes_no_keyboard,
     full_media_send,
@@ -848,22 +849,24 @@ async def fight_confirm_request(
 
     if get_random_win(win_probability):  # Challenger won
         fight.status = GameStatus.WON
+        win_amount = 0 if user_has_combat_loss_immunity(opponent) else win_amount
         fight.belly = win_amount
-        # Add bounty to challenger
-        await add_or_remove_bounty(
-            user,
-            win_amount,
-            context=context,
-            update=update,
-            tax_event_type=IncomeTaxEventType.FIGHT,
-            event_id=fight.id,
-            should_save=True,
-            opponent=user,
-        )
-        # Remove bounty from opponent
-        await add_or_remove_bounty(
-            opponent, win_amount, add=False, update=update, should_save=True
-        )
+        if win_amount > 0:
+            # Add bounty to challenger
+            await add_or_remove_bounty(
+                user,
+                win_amount,
+                context=context,
+                update=update,
+                tax_event_type=IncomeTaxEventType.FIGHT,
+                event_id=fight.id,
+                should_save=True,
+                opponent=user,
+            )
+            # Remove bounty from opponent
+            await add_or_remove_bounty(
+                opponent, win_amount, add=False, update=update, should_save=True
+            )
         caption = phrases.FIGHT_WIN.format(
             mention_markdown_v2(user.tg_user_id, "you"),
             mention_markdown_user(opponent),
@@ -872,20 +875,22 @@ async def fight_confirm_request(
         )
     else:  # Challenger lost
         fight.status = GameStatus.LOST
+        lose_amount = 0 if user_has_combat_loss_immunity(user) else lose_amount
         fight.belly = lose_amount
-        # Remove bounty from challenger
-        await add_or_remove_bounty(user, lose_amount, add=False, update=update, should_save=True)
-        # Add bounty to opponent
-        await add_or_remove_bounty(
-            opponent,
-            lose_amount,
-            context=context,
-            update=update,
-            tax_event_type=IncomeTaxEventType.FIGHT,
-            event_id=fight.id,
-            should_save=True,
-            opponent=user,
-        )
+        if lose_amount > 0:
+            # Remove bounty from challenger
+            await add_or_remove_bounty(user, lose_amount, add=False, update=update, should_save=True)
+            # Add bounty to opponent
+            await add_or_remove_bounty(
+                opponent,
+                lose_amount,
+                context=context,
+                update=update,
+                tax_event_type=IncomeTaxEventType.FIGHT,
+                event_id=fight.id,
+                should_save=True,
+                opponent=user,
+            )
         caption = phrases.FIGHT_LOSE.format(
             mention_markdown_v2(user.tg_user_id, "you"),
             mention_markdown_user(opponent),
@@ -1302,21 +1307,24 @@ async def plunder_confirm_request(
 
     if get_random_win(win_probability):  # Challenger won
         plunder.status = GameStatus.WON
-        # Add bounty to challenger
-        await add_or_remove_bounty(
-            user,
-            win_amount,
-            context=context,
-            update=update,
-            tax_event_type=IncomeTaxEventType.PLUNDER,
-            event_id=plunder.id,
-            should_save=True,
-            opponent=opponent,
-        )
-        # Remove bounty from opponent
-        await add_or_remove_bounty(
-            opponent, win_amount, add=False, update=update, should_save=True
-        )
+        win_amount = 0 if user_has_combat_loss_immunity(opponent) else win_amount
+        plunder.belly = win_amount
+        if win_amount > 0:
+            # Add bounty to challenger
+            await add_or_remove_bounty(
+                user,
+                win_amount,
+                context=context,
+                update=update,
+                tax_event_type=IncomeTaxEventType.PLUNDER,
+                event_id=plunder.id,
+                should_save=True,
+                opponent=opponent,
+            )
+            # Remove bounty from opponent
+            await add_or_remove_bounty(
+                opponent, win_amount, add=False, update=update, should_save=True
+            )
         caption = phrases.PLUNDER_WIN.format(
             user.get_you_markdown_mention(),
             opponent.get_markdown_mention(),
@@ -1327,37 +1335,43 @@ async def plunder_confirm_request(
     else:  # Challenger lost
         plunder.status = GameStatus.LOST
 
-        # Create loan for the lost amount
-        loan: BountyLoan = add_loan(
-            opponent,
-            user,
-            lose_amount,
-            group_chat,
-            BountyLoanSource.PLUNDER,
-            message_id=plunder.message_id,
-            external_id=plunder.id,
-        )
+        if user_has_combat_loss_immunity(user):
+            caption = phrases.PLUNDER_LOSE_IMMUNE.format(
+                user.get_you_markdown_mention(),
+                mention_markdown_user(opponent),
+            )
+        else:
+            # Create loan for the lost amount
+            loan: BountyLoan = add_loan(
+                opponent,
+                user,
+                lose_amount,
+                group_chat,
+                BountyLoanSource.PLUNDER,
+                message_id=plunder.message_id,
+                external_id=plunder.id,
+            )
 
-        caption = phrases.PLUNDER_LOSE.format(
-            user.get_you_markdown_mention(),
-            mention_markdown_user(opponent),
-            convert_hours_to_duration(plunder.sentence_duration, show_full=True),
-            get_belly_formatted(lose_amount),
-            loan.get_deeplink(),
-            opponent.get_markdown_name(),
-        )
+            caption = phrases.PLUNDER_LOSE.format(
+                user.get_you_markdown_mention(),
+                mention_markdown_user(opponent),
+                convert_hours_to_duration(plunder.sentence_duration, show_full=True),
+                get_belly_formatted(lose_amount),
+                loan.get_deeplink(),
+                opponent.get_markdown_name(),
+            )
 
-        # Add Impel down sentence
-        await add_sentence(
-            context,
-            user,
-            ImpelDownSentenceType.TEMPORARY,
-            ImpelDownBountyAction.NONE,
-            get_datetime_in_future_hours(plunder.sentence_duration),
-            phrases.PLUNDER_LOSE_SENTENCE_REASON.format(opponent.tg_first_name),
-            ImpelDownSource.PLUNDER,
-            external_id=plunder.id,
-        )
+            # Add Impel down sentence
+            await add_sentence(
+                context,
+                user,
+                ImpelDownSentenceType.TEMPORARY,
+                ImpelDownBountyAction.NONE,
+                get_datetime_in_future_hours(plunder.sentence_duration),
+                phrases.PLUNDER_LOSE_SENTENCE_REASON.format(opponent.tg_first_name),
+                ImpelDownSource.PLUNDER,
+                external_id=plunder.id,
+            )
 
         saved_media_name: SavedMediaName = SavedMediaName.PLUNDER_FAIL
 

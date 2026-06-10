@@ -790,6 +790,23 @@ class User(BaseModel):
             (LegendaryPirate.end_date.is_null()) | (LegendaryPirate.end_date > now)
         ).count() > 0
 
+    def is_permanent_legendary_pirate(self) -> bool:
+        """
+        Returns True if the user is a permanent Legendary Pirate
+        :return: True if the user is a permanent Legendary Pirate
+        """
+        from src.model.LegendaryPirate import LegendaryPirate, ensure_legendary_pirate_schema
+
+        ensure_legendary_pirate_schema()
+        now = datetime.datetime.now()
+        return (
+            self.legendary_pirates.where(
+                (LegendaryPirate.is_permanent == True)
+                & ((LegendaryPirate.end_date.is_null()) | (LegendaryPirate.end_date > now))
+            ).count()
+            > 0
+        )
+
     def is_warlord(self) -> bool:
         """
         Returns True if the user is a Warlord

@@ -2221,6 +2221,7 @@ INCOME_TAX_EVENT_PREDICTION = "Prediction"
 INCOME_TAX_DEDUCTION_TYPE_ADMIN = "Admin"
 INCOME_TAX_DEDUCTION_TYPE_CREW_ABILITY = "Crew Ability"
 INCOME_TAX_DEDUCTION_TYPE_DEVIL_FRUIT = "Devil Fruit"
+INCOME_TAX_DEDUCTION_TYPE_LEGENDARY_PIRATE = "Legendary Pirate"
 
 INCOME_TAX_CONTRIBUTION_TYPE_CREW_CHEST = "Crew Chest"
 
@@ -2274,6 +2275,10 @@ PLUNDER_LOSE = (
     "\nYou will be jailed in Impel Down for *{}*, better luck next time!"
     + IMPEL_DOWN_RESTRICTION_BAIL_GUIDE
     + "\n\nYou now have a [฿*{}* loan]({}) towards {}"
+)
+PLUNDER_LOSE_IMMUNE = (
+    "{} have been caught trying to rob {}, but your Legendary Pirate status protected you from"
+    " any penalties."
 )
 PLUNDER_LOSE_SENTENCE_REASON = "Failed plunder against {}"
 PLUNDER_REVENGE_TOO_LATE = (

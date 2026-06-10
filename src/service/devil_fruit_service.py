@@ -14,6 +14,7 @@ from src.model.DevilFruitTrade import DevilFruitTrade
 from src.model.GroupChat import GroupChat
 from src.model.Leaderboard import Leaderboard
 from src.model.LeaderboardUser import LeaderboardUser
+from src.model.LegendaryPirate import LegendaryPirate
 from src.model.User import User
 from src.model.enums.AssetPath import AssetPath
 from src.model.enums.Emoji import Emoji
@@ -531,6 +532,7 @@ def get_inactive_users_with_eaten_devil_fruits(
             (DevilFruit.status == DevilFruitStatus.EATEN)
             & (User.is_admin == False)
             & (User.is_exempt_from_global_leaderboard_requirements == False)
+            & (User.id.not_in(LegendaryPirate.get_active_user_ids()))
             & (DevilFruit.id.not_in([df.id for df in eaten_active_devil_fruits]))
         )
         .execute()

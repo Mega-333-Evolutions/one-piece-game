@@ -31,6 +31,11 @@ def get_tax_deductions(user: User) -> list[IncomeTaxDeduction]:
         deductions.append(IncomeTaxDeduction(IncomeTaxDeductionType.ADMIN, 100))
         return deductions
 
+    # Legendary Pirate
+    if user.is_legendary_pirate():
+        deductions.append(IncomeTaxDeduction(IncomeTaxDeductionType.LEGENDARY_PIRATE, 100))
+        return deductions
+
     # Devil Fruit
     tax_ability: DevilFruitAbility = DevilFruitAbility.get_user_ability(
         user, DevilFruitAbilityType.INCOME_TAX

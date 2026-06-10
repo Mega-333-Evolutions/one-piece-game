@@ -85,6 +85,16 @@ def get_boss_type(user: User, group_chat: GroupChat = None) -> BossType | None:
     return None
 
 
+def user_has_combat_loss_immunity(user: User) -> bool:
+    """
+    Returns True if the user is immune from combat-related losses
+    :param user: The user
+    :return: True if the user is immune from combat-related losses
+    """
+
+    return user.is_legendary_pirate()
+
+
 def user_is_boss(user: User, group_chat: GroupChat = None) -> bool:
     """
     Returns True if the user is a boss

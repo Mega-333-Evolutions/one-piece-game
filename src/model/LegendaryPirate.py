@@ -45,6 +45,34 @@ class LegendaryPirate(BaseModel):
 
         return self.end_date is None or self.end_date > datetime.datetime.now()
 
+    @staticmethod
+    def get_active_user_ids() -> list[int]:
+        """
+        Get active legendary pirate user ids
+        :return: Active legendary pirate user ids
+        """
+
+        return [legendary_pirate.user.id for legendary_pirate in LegendaryPirate.get_active()]
+
+    @staticmethod
+    def get_active_permanent_order_by_bounty() -> list["LegendaryPirate"]:
+        """
+        Get active permanent legendary pirates ordered by bounty
+        :return: Active permanent legendary pirates
+        """
+
+        ensure_legendary_pirate_schema()
+        now = datetime.datetime.now()
+        return list(
+            LegendaryPirate.select()
+            .join(User)
+            .where(
+                (LegendaryPirate.is_permanent == True)
+                & ((LegendaryPirate.end_date.is_null()) | (LegendaryPirate.end_date > now))
+            )
+            .order_by(User.bounty.desc())
+        )
+
 
 _schema_ensured = False
 
