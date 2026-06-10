@@ -61,6 +61,7 @@ def get_leaderboard_message(
 
     content_text = ""
     warlords_text = ""
+    legendary_pirates_text = ""
     effective_users_count = 0
     for index, leaderboard_user in enumerate(leaderboard.leaderboard_users):
         leaderboard_user: LeaderboardUser = leaderboard_user
@@ -73,6 +74,16 @@ def get_leaderboard_message(
                 escape_valid_markdown_chars(warlord.epithet),
                 Log.get_deeplink_by_type(LogType.WARLORD, warlord.id),
             )
+        elif (
+            LeaderboardRankIndex(leaderboard_user.rank_index)
+            is LeaderboardRankIndex.LEGENDARY_PIRATE
+        ):
+            legendary_pirate: LegendaryPirate = LegendaryPirate.get_latest_active_by_user(user)
+            if legendary_pirate is not None:
+                legendary_pirates_text += phrases.LEADERBOARD_LEGENDARY_PIRATE_ROW.format(
+                    escape_valid_markdown_chars(legendary_pirate.epithet),
+                    Log.get_deeplink_by_type(LogType.LEGENDARY_PIRATE, legendary_pirate.id),
+                )
         else:
             effective_users_count += 1
             content_text += phrases.LEADERBOARD_USER_ROW.format(
@@ -97,6 +108,9 @@ def get_leaderboard_message(
     if warlords_text != "":
         warlords_text = phrases.LEADERBOARD_WARLORDS + warlords_text
 
+    if legendary_pirates_text != "":
+        legendary_pirates_text = phrases.LEADERBOARD_LEGENDARY_PIRATES + legendary_pirates_text
+
     crew_text = ""
     crew_items_text = ""
     total_crews = len(leaderboard.leaderboard_crews)
@@ -118,6 +132,7 @@ def get_leaderboard_message(
         content_text,
         crew_text,
         warlords_text,
+        legendary_pirates_text,
         view_global_leaderboard_text,
         phrases.LEADERBOARD_VIEW_BOUNTIES_RESET if leaderboard.is_bounty_reset else "",
         default_date_format(next_bounty_reset_time),
@@ -313,13 +328,6 @@ def create_leaderboard_users(
         # Add warlords
         excluded_user_ids.extend(Warlord.get_active_user_ids())
 
-        # Add permanent legendary pirates
-        permanent_legendary_pirate_user_ids = [
-            legendary_pirate.user.id
-            for legendary_pirate in LegendaryPirate.get_active_permanent_order_by_bounty()
-        ]
-        excluded_user_ids.extend(permanent_legendary_pirate_user_ids)
-
     # Get previous leaderboard users who were Emperors or higher
     previous_leaderboard: Leaderboard = get_leaderboard(1, group)
     if previous_leaderboard is None:
@@ -345,21 +353,6 @@ def create_leaderboard_users(
         if leaderboard_user.rank_index <= LeaderboardRank.EMPEROR.index
     ]
 
-    # Save permanent legendary pirates at the top of the global leaderboard
-    if group is None:
-        for legendary_pirate in LegendaryPirate.get_active_permanent_order_by_bounty():
-            if not legendary_pirate.user.is_active:
-                continue
-
-            leaderboard_user: LeaderboardUser = save_leaderboard_user(
-                leaderboard,
-                legendary_pirate.user,
-                position,
-                LeaderboardRank.LEGENDARY_PIRATE,
-            )
-            leaderboard_users.append(leaderboard_user)
-            position += 1
-
     # Get current New World users, excluding arrested users and Admins
     new_world_users: list[User] = list(
         User.select()
@@ -375,6 +368,7 @@ def create_leaderboard_users(
     )
 
     # Save Pirate King, if available
+    pirate_king_assigned = False
     for user in new_world_users:
         if user in eligible_pk_users:
             leaderboard_user: LeaderboardUser = save_leaderboard_user(
@@ -382,7 +376,19 @@ def create_leaderboard_users(
             )
             leaderboard_users.append(leaderboard_user)
             position += 1
+            pirate_king_assigned = True
             break
+
+    # Legendary Pirates with the highest New World bounty can become Pirate King even without a
+    # previous Emperor or Pirate King rank
+    if not pirate_king_assigned and len(new_world_users) > 0:
+        top_new_world_user: User = new_world_users[0]
+        if top_new_world_user.is_legendary_pirate():
+            leaderboard_user: LeaderboardUser = save_leaderboard_user(
+                leaderboard, top_new_world_user, position, LeaderboardRank.PIRATE_KING
+            )
+            leaderboard_users.append(leaderboard_user)
+            position += 1
 
     # Save Emperors, next 4 users
     added_users_count = 0
@@ -437,11 +443,23 @@ def create_leaderboard_users(
             if added_users_count == 11:
                 break
 
-    # Save Warlords, if global leaderboard
+    # Save Warlords and Legendary Pirates, if global leaderboard
     if group is None:
         for index, warlord in enumerate(Warlord.get_active_order_by_bounty()):
             leaderboard_user: LeaderboardUser = save_leaderboard_user(
                 leaderboard, warlord.user, index + 1, LeaderboardRank.WARLORD
+            )
+            leaderboard_users.append(leaderboard_user)
+
+        for index, legendary_pirate in enumerate(LegendaryPirate.get_active_order_by_bounty()):
+            if not legendary_pirate.user.is_active:
+                continue
+
+            leaderboard_user: LeaderboardUser = save_leaderboard_user(
+                leaderboard,
+                legendary_pirate.user,
+                index + 1,
+                LeaderboardRank.LEGENDARY_PIRATE,
             )
             leaderboard_users.append(leaderboard_user)
 

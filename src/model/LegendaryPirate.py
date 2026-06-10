@@ -55,6 +55,22 @@ class LegendaryPirate(BaseModel):
         return [legendary_pirate.user.id for legendary_pirate in LegendaryPirate.get_active()]
 
     @staticmethod
+    def get_active_order_by_bounty() -> list["LegendaryPirate"]:
+        """
+        Get active legendary pirates ordered by bounty
+        :return: Active legendary pirates
+        """
+
+        ensure_legendary_pirate_schema()
+        now = datetime.datetime.now()
+        return list(
+            LegendaryPirate.select()
+            .join(User)
+            .where((LegendaryPirate.end_date.is_null()) | (LegendaryPirate.end_date > now))
+            .order_by(User.bounty.desc())
+        )
+
+    @staticmethod
     def get_active_permanent_order_by_bounty() -> list["LegendaryPirate"]:
         """
         Get active permanent legendary pirates ordered by bounty
@@ -71,6 +87,26 @@ class LegendaryPirate(BaseModel):
                 & ((LegendaryPirate.end_date.is_null()) | (LegendaryPirate.end_date > now))
             )
             .order_by(User.bounty.desc())
+        )
+
+    @staticmethod
+    def get_latest_active_by_user(user: User) -> "LegendaryPirate | None":
+        """
+        Get the latest active legendary pirate record for a user
+        :param user: The user
+        :return: The legendary pirate record
+        """
+
+        ensure_legendary_pirate_schema()
+        now = datetime.datetime.now()
+        return (
+            LegendaryPirate.select()
+            .where(
+                (LegendaryPirate.user == user)
+                & ((LegendaryPirate.end_date.is_null()) | (LegendaryPirate.end_date > now))
+            )
+            .order_by(LegendaryPirate.date.desc())
+            .first()
         )
 
 

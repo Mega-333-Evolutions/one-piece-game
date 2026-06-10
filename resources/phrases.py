@@ -115,7 +115,7 @@ JOIN_SUPPORT_GROUP = f">For questions or suggestions, please join the {SUPPORT_G
 
 LEADERBOARD = (
     "*{}* Leaderboard for week *{}* of *{}*\n\n*Here are the top {} users with the most"
-    " bounties*:{}{}{}{}\n\n{}_Next bounty reset on {} \\(in {}\\)_\n" + JOIN_SUPPORT_GROUP
+    " bounties*:{}{}{}{}{}\n\n{}_Next bounty reset on {} \\(in {}\\)_\n" + JOIN_SUPPORT_GROUP
 )
 LEADERBOARD_USER_ROW = "\n\n{}°: {}\n{} - ฿*{}*"
 LEADERBOARD_CREW_ROW = "\n\n{}°: {}\n*Captain*: {}"
@@ -125,6 +125,8 @@ LEADERBOARD_GLOBAL = "Global"
 LEADERBOARD_VIEW_GLOBAL_LEADERBOARD = "\n\n\n" + Emoji.GLOBE + "[Global Leaderboard]({})"
 LEADERBOARD_WARLORDS = "\n\n\n" + Emoji.LEADERBOARD_WARLORD + " *Warlords*"
 LEADERBOARD_WARLORD_ROW = "\n• [{}]({})"
+LEADERBOARD_LEGENDARY_PIRATES = "\n\n\n" + Emoji.LEADERBOARD_LEGENDARY_PIRATE + " *Legendary Pirates*"
+LEADERBOARD_LEGENDARY_PIRATE_ROW = "\n• [{}]({})"
 LEADERBOARD_RANK_PIRATE_KING = "Pirate King"
 LEADERBOARD_RANK_EMPEROR = "Emperor"
 LEADERBOARD_RANK_FIRST_MATE = "First Mate"
@@ -1857,10 +1859,11 @@ LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION = (
     "Congratulations, you have been appointed as a Legendary Pirate!\n\n*Epithet*: {}\n\n"
     "*Duration*: {}\n\n*Reason*: {}\n\n*Privileges*\n• Complete immunity from all combat-related"
     " losses\n• Exemption from bounty taxes and income tax\n• Permanent boss status\n•"
-    " Immunity from Devil Fruit revocation"
+    " Immunity from Devil Fruit revocation\n• Eligible to become Pirate King with the highest New"
+    " World bounty, regardless of previous leaderboard rank"
 )
 LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_PERMANENT_FOOTER = (
-    "\n\n_You are now a permanent Legendary Pirate and will always appear at the top of all"
+    "\n\n_You are now a permanent Legendary Pirate and will always appear on all global"
     " leaderboards_"
 )
 LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_DESCRIPTION = (
