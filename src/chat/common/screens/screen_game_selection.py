@@ -79,6 +79,8 @@ async def manage(
                 yes_text=phrases.KEYBOARD_OPTION_ACCEPT,
                 no_text=phrases.KEYBOARD_OPTION_REJECT,
                 primary_key=game.id,
+                yes_style="success",
+                no_style="danger",
             )
         ]
     else:  # Open to all
@@ -104,6 +106,7 @@ async def manage(
                 yes_text=phrases.KEYBOARD_OPTION_ACCEPT,
                 primary_key=game.id,
                 exclude_no_button=True,
+                yes_style="success",
             ),
         ]
 
@@ -118,6 +121,7 @@ async def manage(
                 phrases.KEYBOARD_OPTION_CANCEL,
                 info=button_delete_info,
                 screen=Screen.GRP_GAME_OPPONENT_CONFIRMATION,
+                style="primary",
             )
         ]
     )
