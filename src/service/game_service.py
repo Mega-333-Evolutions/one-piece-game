@@ -1179,7 +1179,7 @@ async def collect_game_wagers_and_set_in_progress(
     game.status = GameStatus.IN_PROGRESS
 
     # Explicitly save the users so the new dates go to the database
-    if should_save_challenger:
+    if challenger is not None and should_save_challenger:
         challenger.save()
         
     if opponent is not None and should_save_opponent:
