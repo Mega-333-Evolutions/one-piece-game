@@ -354,6 +354,7 @@ async def full_message_send(
     from_exception: bool = False,
     add_back_button: bool = True,
     should_auto_delete: bool = True,
+    ignore_bad_request_exception: bool = False,
 ) -> Message | bool:
     """
     Send a message
@@ -398,6 +399,7 @@ async def full_message_send(
     :param from_exception: True if the message is sent from an exception
     :param add_back_button: True if the back button should be added to the keyboard when possible
     :param should_auto_delete: True if the message should be auto deleted
+    :param ignore_bad_request_exception: True to ignore specific bad request exceptions like "message is not modified"
     :return: Message
     """
 
@@ -519,19 +521,27 @@ async def full_message_send(
         if edit_message_id is not None
         else update.callback_query.message.message_id
     )
-    message: Message = await context.bot.edit_message_text(
-        text=text,
-        chat_id=chat_id,
-        reply_markup=keyboard_markup,
-        parse_mode=parse_mode,
-        disable_web_page_preview=disable_web_page_preview,
-        message_id=edit_message_id,
-    )
+    
+    try:
+        message: Message = await context.bot.edit_message_text(
+            text=text,
+            chat_id=chat_id,
+            reply_markup=keyboard_markup,
+            parse_mode=parse_mode,
+            disable_web_page_preview=disable_web_page_preview,
+            message_id=edit_message_id,
+        )
 
-    if should_auto_delete:
-        context.application.create_task(enqueue_message_auto_delete(group_chat, message))
+        if should_auto_delete:
+            context.application.create_task(enqueue_message_auto_delete(group_chat, message))
 
-    return message
+        return message
+    except BadRequest as e:
+        if ignore_bad_request_exception:
+            error_msg = str(e).lower()
+            if "message is not modified" in error_msg or "message to edit not found" in error_msg:
+                return False
+        raise e
 
 
 def get_input_media_from_saved_media(
@@ -887,6 +897,7 @@ async def full_message_or_media_send_or_edit(
     from_exception: bool = False,
     previous_screen_list_keyboard_info: dict = None,
     should_auto_delete: bool = True,
+    ignore_bad_request_exception: bool = False,
 ) -> Message:
     """
     Edit a message or media, in case the type of message being edited is unknown
@@ -913,6 +924,7 @@ async def full_message_or_media_send_or_edit(
     :param previous_screen_list_keyboard_info: In case inbound keyboard is inferred from
     previous_screens, this is the keyboard info to add to the back button
     :param should_auto_delete: True if the message should be auto deleted
+    :param ignore_bad_request_exception: True if specific bad requests should be ignored
 
     :return: Message
     """
@@ -936,6 +948,7 @@ async def full_message_or_media_send_or_edit(
             from_exception=from_exception,
             previous_screen_list_keyboard_info=previous_screen_list_keyboard_info,
             should_auto_delete=should_auto_delete,
+            ignore_bad_request_exception=ignore_bad_request_exception,
         )
     except BadRequest:
         return await full_media_send(
@@ -954,6 +967,7 @@ async def full_message_or_media_send_or_edit(
             show_alert=show_alert,
             inbound_keyboard=inbound_keyboard,
             should_auto_delete=should_auto_delete,
+            ignore_bad_request_exception=ignore_bad_request_exception,
         )
 
 
