@@ -30,6 +30,10 @@ async def manage(
     :return: None
     """
 
+    # Guard clause: If there is no keyboard payload (e.g., user typed a raw command), abort.
+    if inbound_keyboard is None:
+        return
+
     # Get the notification
     notification: Notification = get_notification_by_type(
         NotificationType(inbound_keyboard.info[NotificationTypeEditReservedKeys.TYPE])
