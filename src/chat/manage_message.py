@@ -163,9 +163,14 @@ async def manage_after_db(
 
     user = User()
     if update.effective_user is not None:
-        tg_user_id = await get_effective_tg_user_id(
-            update.effective_user, update.effective_message
-        )
+        try:
+            tg_user_id = await get_effective_tg_user_id(
+                update.effective_user, update.effective_message
+            )
+        except AnonymousAdminException:
+            # Safely abort if the message is from an anonymous admin or linked channel
+            return
+            
         user: User = await get_user(tg_user_id, update.effective_user, should_save=False)
 
         # Check if the user is authorized
