@@ -1141,11 +1141,13 @@ async def collect_game_wagers_and_set_in_progress(
             add=False,
             update=update,
             should_affect_pending_bounty=True,
-            should_save=should_save_opponent,
+            should_save=False, # We will save at the end
             pending_belly_amount=game.wager,  # Full wager (will be doubled later)
         )
+        
     if should_set_global_cooldown_opponent:
-        opponent.should_set_global_cooldown_opponent = get_ability_adjusted_datetime(
+        # Fixed typo: changed should_set_global_cooldown_opponent to game_cooldown_end_date
+        opponent.game_cooldown_end_date = get_ability_adjusted_datetime(
             opponent,
             DevilFruitAbilityType.GAME_GLOBAL_ACCEPT_COOLDOWN_DURATION,
             Env.GAME_GLOBAL_ACCEPT_COOLDOWN_DURATION.get_int(),
@@ -1159,8 +1161,9 @@ async def collect_game_wagers_and_set_in_progress(
             should_affect_pending_bounty=True,
             update=update,
             pending_belly_amount=game.wager,  # Full wager (will be doubled later)
-            should_save=should_save_challenger,
+            should_save=False, # We will save at the end
         )
+        
     if should_set_cooldown_challenger:
         challenger.game_cooldown_end_date = get_ability_adjusted_datetime(
             challenger,
@@ -1174,6 +1177,13 @@ async def collect_game_wagers_and_set_in_progress(
         game.opponent = opponent
 
     game.status = GameStatus.IN_PROGRESS
+
+    # Explicitly save the users so the new dates go to the database
+    if should_save_challenger:
+        challenger.save()
+        
+    if opponent is not None and should_save_opponent:
+        opponent.save()
 
     if should_save_game:
         game.save()
