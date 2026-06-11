@@ -494,6 +494,7 @@ async def validate_game(
             context,
             text=phrases.GAME_FORCED_END,
             update=update,
+            ignore_bad_request_exception=True,
         )
         return None
 
@@ -502,8 +503,9 @@ async def validate_game(
             context,
             text=phrases.GAME_ENDED,
             update=update,
-            answer_callback=True,
+            answer_callback=False,
             show_alert=True,
+            ignore_bad_request_exception=True,
         )
         return None
 
