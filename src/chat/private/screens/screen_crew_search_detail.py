@@ -21,6 +21,11 @@ async def manage(
     :param inbound_keyboard: The keyboard object
     :return: None
     """
+    
+    # Guard clause: If there is no keyboard payload (e.g., user typed a raw command), abort.
+    if inbound_keyboard is None:
+        return
+
     crew_search_list_page: CrewSearchListPage = CrewSearchListPage()
     crew_search_list_page.user = user
     crew_search_list_page.set_object(
