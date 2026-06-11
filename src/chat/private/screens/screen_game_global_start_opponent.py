@@ -88,11 +88,12 @@ async def manage(
         ot_text = phrases.GAME_GLOBAL_COOLDOWN.format(
             get_remaining_duration(user.game_accept_global_cooldown_end_date)
         )
-        await full_media_send(
-            context, 
-            caption=ot_text, 
+        await full_message_send(
+            context,
+            text=ot_text,
             update=update,
-            edit_only_caption_and_keyboard=True
+            answer_callback=True,
+            show_alert=True,
         )
         return
 
