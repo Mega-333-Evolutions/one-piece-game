@@ -1148,8 +1148,7 @@ async def collect_game_wagers_and_set_in_progress(
         )
         
     if should_set_global_cooldown_opponent:
-        # Fixed typo: changed should_set_global_cooldown_opponent to game_cooldown_end_date
-        opponent.game_cooldown_end_date = get_ability_adjusted_datetime(
+        opponent.game_accept_global_cooldown_end_date = get_ability_adjusted_datetime(
             opponent,
             DevilFruitAbilityType.GAME_GLOBAL_ACCEPT_COOLDOWN_DURATION,
             Env.GAME_GLOBAL_ACCEPT_COOLDOWN_DURATION.get_int(),
