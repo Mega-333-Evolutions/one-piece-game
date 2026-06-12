@@ -577,6 +577,8 @@ GAME_TURN_AUTO_MOVE_TIME_SECONDS = Environment(
 )
 # Game cooldown duration in hours. Default: 8
 GAME_COOLDOWN_DURATION = Environment("GAME_COOLDOWN_DURATION", default_value="8")
+# How many challenges a user can initiate per cooldown period. Default: 3
+GAME_CHALLENGE_LIMIT = Environment("GAME_CHALLENGE_LIMIT", default_value="3")
 # Game accept global cooldown duration in hours. Default: 2
 GAME_GLOBAL_ACCEPT_COOLDOWN_DURATION = Environment(
     "GAME_GLOBAL_ACCEPT_COOLDOWN_DURATION", default_value="2"
