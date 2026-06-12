@@ -820,7 +820,7 @@ async def save_prediction_option_user(
             user, DevilFruitAbilityType.PREDICTION_WAGER_REFUND, 0, add_to_value=True
         )
         prediction_option_user.max_refund_wager_boost = (
-            max_refund_wager_boost if max_refund_wager_boost > 0 else None
+            max_refund_wager_boost if max_refund_wager_boost > 0 else 0
         )
 
     prediction_option_user.prediction_group_chat_message = (
