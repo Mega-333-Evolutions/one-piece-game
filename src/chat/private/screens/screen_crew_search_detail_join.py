@@ -37,6 +37,10 @@ async def manage(
     :return: None
     """
 
+    # Guard clause: If there is no keyboard payload (e.g., user typed raw text), abort.
+    if inbound_keyboard is None:
+        return
+
     crew: Crew = Crew.logical_get(inbound_keyboard.get(ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY))
 
     if not await validate(update, context, inbound_keyboard, crew, user):
