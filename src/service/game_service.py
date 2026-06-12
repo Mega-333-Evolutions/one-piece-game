@@ -517,22 +517,32 @@ async def validate_game(
         ):
             return None
 
-        # Challenger in cooldown
-        if (
-            challenger.game_cooldown_end_date
-            and challenger.game_cooldown_end_date > datetime.now()
-        ):
-            ot_text = phrases.GAME_CANNOT_INITIATE.format(
-                get_remaining_duration(challenger.game_cooldown_end_date)
+        # Challenger in cooldown — 3-challenge bucket check
+        now = datetime.now()
+        challenge_limit: int = Env.GAME_CHALLENGE_LIMIT.get_int()
+        if challenger.game_cooldown_start_time is not None:
+            cooldown_end = challenger.game_cooldown_start_time + timedelta(
+                hours=Env.GAME_COOLDOWN_DURATION.get_int()
             )
-            await full_media_send(
-                context,
-                caption=ot_text,
-                update=update,
-                add_delete_button=True,
-                authorized_users=game.get_players(),
-                edit_only_caption_and_keyboard=True,
-            )
+            if now < cooldown_end:
+                if challenger.game_challenge_count >= challenge_limit:
+                    ot_text = phrases.GAME_CANNOT_INITIATE.format(
+                        get_remaining_duration(cooldown_end)
+                    )
+                    await full_media_send(
+                        context,
+                        caption=ot_text,
+                        update=update,
+                        add_delete_button=True,
+                        authorized_users=game.get_players(),
+                        edit_only_caption_and_keyboard=True,
+                    )
+                    return None
+            else:
+                # Cooldown window expired — reset bucket
+                challenger.game_challenge_count = 0
+                challenger.game_cooldown_start_time = None
+                challenger.save()
 
     return game
 
@@ -1166,11 +1176,19 @@ async def collect_game_wagers_and_set_in_progress(
         )
         
     if should_set_cooldown_challenger:
-        challenger.game_cooldown_end_date = get_ability_adjusted_datetime(
-            challenger,
-            DevilFruitAbilityType.GAME_COOLDOWN_DURATION,
-            Env.GAME_COOLDOWN_DURATION.get_int(),
-        )
+        now = datetime.now()
+        cooldown_duration_hours: int = Env.GAME_COOLDOWN_DURATION.get_int()
+        # Start the cooldown timer only on the first challenge of a new window
+        if (
+            challenger.game_cooldown_start_time is None
+            or now >= challenger.game_cooldown_start_time + timedelta(hours=cooldown_duration_hours)
+        ):
+            # New cooldown window: reset count and start timer
+            challenger.game_cooldown_start_time = now
+            challenger.game_challenge_count = 1
+        else:
+            # Existing window still active: just increment
+            challenger.game_challenge_count += 1
 
     # Double wager if opponent is provided
     if opponent is not None:
