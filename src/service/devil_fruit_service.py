@@ -280,6 +280,14 @@ async def release_devil_fruit_to_user(
         inline_keyboard: list[list[Keyboard]] = [[get_manage_deeplink_keyboard(devil_fruit)]]
 
         try:
+            # Mark the fruit as COLLECTED and set the release group BEFORE sending the message.
+            # This commits the status change to the DB so that any concurrent request querying
+            # for SCHEDULED fruits won't find this one during the async await below,
+            # preventing the spawn message from being sent twice.
+            devil_fruit.release_group_chat = group_chat
+            give_devil_fruit_to_user(devil_fruit, user, DevilFruitSource.BOT)
+            user.devil_fruit_collection_cooldown_end_date = get_next_bounty_reset_time()
+
             # Send release message
             message: Message = await full_media_send(
                 context,
@@ -291,11 +299,9 @@ async def release_devil_fruit_to_user(
                 quote_if_group=False,
             )
 
-            devil_fruit.release_group_chat = group_chat
+            # Save the message ID now that we have it
             devil_fruit.release_message_id = message.message_id
-
-            give_devil_fruit_to_user(devil_fruit, user, DevilFruitSource.BOT)
-            user.devil_fruit_collection_cooldown_end_date = get_next_bounty_reset_time()
+            devil_fruit.save()
         except (TelegramError, DevilFruitValidationException) as e:
             transaction.rollback()
             logging.error(f"Error giving devil fruit to user {user.tg_user_id}: {e}")
