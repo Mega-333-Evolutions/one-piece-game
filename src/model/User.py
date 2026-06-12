@@ -49,6 +49,8 @@ class User(BaseModel):
     pending_bounty: int | BigIntegerField = BigIntegerField(default=0)
     doc_q_cooldown_end_date: datetime.datetime | DateTimeField = DateTimeField(null=True)
     game_cooldown_end_date: datetime.datetime | DateTimeField = DateTimeField(null=True)
+    game_challenge_count: int | SmallIntegerField = SmallIntegerField(default=0)
+    game_cooldown_start_time: datetime.datetime | DateTimeField = DateTimeField(null=True)
     game_accept_global_cooldown_end_date: datetime.datetime | DateTimeField = DateTimeField(
         null=True
     )
@@ -844,3 +846,26 @@ class User(BaseModel):
 
 
 User.create_table()
+
+# Auto-migrate: add new challenge cooldown bucket columns if they don't exist yet
+try:
+    from playhouse.migrate import MySQLMigrator, migrate as pw_migrate
+    from src.model.BaseModel import db_obj
+
+    _migrator = MySQLMigrator(db_obj.get_db())
+    pw_migrate(
+        _migrator.add_column('user', 'game_challenge_count', SmallIntegerField(default=0)),
+    )
+except Exception:
+    pass  # Column already exists
+
+try:
+    from playhouse.migrate import MySQLMigrator, migrate as pw_migrate
+    from src.model.BaseModel import db_obj
+
+    _migrator = MySQLMigrator(db_obj.get_db())
+    pw_migrate(
+        _migrator.add_column('user', 'game_cooldown_start_time', DateTimeField(null=True)),
+    )
+except Exception:
+    pass  # Column already exists
