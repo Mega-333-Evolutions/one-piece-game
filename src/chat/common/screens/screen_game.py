@@ -1,3 +1,4 @@
+import datetime as dt
 from datetime import datetime
 from enum import StrEnum
 
@@ -73,35 +74,47 @@ async def validate(
     ):
         return False
 
-    # Challenger cannot initiate a game
-    if challenger.game_cooldown_end_date and challenger.game_cooldown_end_date > datetime.now():
-        ot_text = (
-            phrases.GAME_CANNOT_INITIATE.format(
-                get_remaining_duration(challenger.game_cooldown_end_date)
-            )
-            + global_challenges_text
-        )
-
-        outbound_keyboard: list[list[Keyboard]] = [[]]
-        pending_games: list[Game] = Game.select().where(
-            (Game.challenger == challenger)
-            & (Game.status.not_in(GameStatus.get_finished()))
-            & (Game.group_chat.is_null(False))
-        )
-        for game in pending_games:
-            outbound_keyboard.append(
-                [
-                    Keyboard(
-                        phrases.GAME_PENDING_KEY,
-                        url=get_message_url(game.message_id, game.group_chat),
+    # Challenger cannot initiate a game — check 3-challenge bucket cooldown
+    now = datetime.now()
+    challenge_limit: int = Env.GAME_CHALLENGE_LIMIT.get_int()
+    if challenger.game_cooldown_start_time is not None:
+        cooldown_duration_hours: int = Env.GAME_COOLDOWN_DURATION.get_int()
+        cooldown_end = challenger.game_cooldown_start_time + dt.timedelta(hours=cooldown_duration_hours)
+        if now < cooldown_end:
+            # Still inside the cooldown window — block only if all challenges are used
+            if challenger.game_challenge_count >= challenge_limit:
+                ot_text = (
+                    phrases.GAME_CANNOT_INITIATE.format(
+                        get_remaining_duration(cooldown_end)
                     )
-                ]
-            )
+                    + global_challenges_text
+                )
 
-        await full_message_send(
-            context, ot_text, update=update, keyboard=outbound_keyboard, add_delete_button=True
-        )
-        return False
+                outbound_keyboard: list[list[Keyboard]] = [[]]
+                pending_games: list[Game] = Game.select().where(
+                    (Game.challenger == challenger)
+                    & (Game.status.not_in(GameStatus.get_finished()))
+                    & (Game.group_chat.is_null(False))
+                )
+                for game in pending_games:
+                    outbound_keyboard.append(
+                        [
+                            Keyboard(
+                                phrases.GAME_PENDING_KEY,
+                                url=get_message_url(game.message_id, game.group_chat),
+                            )
+                        ]
+                    )
+
+                await full_message_send(
+                    context, ot_text, update=update, keyboard=outbound_keyboard, add_delete_button=True
+                )
+                return False
+        else:
+            # Cooldown window has expired — reset the bucket
+            challenger.game_challenge_count = 0
+            challenger.game_cooldown_start_time = None
+            challenger.save()
 
     # Opponent validation
     if opponent is not None:
