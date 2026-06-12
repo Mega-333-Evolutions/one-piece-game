@@ -524,9 +524,10 @@ GAME_CANNOT_INITIATE = (
     " initiate another challenge in *{}*, but in the meantime you can ask another user to"
     " challenge you or accept a Global Challenge if available."
 )
-GAME_GLOBAL_COOLDOWN = (
-    "Challenge limit reached. You can accept another global challenge in *{}*, but in the meantime you can ask another "
-    "user to challenge you"
+GAME_GLOBAL_COOLDOWN =(
+    "Global challenge acceptance limit reached.\n\n"
+    "You can accept another global challenge in *{}*, but in the meantime you can accept normal"
+    " challenges or you can initiate a challenge yourself."
 )
 GAME_PENDING_KEY = "Pending challenge"
 GAME_FORCED_END = (
