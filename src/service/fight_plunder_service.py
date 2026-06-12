@@ -139,6 +139,7 @@ async def group_send_scout_request(
         caption=caption,
         keyboard=inline_keyboard,
         add_delete_button=True,
+        ignore_bad_request_exception=True,
     )
 
 
@@ -278,6 +279,7 @@ async def private_send_scout_request(
         add_delete_button=True,
         delete_button_text=phrases.KEYBOARD_OPTION_CANCEL,
         new_message=(opponent is None),
+        ignore_bad_request_exception=True,
     )
 
 
@@ -296,6 +298,7 @@ async def private_send_no_opponent_found(
         update=update,
         caption=phrases.FIGHT_PLUNDER_SCOUT_NO_OPPONENT_FOUND,
         add_delete_button=True,
+        ignore_bad_request_exception=True,
     )
 
 
@@ -597,7 +600,7 @@ async def fight_validate(
                 get_elapsed_duration(attack_fight.date),
             )
             await full_message_or_media_send_or_edit(
-                context, ot_text, update, add_delete_button=True
+                context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True
             )
             return False
 
@@ -607,7 +610,7 @@ async def fight_validate(
                 Log.get_deeplink_by_type(LogType.FIGHT, attack_fight.id)
             )
             await full_message_or_media_send_or_edit(
-                context, ot_text, update, add_delete_button=True
+                context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True
             )
             return False
 
@@ -621,7 +624,7 @@ async def fight_validate(
             (user.fight_cooldown_end_date - datetime.datetime.now()).total_seconds()
         )
         ot_text = phrases.FIGHT_USER_IN_COOLDOWN.format(remaining_time)
-        await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True)
+        await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True)
         return False
 
     # User does not have enough amount to scout
@@ -632,7 +635,7 @@ async def fight_validate(
             if is_group
             else phrases.FIGHT_PLUNDER_PRIVATE_INSUFFICIENT_SCOUT_BOUNTY
         ).format(get_belly_formatted(scout_fee), user.get_bounty_formatted())
-        await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True)
+        await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True)
         return False
 
     # Opponent not yet available
@@ -662,10 +665,10 @@ async def fight_validate(
 
     except OpponentValidationException as ove:
         if ove.message is not None:
-            await full_message_or_media_send_or_edit(context, ove.message, update)
+            await full_message_or_media_send_or_edit(context, ove.message, update, ignore_bad_request_exception=True)
         else:
             await full_message_or_media_send_or_edit(
-                context, phrases.FIGHT_CANNOT_FIGHT_USER, update=update, add_delete_button=True
+                context, phrases.FIGHT_CANNOT_FIGHT_USER, update=update, add_delete_button=True, ignore_bad_request_exception=True
             )
         return False
 
@@ -775,15 +778,17 @@ async def fight_send_request(
             get_belly_formatted(get_scout_fee(user, False, ScoutType.FIGHT))
         )
 
-    message: Message = await full_media_send(
+    message: Message | bool = await full_media_send(
         context,
         saved_media_name=SavedMediaName.FIGHT,
         update=update,
         caption=caption,
         keyboard=inline_keyboard,
+        ignore_bad_request_exception=True,
     )
 
-    fight.message_id = message.message_id
+    if message:
+        fight.message_id = message.message_id
     fight.save()
 
 
@@ -949,6 +954,7 @@ async def fight_confirm_request(
         edit_only_caption_and_keyboard=True,
         delete_button_text=delete_button_text,
         keyboard=inline_keyboard,
+        ignore_bad_request_exception=True,
     )
 
     # Save info
@@ -1051,7 +1057,7 @@ async def plunder_validate(
                 get_elapsed_duration(attack_plunder.date),
             )
             await full_message_or_media_send_or_edit(
-                context, ot_text, update, add_delete_button=True
+                context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True
             )
             return False
 
@@ -1061,7 +1067,7 @@ async def plunder_validate(
                 Log.get_deeplink_by_type(LogType.PLUNDER, attack_plunder.id)
             )
             await full_message_or_media_send_or_edit(
-                context, ot_text, update, add_delete_button=True
+                context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True
             )
             return False
 
@@ -1075,7 +1081,7 @@ async def plunder_validate(
             (user.plunder_cooldown_end_date - datetime.datetime.now()).total_seconds()
         )
         ot_text = phrases.PLUNDER_USER_IN_COOLDOWN.format(remaining_time)
-        await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True)
+        await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True)
         return False
 
     # User does not have enough amount to scout
@@ -1086,7 +1092,7 @@ async def plunder_validate(
             if is_group
             else phrases.FIGHT_PLUNDER_PRIVATE_INSUFFICIENT_SCOUT_BOUNTY
         ).format(get_belly_formatted(scout_fee), user.get_bounty_formatted())
-        await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True)
+        await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True)
         return False
 
     # Opponent not yet available
@@ -1116,10 +1122,10 @@ async def plunder_validate(
 
     except OpponentValidationException as ove:
         if ove.message is not None:
-            await full_message_or_media_send_or_edit(context, ove.message, update)
+            await full_message_or_media_send_or_edit(context, ove.message, update, ignore_bad_request_exception=True)
         else:
             await full_message_or_media_send_or_edit(
-                context, phrases.PLUNDER_CANNOT_PLUNDER_USER, update=update, add_delete_button=True
+                context, phrases.PLUNDER_CANNOT_PLUNDER_USER, update=update, add_delete_button=True, ignore_bad_request_exception=True
             )
         return False
 
@@ -1222,15 +1228,17 @@ async def plunder_send_request(
             get_belly_formatted(get_scout_fee(user, False, ScoutType.PLUNDER))
         )
 
-    message: Message = await full_media_send(
+    message: Message | bool = await full_media_send(
         context,
         saved_media_name=SavedMediaName.PLUNDER,
         update=update,
         caption=caption,
         keyboard=inline_keyboard,
+        ignore_bad_request_exception=True,
     )
 
-    plunder.message_id = message.message_id
+    if message:
+        plunder.message_id = message.message_id
     plunder.save()
 
 
@@ -1426,6 +1434,7 @@ async def plunder_confirm_request(
         add_delete_button=True,
         delete_button_text=delete_button_text,
         keyboard=inline_keyboard,
+        ignore_bad_request_exception=True,
     )
 
     # Save info
