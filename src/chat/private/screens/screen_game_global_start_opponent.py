@@ -22,6 +22,7 @@ from src.service.message_service import (
     full_message_send,
     get_yes_no_keyboard,
     full_media_send,
+    full_message_or_media_send_or_edit,
 )
 from src.utils.string_utils import get_belly_formatted
 
@@ -52,11 +53,10 @@ async def manage(
     if game.opponent is not None:
         # Accepted by another player
         if not game.is_player(user):
-            await full_media_send(
+            await full_message_or_media_send_or_edit(
                 context, 
-                caption=phrases.GAME_GLOBAL_ALREADY_ACCEPTED, 
-                update=update,
-                edit_only_caption_and_keyboard=True
+                text=phrases.GAME_GLOBAL_ALREADY_ACCEPTED, 
+                update=update
             )
             return
 
@@ -64,21 +64,19 @@ async def manage(
         return
 
     if game_status is not GameStatus.IN_PROGRESS:
-        await full_media_send(
+        await full_message_or_media_send_or_edit(
             context, 
-            caption=phrases.ITEM_IN_WRONG_STATUS, 
-            update=update,
-            edit_only_caption_and_keyboard=True
+            text=phrases.ITEM_IN_WRONG_STATUS, 
+            update=update
         )
         return
 
     # Opponent does not have enough bounty
     if user.bounty < game.wager:
-        await full_media_send(
+        await full_message_or_media_send_or_edit(
             context,
-            caption=phrases.ACTION_INSUFFICIENT_BOUNTY.format(get_belly_formatted(game.wager)),
-            update=update,
-            edit_only_caption_and_keyboard=True
+            text=phrases.ACTION_INSUFFICIENT_BOUNTY.format(get_belly_formatted(game.wager)),
+            update=update
         )
         return
 
@@ -88,11 +86,10 @@ async def manage(
         ot_text = phrases.GAME_GLOBAL_COOLDOWN.format(
             get_remaining_duration(user.game_accept_global_cooldown_end_date)
         )
-        await full_media_send(
-            context,
-            caption=ot_text,
-            update=update,
-            edit_only_caption_and_keyboard=True
+        await full_message_or_media_send_or_edit(
+            context, 
+            text=ot_text, 
+            update=update
         )
         return
 
