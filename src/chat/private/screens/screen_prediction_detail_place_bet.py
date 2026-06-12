@@ -69,6 +69,10 @@ async def manage(
     :return: None
     """
 
+    # Guard clause: If there is no keyboard payload (e.g., user typed raw text), abort.
+    if inbound_keyboard is None:
+        return
+
     prediction: Prediction = Prediction.get(
         Prediction.id == inbound_keyboard.get(PredictionPlaceBetReservedKeys.PREDICTION_ID)
     )
