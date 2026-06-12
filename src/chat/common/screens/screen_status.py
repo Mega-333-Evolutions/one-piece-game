@@ -1,36 +1,47 @@
 import datetime
 
 from telegram import Update
+from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
 import resources.Environment as Env
-import resources.phrases as phrases
+from resources import phrases
+from src.chat.common.screens.screen_crew_join import validate as validate_crew_join
+from src.chat.private.screens.screen_crew_join_request_received import accept
+from src.model.Crew import Crew
+from src.model.CrewJoinRequest import CrewJoinRequest
+from src.model.User import User
+from src.model.enums.ReservedKeyboardKeys import ReservedKeyboardKeys
+from src.model.enums.Screen import Screen
+from src.model.error.CustomException import CrewValidationException
+from src.model.error.PrivateChatError import PrivateChatException
+from src.model.pojo.Keyboard import Keyboard
+from src.service.date_service import (
+    get_remaining_duration,
+    get_datetime_in_future_hours,
+    get_datetime_in_future_days,
+)
+from src.service.message_service import full_message_send, get_yes_no_keyboard, get_deeplink
 import src.model.enums.Command as Command
 import src.model.enums.LeaderboardRank as LeaderboardRank
 from resources.phrases import surround_with_expandable_quote
-from src.model.Crew import Crew
 from src.model.DevilFruit import DevilFruit
 from src.model.GroupChat import GroupChat
-from src.model.User import User
 from src.model.Warlord import Warlord
 from src.model.enums import Location
 from src.model.enums.BossType import BossType
 from src.model.enums.Emoji import Emoji
-from src.model.enums.LeaderboardRank import LeaderboardRank
 from src.model.enums.MessageSource import MessageSource
 from src.model.enums.SavedMedia import SavedMedia
 from src.model.enums.SavedMediaType import SavedMediaType
 from src.model.error.GroupChatError import GroupChatError, GroupChatException
-from src.model.pojo.Keyboard import Keyboard
 from src.service.bounty_poster_service import get_bounty_poster
 from src.service.crew_service import get_crew_abilities_text, get_crew_name_with_deeplink
-from src.service.date_service import get_remaining_duration
 from src.service.devil_fruit_service import get_devil_fruit_abilities_text
 from src.service.impel_down_service import get_post_bail_deeplink_button
 from src.service.income_tax_service import user_has_complete_tax_deduction
 from src.service.leaderboard_service import get_current_leaderboard_user, get_highest_active_rank
 from src.service.message_service import (
-    full_message_send,
     full_media_send,
     mention_markdown_v2,
     get_start_with_command_url,
@@ -348,6 +359,7 @@ async def send_bounty_poster(
         new_message=True,
         add_delete_button=True,
         send_in_private_chat=send_in_private_chat,
+        ignore_forbidden_exception=True,
     )
 
 
