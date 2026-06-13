@@ -456,6 +456,7 @@ async def delete_game(
             edit_message_id=game.message_id,
             edit_only_caption_and_keyboard=True,
             add_delete_button=True,
+            ignore_bad_request_exception=True,
         )
     elif should_delete_message:
         # Try to delete message
