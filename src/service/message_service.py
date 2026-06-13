@@ -152,7 +152,7 @@ async def get_keyboard(
                 == await get_effective_tg_user_id(update.effective_user, update.effective_message)
             )
             authorized_users.append(user_from_update)
-    except AttributeError:
+    except Exception:  # Catch all exceptions here, including AnonymousAdminException
         pass
 
     keyboard_markup = None
