@@ -1,15 +1,73 @@
-import base64
+import asyncio
+import json
 import logging
-import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Tuple, Callable
 
-from peewee import MySQLDatabase, DoesNotExist
-from telegram import Update, User as TelegramUser
-from telegram.error import BadRequest, TimedOut, NetworkError
+from peewee import DoesNotExist
+from telegram import Update
+from telegram.error import RetryAfter
 from telegram.ext import ContextTypes
 
-import resources.Environment as Env
-import resources.phrases as phrases
+import constants as c
+from resources import phrases as phrases, Environment as Env
+from src.model.Game import Game
+from src.model.GroupChat import GroupChat
+from src.model.User import User
+from src.model.enums.ContextDataKey import ContextDataKey
+from src.model.enums.Emoji import Emoji
+from src.model.enums.GameStatus import GameStatus
+from src.model.enums.Notification import GameTurnNotification, GameOutcomeNotification
+from src.model.enums.ReservedKeyboardKeys import ReservedKeyboardKeys
+from src.model.enums.SavedMedia import SavedMedia
+from src.model.enums.SavedMediaType import SavedMediaType
+from src.model.enums.Screen import Screen
+from src.model.enums.devil_fruit.DevilFruitAbilityType import DevilFruitAbilityType
+from src.model.enums.income_tax.IncomeTaxEventType import IncomeTaxEventType
+from src.model.error.CommonChatError import CommonChatException
+from src.model.game.GameBoard import GameBoard
+from src.model.game.GameOutcome import GameOutcome
+from src.model.game.GameTurn import GameTurn
+from src.model.game.GameType import GameType
+from src.model.game.punkrecords.PunkRecords import PunkRecords
+from src.model.game.shambles.Shambles import Shambles
+from src.model.game.whoswho.WhosWho import WhosWho
+from src.model.pojo.ContextDataValue import ContextDataValue
+from src.model.pojo.Keyboard import Keyboard
+from src.model.wiki.Character import Character
+from src.model.wiki.SupabaseRest import SupabaseRest
+from src.model.wiki.Terminology import Terminology
+from src.service.bounty_service import add_or_remove_bounty, validate_amount
+from src.service.date_service import (
+    convert_seconds_to_duration,
+    get_remaining_duration,
+    get_elapsed_duration,
+)
+from src.service.devil_fruit_service import get_ability_adjusted_datetime
+from src.service.message_service import (
+    mention_markdown_user,
+    delete_message,
+    full_media_send,
+    get_message_url,
+    full_message_send,
+    full_message_or_media_send_or_edit,
+    get_deeplink,
+)
+from src.service.notification_service import send_notification
+from src.utils.context_utils import (
+    get_bot_context_data,
+    set_bot_context_data,
+    get_random_user_context_inner_query_key,
+)
+from src.utils.phrase_utils import get_outcome_text
+from src.utils.string_utils import get_belly_formatted
+import base64
+import traceback
+
+from peewee import MySQLDatabase
+from telegram import User as TelegramUser
+from telegram.error import BadRequest, TimedOut, NetworkError
+
 import src.model.enums.Command as Command
 from resources.Database import Database
 from src.chat.group.group_chat_manager import manage as manage_group_chat
@@ -17,16 +75,11 @@ from src.chat.inline_query.inline_query_manager import manage as manage_inline_q
 from src.chat.private.private_chat_manager import manage as manage_private_chat
 from src.chat.tgrest.tgrest_chat_manager import manage as manage_tgrest_chat
 from src.model.Group import Group
-from src.model.GroupChat import GroupChat
 from src.model.GroupUser import GroupUser
-from src.model.User import User
-from src.model.enums.ContextDataKey import ContextDataType, ContextDataKey
+from src.model.enums.ContextDataKey import ContextDataType
 from src.model.enums.Feature import Feature
 from src.model.enums.MessageSource import MessageSource
-from src.model.enums.ReservedKeyboardKeys import ReservedKeyboardKeys
-from src.model.enums.Screen import Screen
 from src.model.error.ChatWarning import ChatWarning
-from src.model.error.CommonChatError import CommonChatException
 from src.model.error.CustomException import (
     CommandValidationException,
     NavigationLimitReachedException,
@@ -34,16 +87,10 @@ from src.model.error.CustomException import (
 )
 from src.model.error.GroupChatError import GroupChatException
 from src.model.error.PrivateChatError import PrivateChatException
-from src.model.pojo.Keyboard import Keyboard
-from src.service.bounty_service import add_or_remove_bounty
-from src.service.date_service import get_datetime_in_future_seconds
 from src.service.group_service import feature_is_enabled, get_group_or_topic_text, is_main_group
 from src.service.message_service import (
-    full_message_send,
     is_command,
-    delete_message,
     get_message_source,
-    full_message_or_media_send_or_edit,
     message_is_reply,
     escape_valid_markdown_chars,
 )
@@ -55,7 +102,6 @@ from src.utils.context_utils import (
     set_user_context_data,
     remove_user_context_data,
 )
-from src.utils.string_utils import get_belly_formatted
 
 
 def init() -> MySQLDatabase:
@@ -308,6 +354,8 @@ async def manage_after_db(
                         tg_user_id, update.effective_message.reply_to_message.from_user
                     )
             except AttributeError:
+                pass
+            except AnonymousAdminException:
                 pass
 
         # Start command, reset private screen
