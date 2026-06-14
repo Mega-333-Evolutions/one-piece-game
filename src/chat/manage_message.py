@@ -443,8 +443,11 @@ async def manage_after_db(
                     from_exception=True,
                 )
     except BadRequest as bre:
-        if "Message is not modified" in str(bre):
+        error_str = str(bre).lower()
+        if "message is not modified" in error_str:
             logging.error(f"Updated message same as previous in chat {update.effective_chat.id}")
+        elif "query is too old" in error_str or "query id is invalid" in error_str:
+            logging.warning("Ignored stale callback query (Query is too old).")
         else:
             raise bre
     except NavigationLimitReachedException:
