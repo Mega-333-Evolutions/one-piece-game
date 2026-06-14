@@ -17,7 +17,7 @@ from src.model.error.PrivateChatError import PrivateChatException
 from src.model.pojo.Keyboard import Keyboard
 from src.service.crew_service import get_crew_overview_text
 from src.service.list_service import get_items_text_keyboard
-from src.service.message_service import full_message_send
+from src.service.message_service import full_message_send, escape_valid_markdown_chars
 
 
 class CrewSearchListPage(ListPage):
@@ -49,7 +49,7 @@ class CrewSearchListPage(ListPage):
 
     def get_item_text(self) -> str:
         return self.get_emoji_legend_multiple_formatted() + phrases.CREW_SEARCH_ITEM_TEXT.format(
-            self.object.get_name_escaped(), self.object.level
+            escape_valid_markdown_chars(self.object.get_name_escaped()), self.object.level
         )
 
     def get_item_detail_text(self) -> str:
