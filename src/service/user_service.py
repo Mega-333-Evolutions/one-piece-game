@@ -4,7 +4,7 @@ from typing import Sequence, Optional
 from telegram import Update, PhotoSize, UserProfilePhotos, File, ChatMember, Message
 from telegram import User as TelegramUser, ChatMemberAdministrator
 from telegram.constants import ChatMemberStatus
-from telegram.error import BadRequest
+from telegram.error import BadRequest, ChatMigrated
 from telegram.ext import ContextTypes
 
 import constants as c
@@ -164,6 +164,18 @@ async def get_chat_member(
             return await context.bot.get_chat_member(tg_group_id, str(user.tg_user_id))
         else:
             raise ValueError("update or group_chat must be specified")
+    except ChatMigrated as e:
+        # Group was upgraded to a Supergroup. Save the new ID and retry.
+        if group_chat is not None:
+            group: Group = group_chat.group
+            group.tg_group_id = e.new_chat_id
+            group.save()
+            
+        if context is not None:
+            return await context.bot.get_chat_member(e.new_chat_id, str(user.tg_user_id))
+        elif update is not None:
+            return await update.get_bot().get_chat_member(e.new_chat_id, str(user.tg_user_id))
+        return None
     except (Forbidden, BadRequest):  # Bot kicked from the group chat or user not found
         return None
 
