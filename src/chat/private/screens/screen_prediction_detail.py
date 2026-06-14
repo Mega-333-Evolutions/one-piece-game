@@ -46,6 +46,10 @@ async def manage(
     :return: None
     """
 
+    # Guard clause: If there is no keyboard payload (e.g., user typed raw text), abort.
+    if inbound_keyboard is None:
+        return
+
     prediction_list_page = PredictionListPage()
 
     prediction_list_page.user = user
