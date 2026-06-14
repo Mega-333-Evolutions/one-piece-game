@@ -26,6 +26,7 @@ def get_navigation_buttons(inbound_keyboard: Keyboard, current_page: int) -> lis
     """
 
     keyboard_line: list[Keyboard] = []
+    inbound_info = inbound_keyboard.info if inbound_keyboard is not None else None
 
     # Previous page
     previous_page_button_info = {ReservedKeyboardKeys.PAGE: current_page - 1}
@@ -33,7 +34,7 @@ def get_navigation_buttons(inbound_keyboard: Keyboard, current_page: int) -> lis
         Keyboard(
             phrases.PVT_KEY_PREVIOUS_PAGE,
             info=previous_page_button_info,
-            inbound_info=inbound_keyboard.info,
+            inbound_info=inbound_info,
         )
     )
 
@@ -43,7 +44,7 @@ def get_navigation_buttons(inbound_keyboard: Keyboard, current_page: int) -> lis
         Keyboard(
             phrases.PVT_KEY_NEXT_PAGE,
             info=next_page_button_info,
-            inbound_info=inbound_keyboard.info,
+            inbound_info=inbound_info,
         )
     )
 
@@ -56,6 +57,10 @@ def get_page(inbound_keyboard: Keyboard) -> int:
     :param inbound_keyboard: The inbound keyboard
     :return: The page number
     """
+
+    # Guard clause: safely return page 1 if there is no keyboard payload
+    if inbound_keyboard is None:
+        return 1
 
     # Get the page number
     if ReservedKeyboardKeys.PAGE in inbound_keyboard.info:
@@ -141,11 +146,15 @@ def get_items_text_keyboard(
         if inbound_keyboard is not None:
             user.set_context_data(context, ContextDataKey.INBOUND_KEYBOARD, inbound_keyboard)
         else:
-            inbound_keyboard = user.get_context_data(context, ContextDataKey.INBOUND_KEYBOARD)
-            inbound_keyboard.is_simulated = True
+            try:
+                inbound_keyboard = user.get_context_data(context, ContextDataKey.INBOUND_KEYBOARD)
+                if inbound_keyboard is not None:
+                    inbound_keyboard.is_simulated = True
+            except Exception:
+                inbound_keyboard = None
 
         try:
-            if not inbound_keyboard.is_simulated:
+            if inbound_keyboard is None or not getattr(inbound_keyboard, "is_simulated", False):
                 raise AttributeError
 
             list_page.string_filter = update.effective_message.text
@@ -197,7 +206,7 @@ def get_items_text_keyboard(
                 str(current_number),
                 screen=item_detail_screen,
                 info=button_info,
-                inbound_info=inbound_keyboard.info,
+                inbound_info=inbound_keyboard.info if inbound_keyboard else None,
             )
             keyboard_line.append(button)
 
@@ -243,7 +252,8 @@ def get_items_text_keyboard(
 
                 # Current active legend filter, should add button of next filter
                 if filter_value:
-                    inbound_keyboard.info.pop(key)  # Else it will stack
+                    if inbound_keyboard is not None:
+                        inbound_keyboard.info.pop(key, None)  # Else it will stack
                     user.remove_context_data(context, ContextDataKey.FILTER, inner_key=key)
                     add_legend_filter = True
 
@@ -253,9 +263,9 @@ def get_items_text_keyboard(
                             [
                                 Keyboard(
                                     phrases.PVT_KEY_STRING_FILTER_REMOVE.format(phrases.LEGEND),
-                                    screen=inbound_keyboard.screen,
+                                    screen=inbound_keyboard.screen if inbound_keyboard else None,
                                     info={key: False, ReservedKeyboardKeys.PAGE: 1},
-                                    inbound_info=inbound_keyboard.info,
+                                    inbound_info=inbound_keyboard.info if inbound_keyboard else None,
                                 )
                             ]
                         )
@@ -272,9 +282,9 @@ def get_items_text_keyboard(
                     Keyboard(
                         list_filter.legend.get_formatted()
                         + phrases.TEXT_ONLY.format(list_filter.description),
-                        screen=inbound_keyboard.screen,
+                        screen=inbound_keyboard.screen if inbound_keyboard else None,
                         info={key: True, ReservedKeyboardKeys.PAGE: 1},
-                        inbound_info=inbound_keyboard.info,
+                        inbound_info=inbound_keyboard.info if inbound_keyboard else None,
                     )
                 ]
             )
@@ -289,9 +299,9 @@ def get_items_text_keyboard(
                     [
                         Keyboard(
                             phrases.PVT_KEY_STRING_FILTER_REMOVE.format(list_filter.description),
-                            screen=inbound_keyboard.screen,
+                            screen=inbound_keyboard.screen if inbound_keyboard else None,
                             info={key: False, ReservedKeyboardKeys.PAGE: 1},
-                            inbound_info=inbound_keyboard.info,
+                            inbound_info=inbound_keyboard.info if inbound_keyboard else None,
                         )
                     ]
                 )
@@ -343,7 +353,7 @@ def get_legend_filter_value(inbound_keyboard: Keyboard, key: str) -> bool:
     :return: The list filter value
     """
 
-    if key in inbound_keyboard.info:
+    if inbound_keyboard is not None and key in inbound_keyboard.info:
         return inbound_keyboard.info[key]
 
     return False
@@ -376,7 +386,7 @@ def get_active_filter_list(
 
     active_filter_list: list[ListFilter] = []
 
-    if inbound_keyboard is not None and not inbound_keyboard.is_simulated:
+    if inbound_keyboard is not None and not getattr(inbound_keyboard, "is_simulated", False):
         for index, list_filter in enumerate(list_page.get_filter_list()):
             key = list_page.get_filter_key(index)
             if key in inbound_keyboard.info:
@@ -411,10 +421,11 @@ def get_show_list_button(inbound_keyboard: Keyboard) -> Keyboard:
     :return: The show list button
     """
 
-    inbound_keyboard.info[ReservedKeyboardKeys.DIRECT_ITEM] = False
+    info = inbound_keyboard.info if inbound_keyboard is not None else {}
+    info[ReservedKeyboardKeys.DIRECT_ITEM] = False
     return Keyboard(
         phrases.PVT_KEY_SHOW_ALL,
-        inbound_info=inbound_keyboard.info,
+        inbound_info=info,
     )
 
 
