@@ -59,17 +59,29 @@ class ImpelDownLog(BaseModel):
             .first()
         )
 
-    def get_bail(self):
+    def get_bail(self) -> int:
         """
-        Get the bail for the user
-        :return: The bail
+        Get the bail amount for the user.
+
+        Bail = remaining_minutes × IMPEL_DOWN_BAIL_PER_MINUTE.
+
+        Both release_date_time (stored by the dashboard via datetime.now()) and
+        datetime.now() here are naive local-time values, so the subtraction is
+        always consistent regardless of the server timezone.
+        :return: The bail amount in bounty
         """
 
-        # Get how many minutes until the release
-        minutes = int((self.release_date_time - datetime.now()).total_seconds() / 60)
-
-        if minutes < 0:
+        if self.release_date_time is None:
             return 0
+
+        # Both sides are naive datetime objects in server local time — no tz conversion needed.
+        remaining_seconds = (self.release_date_time - datetime.now()).total_seconds()
+
+        if remaining_seconds <= 0:
+            return 0
+
+        # Floor to whole minutes — never round up (favors the prisoner)
+        minutes = int(remaining_seconds // 60)
 
         return minutes * Env.IMPEL_DOWN_BAIL_PER_MINUTE.get_int()
 
