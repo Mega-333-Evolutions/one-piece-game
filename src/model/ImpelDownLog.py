@@ -38,9 +38,14 @@ class ImpelDownLog(BaseModel):
     @staticmethod
     def get_current_for_user(user: User):
         """
-        Get the current impel down log for the user
+        Get the current impel down log for the user.
+
+        Always returns the LATEST active record (highest id) so that a new
+        dashboard sentence is never shadowed by an older bot-created record
+        that hasn't been reversed yet.
+
         :param user: The user
-        :return: The impel down log
+        :return: The impel down log, or None
         """
         if not user.is_arrested():
             return None
@@ -56,34 +61,38 @@ class ImpelDownLog(BaseModel):
                 )
                 & (ImpelDownLog.bail_date.is_null())
             )
+            .order_by(ImpelDownLog.id.desc())   # ← always use the newest sentence
             .first()
         )
 
     def get_bail(self) -> int:
         """
-        Get the bail amount for the user.
+        Calculate the bail cost based on the number of whole minutes remaining.
 
-        Bail = remaining_minutes × IMPEL_DOWN_BAIL_PER_MINUTE.
+        release_date_time is stored as a naive datetime by both the bot and the
+        dashboard. tzinfo is stripped defensively so a timezone-aware value
+        stored by a future migration doesn't cause a TypeError.
 
-        Both release_date_time (stored by the dashboard via datetime.now()) and
-        datetime.now() here are naive local-time values, so the subtraction is
-        always consistent regardless of the server timezone.
-        :return: The bail amount in bounty
+        :return: Bail amount in bounty
         """
-
         if self.release_date_time is None:
             return 0
 
-        # Both sides are naive datetime objects in server local time — no tz conversion needed.
-        remaining_seconds = (self.release_date_time - datetime.now()).total_seconds()
+        # Strip timezone info to ensure consistent naive-datetime arithmetic
+        release_dt = (
+            self.release_date_time.replace(tzinfo=None)
+            if self.release_date_time.tzinfo is not None
+            else self.release_date_time
+        )
 
-        if remaining_seconds <= 0:
+        remaining_seconds = (release_dt - datetime.now()).total_seconds()
+
+        # Floor to whole minutes — never return a negative bail
+        remaining_minutes = int(remaining_seconds // 60)
+        if remaining_minutes <= 0:
             return 0
 
-        # Floor to whole minutes — never round up (favors the prisoner)
-        minutes = int(remaining_seconds // 60)
-
-        return minutes * Env.IMPEL_DOWN_BAIL_PER_MINUTE.get_int()
+        return remaining_minutes * Env.IMPEL_DOWN_BAIL_PER_MINUTE.get_int()
 
 
 ImpelDownLog.create_table()
