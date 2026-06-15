@@ -30,11 +30,11 @@ from src.model.error.CommonChatError import CommonChatException
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the game input screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -48,12 +48,12 @@ async def manage(
             game: Game = Game.get_by_id(user.private_screen_in_edit_id)
     except (CommonChatException, DoesNotExist):
         user.reset_private_screen()
-        await full_message_send(context, phrases.GAME_NOT_FOUND, update=update)
+        await full_message_send(context, phrases.GAME_NOT_FOUND, event=event)
         return
 
     # User is not a player of the game
     if not game.is_player(user):
-        await full_message_send(context, phrases.GAME_INPUT_NOT_PLAYER, update=update)
+        await full_message_send(context, phrases.GAME_INPUT_NOT_PLAYER, event=event)
         return
 
     game_status: GameStatus = GameStatus(game.status)
@@ -61,7 +61,7 @@ async def manage(
 
     # Game is finished
     if game_status.is_finished():
-        await full_message_send(context, phrases.GAME_INPUT_GAME_FINISHED, update=update)
+        await full_message_send(context, phrases.GAME_INPUT_GAME_FINISHED, event=event)
         return
 
     game.last_interaction_date = datetime.now()
@@ -69,7 +69,7 @@ async def manage(
 
     # Game in countdown
     if game_status is GameStatus.COUNTDOWN_TO_START:
-        await full_message_send(context, phrases.GAME_INPUT_COUNTDOWN, update=update)
+        await full_message_send(context, phrases.GAME_INPUT_COUNTDOWN, event=event)
         return
 
     if inbound_keyboard is not None:  # From deep link
@@ -113,9 +113,9 @@ async def manage(
     # Regular input
     match game_type:
         case GameType.GUESS_OR_LIFE:
-            await validate_answer_gol(update, context, game, user)
+            await validate_answer_gol(event, context, game, user)
 
         case GameType.PUNK_RECORDS:
-            await validate_answer_pr(update, context, game, user)
+            await validate_answer_pr(event, context, game, user)
         case _:
-            await guess_game_validate_answer(update, context, game, user)
+            await guess_game_validate_answer(event, context, game, user)

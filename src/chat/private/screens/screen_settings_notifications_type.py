@@ -16,11 +16,11 @@ class NotificationTypeReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard
 ) -> None:
     """
     Manage the settings screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :return: None
@@ -44,7 +44,7 @@ async def manage(
     await full_message_send(
         context,
         phrases.PVT_TXT_SETTINGS_NOTIFICATIONS_TYPE,
-        update=update,
+        event=event,
         keyboard=inline_keyboard,
         inbound_keyboard=inbound_keyboard,
         excluded_keys_from_back_button=[NotificationTypeReservedKeys.CATEGORY],

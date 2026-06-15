@@ -47,7 +47,7 @@ def get_specific_text(
     :param is_finished: If the game is finished
     :param player_type: The player type
     :param outcome: The outcome if the game is finished
-    :param is_for_group: If the text is for the group message update
+    :param is_for_group: If the text is for the group message event
     :param is_for_new_life: If the text is for a new life
     :return: The specific text
     """
@@ -320,11 +320,11 @@ async def run_game(
 
 
 async def validate_answer(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, game: Game, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, game: Game, user: User
 ) -> None:
     """
     Validate the answer
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param game: The game object
     :param user: The user object
@@ -332,7 +332,7 @@ async def validate_answer(
     """
 
     try:
-        letter = update.effective_message.text
+        letter = event.effective_message.text
     except AttributeError:
         return
 
@@ -368,7 +368,7 @@ async def validate_answer(
         ot_text = phrases.GUESS_OR_LIFE_GAME_PRIVATE_RECAP.format(
             phrases.GUESS_OR_LIFE_GAME_WRONG_LETTER, specific_text
         )
-        await full_message_send(context, ot_text, update=update)
+        await full_message_send(context, ot_text, event=event)
         return
 
     # Correct letter but game not finished
@@ -383,7 +383,7 @@ async def validate_answer(
             await full_message_send(
                 context,
                 ot_text,
-                update=update,
+                event=event,
                 keyboard=get_global_share_keyboard(context, game),
             )
 
@@ -392,14 +392,14 @@ async def validate_answer(
         ot_text = phrases.GUESS_OR_LIFE_GAME_PRIVATE_RECAP.format(
             phrases.GUESS_OR_LIFE_GAME_CORRECT_LETTER, specific_text
         )
-        await full_message_send(context, ot_text, update=update)
+        await full_message_send(context, ot_text, event=event)
         return
 
     # End game
     challenger, opponent = get_players(game)
     outcome: GameOutcome = board.get_outcome(player_type)
 
-    await end_game(game, outcome, context, update=update)
+    await end_game(game, outcome, context, event=event)
     user.should_update_model = False  # To avoid re-writing bounty
     loser = challenger if user == opponent else opponent
 

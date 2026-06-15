@@ -27,12 +27,12 @@ from src.service.notification_service import send_notification
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage this screen
 
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -49,7 +49,7 @@ async def manage(
     except CrewValidationException as cve:
         await send_outcome_notification(context, davy_back_fight, False)
         await full_message_send(
-            context, cve.message, update=update, inbound_keyboard=inbound_keyboard
+            context, cve.message, event=event, inbound_keyboard=inbound_keyboard
         )
         return
 
@@ -61,11 +61,11 @@ async def manage(
         ot_text = phrases.CREW_DAVY_BACK_FIGHT_CAPTAIN_REJECTED.format(
             challenger_crew.get_name_with_deeplink()
         )
-        await full_message_send(context, ot_text, update=update)
+        await full_message_send(context, ot_text, event=event)
         return
 
     if not await validate(
-        update, context, inbound_keyboard, challenger_crew, crew, davy_back_fight=davy_back_fight
+        event, context, inbound_keyboard, challenger_crew, crew, davy_back_fight=davy_back_fight
     ):
         await send_outcome_notification(context, davy_back_fight, False)
         return
@@ -92,7 +92,7 @@ async def manage(
         ]
     ]
 
-    await full_message_send(context, ot_text, update=update, keyboard=inline_keyboard)
+    await full_message_send(context, ot_text, event=event, keyboard=inline_keyboard)
 
 
 async def accept(context: ContextTypes.DEFAULT_TYPE, davy_back_fight: DavyBackFight) -> None:

@@ -84,7 +84,7 @@ async def end_game(
     game_outcome: GameOutcome,
     context: ContextTypes.DEFAULT_TYPE,
     is_forced_end: bool = False,
-    update: Update = None,
+    event: Update = None,
     send_outcome_to_user: User = None,
 ):
     """
@@ -93,7 +93,7 @@ async def end_game(
     :param game_outcome: The outcome
     :param context: The context
     :param is_forced_end: If the game was forced to end
-    :param update: The update
+    :param event: The event
     :param send_outcome_to_user: End user to send game outcome notification
     :return: None
     """
@@ -138,7 +138,7 @@ async def end_game(
             bounty_for_challenger,
             context=context,
             pending_belly_amount=pending_bounty_for_challenger,
-            update=update,
+            event=event,
             tax_event_type=IncomeTaxEventType.GAME,
             event_id=game.id,
             opponent=opponent,
@@ -150,7 +150,7 @@ async def end_game(
                 bounty_for_opponent,
                 context=context,
                 pending_belly_amount=pending_bounty_for_opponent,
-                update=update,
+                event=event,
                 tax_event_type=IncomeTaxEventType.GAME,
                 event_id=game.id,
                 opponent=challenger,
@@ -429,7 +429,7 @@ def get_opponent_and_wager_text(game: Game) -> str:
 
 async def delete_game(
     context: ContextTypes.DEFAULT_TYPE,
-    update: Update,
+    event: Update,
     game: Game,
     should_delete_message: bool = True,
     show_timeout_message: bool = False,
@@ -437,7 +437,7 @@ async def delete_game(
     """
     Delete game
     :param context: The context
-    :param update: The update
+    :param event: The event
     :param game: The game
     :param should_delete_message: If the message should be deleted
     :param show_timeout_message: If the message should be edited showing timeout
@@ -450,7 +450,7 @@ async def delete_game(
     if show_timeout_message:
         await full_media_send(
             context=context,
-            update=update,
+            event=event,
             group_chat=game.group_chat,
             caption=phrases.GAME_TIMEOUT,
             edit_message_id=game.message_id,
@@ -470,14 +470,14 @@ async def delete_game(
 
 
 async def validate_game(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
     game: Game = None,
 ) -> Game | None:
     """
     Validate the game
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The keyboard
     :param game: The game
@@ -494,7 +494,7 @@ async def validate_game(
         await full_message_or_media_send_or_edit(
             context,
             text=phrases.GAME_FORCED_END,
-            update=update,
+            event=event,
             ignore_bad_request_exception=True,
         )
         return None
@@ -503,7 +503,7 @@ async def validate_game(
         await full_message_or_media_send_or_edit(
             context,
             text=phrases.GAME_ENDED,
-            update=update,
+            event=event,
             answer_callback=False,
             show_alert=True,
             ignore_bad_request_exception=True,
@@ -514,7 +514,7 @@ async def validate_game(
         challenger: User = game.challenger
         # Challenger does not have enough bounty
         if not await validate_amount(
-            update, context, challenger, game.wager, Env.GAME_MIN_WAGER.get_int()
+            event, context, challenger, game.wager, Env.GAME_MIN_WAGER.get_int()
         ):
             return None
 
@@ -533,7 +533,7 @@ async def validate_game(
                     await full_media_send(
                         context,
                         caption=ot_text,
-                        update=update,
+                        event=event,
                         add_delete_button=True,
                         authorized_users=game.get_players(),
                         edit_only_caption_and_keyboard=True,
@@ -675,12 +675,12 @@ async def enqueue_game_turn_notification(
         await send_notification(context, user, GameTurnNotification(game, opponent))
 
 
-async def enqueue_game_timeout(context: ContextTypes.DEFAULT_TYPE, update: Update, game: Game):
+async def enqueue_game_timeout(context: ContextTypes.DEFAULT_TYPE, event: Update, game: Game):
     """
     Enqueue a game timeout. Waits for N time and if the opponent doesn't accept,
     the game is deleted
     :param context: The context
-    :param update: The update
+    :param event: The event
     :param game: The game
     :return: None
     """
@@ -696,7 +696,7 @@ async def enqueue_game_timeout(context: ContextTypes.DEFAULT_TYPE, update: Updat
     # Check if the game is still in the same state
     if GameStatus(updated_game.status) == GameStatus.AWAITING_OPPONENT_CONFIRMATION:
         await delete_game(
-            context, update, updated_game, should_delete_message=False, show_timeout_message=True
+            context, event, updated_game, should_delete_message=False, show_timeout_message=True
         )
 
 
@@ -732,9 +732,9 @@ async def set_user_private_screen(
         private_screen_list = Screen.PVT_GAME_GUESS_INPUT
         private_screen_in_edit_id = game.id
 
-    # Using update instead of save to avoid overwriting other fields, namely bounty and
+    # Using event instead of save to avoid overwriting other fields, namely bounty and
     # pending_bounty
-    User.update(
+    User.event(
         private_screen_list=private_screen_list,
         private_screen_in_edit_id=private_screen_in_edit_id,
     ).where(User.id == user.id).execute()
@@ -782,7 +782,7 @@ def get_guess_game_result_term_text(terminology: Terminology):
 
 
 async def guess_game_countdown_to_start(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     game: Game,
     remaining_seconds: int,
@@ -791,7 +791,7 @@ async def guess_game_countdown_to_start(
 ) -> None:
     """
     Countdown to start
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param game: The game object
     :param remaining_seconds: The remaining time
@@ -820,7 +820,7 @@ async def guess_game_countdown_to_start(
             await full_media_send(
                 context,
                 caption=ot_text,
-                update=update,
+                event=event,
                 keyboard=play_deeplink_button,
                 edit_only_caption_and_keyboard=True,
                 edit_message_id=game.message_id,
@@ -836,7 +836,7 @@ async def guess_game_countdown_to_start(
         await full_media_send(
             context,
             caption=ot_text,
-            update=update,
+            event=event,
             keyboard=play_deeplink_button,
             saved_media_name=game.get_saved_media_name(),
             ignore_bad_request_exception=True,
@@ -845,16 +845,16 @@ async def guess_game_countdown_to_start(
         pass
 
     # Update every 10 seconds if remaining time is more than 10 seconds, otherwise
-    # update every 5 seconds
+    # event every 5 seconds
     if remaining_seconds > 10:
         await asyncio.sleep(10)
         await guess_game_countdown_to_start(
-            update, context, game, remaining_seconds - 10, run_game_function, player
+            event, context, game, remaining_seconds - 10, run_game_function, player
         )
     else:
         await asyncio.sleep(5)
         await guess_game_countdown_to_start(
-            update, context, game, remaining_seconds - 5, run_game_function, player
+            event, context, game, remaining_seconds - 5, run_game_function, player
         )
 
 
@@ -884,18 +884,18 @@ async def get_guess_game_users_to_send_message_to(
 
 
 async def guess_game_validate_answer(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, game: Game, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, game: Game, user: User
 ) -> None:
     """
     Validate the answer
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param game: The game object
     :param user: The user object
     :return: None
     """
 
-    if not await guess_game_should_end_after_answer(update, context, game, user):
+    if not await guess_game_should_end_after_answer(event, context, game, user):
         return
 
     # End game
@@ -903,7 +903,7 @@ async def guess_game_validate_answer(
     outcome: GameOutcome = (
         GameOutcome.CHALLENGER_WON if user == challenger else GameOutcome.OPPONENT_WON
     )
-    await end_game(game, outcome, context, update=update)
+    await end_game(game, outcome, context, event=event)
     user.should_update_model = False  # To avoid re-writing bounty
     loser = challenger if user == opponent else opponent
 
@@ -1100,7 +1100,7 @@ async def end_text_based_game(
 
 
 async def collect_game_wagers_and_set_in_progress(
-    update: Update,
+    event: Update,
     game: Game,
     challenger: User = None,
     opponent: User = None,
@@ -1114,7 +1114,7 @@ async def collect_game_wagers_and_set_in_progress(
 ) -> None:
     """
     Start the game, removing bounty from challenger and opponent
-    :param update: The update object
+    :param event: The event object
     :param game: The game object
     :param challenger: The challenger
     :param opponent: The opponent
@@ -1152,7 +1152,7 @@ async def collect_game_wagers_and_set_in_progress(
             opponent,
             game.wager,
             add=False,
-            update=update,
+            event=event,
             should_affect_pending_bounty=True,
             should_save=False, # We will save at the end
             pending_belly_amount=game.wager,  # Full wager (will be doubled later)
@@ -1171,7 +1171,7 @@ async def collect_game_wagers_and_set_in_progress(
             game.wager,
             add=False,
             should_affect_pending_bounty=True,
-            update=update,
+            event=event,
             pending_belly_amount=game.wager,  # Full wager (will be doubled later)
             should_save=False, # We will save at the end
         )
@@ -1289,7 +1289,7 @@ def get_auto_move_warning(add_turn_notification_time: bool = False) -> str:
 
 
 async def enqueue_auto_move(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     game: Game,
     user: User,
@@ -1299,7 +1299,7 @@ async def enqueue_auto_move(
 ) -> None:
     """
     Enqueue auto move
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param game: The game
     :param user: The user
@@ -1319,7 +1319,7 @@ async def enqueue_auto_move(
     if game.is_finished():
         return
 
-    await auto_move_function(update, context, updated_game, user, message_id, game)
+    await auto_move_function(event, context, updated_game, user, message_id, game)
 
 
 async def edit_other_player_message(
@@ -1692,7 +1692,7 @@ def get_winner_loser_text(
 
 
 async def guess_game_should_end_after_answer(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     game: Game,
     user: User,
@@ -1700,7 +1700,7 @@ async def guess_game_should_end_after_answer(
 ) -> bool:
     """
     Should the guess game end after the answer is received?
-    :param update: The update received
+    :param event: The event received
     :param context: The context
     :param game: The game
     :param user: The user
@@ -1709,7 +1709,7 @@ async def guess_game_should_end_after_answer(
     """
 
     try:
-        answer = update.effective_message.text
+        answer = event.effective_message.text
     except AttributeError:
         return False
 
@@ -1747,7 +1747,7 @@ async def guess_game_should_end_after_answer(
         await full_message_send(
             context,
             ot_text,
-            update=update,
+            event=event,
             keyboard=get_global_share_keyboard(context, game),
         )
 

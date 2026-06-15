@@ -16,7 +16,7 @@ from src.service.prediction_service import (
 
 
 async def validate(
-    update: Update,
+    event: Update,
     user: User,
     command: Command = None,
     prediction_option: PredictionOption = None,
@@ -24,7 +24,7 @@ async def validate(
 ) -> tuple[Prediction, PredictionOption, list[PredictionOptionUser]]:
     """
     Validate the prediction bet
-    :param update: The update object
+    :param event: The event object
     :param user: The user object
     :param command: The command. Required if prediction_option is None
     :param prediction_option: The prediction option. Required if command is None
@@ -42,7 +42,7 @@ async def validate(
 
         # Get prediction from message id
         prediction: Prediction = get_prediction_from_message_id(
-            group_chat, update.message.reply_to_message.message_id
+            group_chat, event.message.reply_to_message.message_id
         )
         if prediction is None:
             raise PredictionException(phrases.PREDICTION_NOT_FOUND_IN_REPLY)

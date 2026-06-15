@@ -29,11 +29,11 @@ class GameSelectionReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, inbound_keyboard: Keyboard
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, inbound_keyboard: Keyboard
 ) -> None:
     """
     Manage the game screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The inbound keyboard
@@ -41,13 +41,13 @@ async def manage(
     """
 
     # Get the game from validation, will handle error messages
-    game = await validate_game(update, context, inbound_keyboard)
+    game = await validate_game(event, context, inbound_keyboard)
     if game is None:
         return
 
     # User clicked on cancel button
     if GameSelectionReservedKeys.CANCEL in inbound_keyboard.info:
-        await delete_game(context, update, game)
+        await delete_game(context, event, game)
         user.should_update_model = False
         return
 
@@ -60,7 +60,7 @@ async def manage(
 
     # In private chat, immediately start game
     if game.group_chat is None:
-        await manage_global_game(update, context, inbound_keyboard, user)
+        await manage_global_game(event, context, inbound_keyboard, user)
         return
 
     if opponent is not None:
@@ -129,11 +129,11 @@ async def manage(
     await full_media_send(
         context,
         caption=ot_text,
-        update=update,
+        event=event,
         keyboard=outbound_keyboard,
         saved_media_name=game.get_saved_media_name(),
         ignore_bad_request_exception=True,
     )
 
     # Enqueue the game for timeout
-    context.application.create_task(enqueue_game_timeout(context, update, game))
+    context.application.create_task(enqueue_game_timeout(context, event, game))

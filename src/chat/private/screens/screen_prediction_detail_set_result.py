@@ -34,11 +34,11 @@ class PredictionDetailsSetResultReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the prediction detail set result screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -55,7 +55,7 @@ async def manage(
         await full_message_send(
             context,
             phrases.PREDICTION_IN_WRONG_STATUS,
-            update=update,
+            event=event,
             inbound_keyboard=inbound_keyboard,
         )
         return
@@ -116,14 +116,14 @@ async def manage(
             await full_message_send(
                 context,
                 ot_text,
-                update=update,
+                event=event,
                 inbound_keyboard=inbound_keyboard,
                 keyboard=inline_keyboard,
             )
             return
         else:  # Confirm or cancel
             if inbound_keyboard.get_bool(ReservedKeyboardKeys.CONFIRM):
-                PredictionOption.update(is_correct=True).where(
+                PredictionOption.event(is_correct=True).where(
                     PredictionOption.prediction == prediction,
                     PredictionOption.number.in_(correct_options_numbers),
                 ).execute()
@@ -132,12 +132,12 @@ async def manage(
 
                 # Correct options have been set, show alert
                 await full_message_send(
-                    context, phrases.PREDICTION_SET_RESULT_SUCCESS, update=update, show_alert=True
+                    context, phrases.PREDICTION_SET_RESULT_SUCCESS, event=event, show_alert=True
                 )
 
                 # Go back to details
                 return await go_to_prediction_detail(
-                    context, inbound_keyboard, prediction, update, user
+                    context, inbound_keyboard, prediction, event, user
                 )
 
             # Remove confirm key
@@ -215,7 +215,7 @@ async def manage(
     await full_message_send(
         context,
         ot_text,
-        update=update,
+        event=event,
         keyboard=inline_keyboard,
         inbound_keyboard=inbound_keyboard,
     )

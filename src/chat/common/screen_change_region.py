@@ -36,11 +36,11 @@ class ChangeRegionReservedKeys(StrEnum):
 
 
 async def validate_move_request(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, destination_region: Region
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, destination_region: Region
 ) -> bool:
     """
     Validate the move request
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param destination_region: The region to move to
@@ -50,7 +50,7 @@ async def validate_move_request(
     location: Location = Location.get_by_level(user.location_level)
     if location.region == destination_region:
         ot_text = phrases.LOCATION_ALREADY_IN_REGION.format(get_region_text(destination_region))
-        await full_message_send(context, ot_text, update=update, add_delete_button=True)
+        await full_message_send(context, ot_text, event=event, add_delete_button=True)
         return False
 
     # User cannot change region
@@ -58,7 +58,7 @@ async def validate_move_request(
         ot_text = phrases.LOCATION_CANNOT_CHANGE_REGION.format(
             cron_datetime_difference(Env.CRON_RESET_CAN_CHANGE_REGION.get())
         )
-        await full_message_send(context, ot_text, update, add_delete_button=True)
+        await full_message_send(context, ot_text, event, add_delete_button=True)
         return False
 
     # Not enough bounty for New World
@@ -68,7 +68,7 @@ async def validate_move_request(
             ot_text = phrases.LOCATION_NEW_WORLD_REQUEST_REJECTED_NOT_ENOUGH_BOUNTY.format(
                 get_belly_formatted(first_new_world_location.required_bounty)
             )
-            await full_message_send(context, ot_text, update=update, add_delete_button=True)
+            await full_message_send(context, ot_text, event=event, add_delete_button=True)
             return False
 
     return True
@@ -88,11 +88,11 @@ def get_region_image_preview(region: Region) -> str:
 
 
 async def send_proposal(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, region: Region
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, region: Region
 ) -> None:
     """
     Send proposal for region change
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param region: The region to move to
@@ -111,7 +111,7 @@ async def send_proposal(
     inline_keyboard: list[list[Keyboard]] = [
         get_yes_no_keyboard(
             user,
-            screen=get_screen(update),
+            screen=get_screen(event),
             yes_text=phrases.KEYBOARD_OPTION_ACCEPT,
             no_text=phrases.KEYBOARD_OPTION_REJECT,
             primary_key=region,
@@ -121,15 +121,15 @@ async def send_proposal(
     await full_message_send(
         context,
         ot_text,
-        update=update,
+        event=event,
         keyboard=inline_keyboard,
         disable_web_page_preview=False,
-        new_message=(update.callback_query is not None),
+        new_message=(event.callback_query is not None),
     )
 
 
 async def keyboard_interaction(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     keyboard: Keyboard,
@@ -137,7 +137,7 @@ async def keyboard_interaction(
 ) -> None:
     """
     Keyboard interaction
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param keyboard: The keyboard
@@ -148,13 +148,13 @@ async def keyboard_interaction(
     # User accepted
     if keyboard.info[ReservedKeyboardKeys.CONFIRM]:
         # Verify that user can move
-        if not await validate_move_request(update, context, user, region):
+        if not await validate_move_request(event, context, user, region):
             return
 
         # Refresh location
         user.can_change_region = False
         await update_location(
-            user, context, update, cap_to_paradise=False, region=region, requested_by_user=True
+            user, context, event, cap_to_paradise=False, region=region, requested_by_user=True
         )
 
         return
@@ -165,12 +165,12 @@ async def keyboard_interaction(
             get_region_text(region),
             Command.get_other_region_command_name(user.location_level).get_formatted(),
         )
-        await full_message_send(context, ot_text, update=update, add_delete_button=True)
+        await full_message_send(context, ot_text, event=event, add_delete_button=True)
         return
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     keyboard: Keyboard = None,
@@ -178,7 +178,7 @@ async def manage(
 ) -> None:
     """
     Manage the change region request
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param keyboard: The keyboard object
@@ -194,29 +194,29 @@ async def manage(
     else:
         raise CommonChatException(phrases.LOCATION_INVALID_CHANGE_REGION_REQUEST)
 
-    if not await validate_move_request(update, context, user, region):
+    if not await validate_move_request(event, context, user, region):
         return
 
     # Request to move
     if keyboard is None:
-        await send_proposal(update, context, user, region)
+        await send_proposal(event, context, user, region)
         return
 
     # Interaction with keyboard
     if keyboard is None:
         raise CommonChatException(phrases.KEYBOARD_NOT_FOUND)
 
-    await keyboard_interaction(update, context, user, keyboard, region)
+    await keyboard_interaction(event, context, user, keyboard, region)
 
 
-def get_screen(update: Update) -> Screen:
+def get_screen(event: Update) -> Screen:
     """
     Get the screen
-    :param update: The update object
+    :param event: The event object
     :return: The screen
     """
 
-    if get_message_source(update) is MessageSource.GROUP:
+    if get_message_source(event) is MessageSource.GROUP:
         return Screen.GRP_CHANGE_REGION
 
     return Screen.PVT_CHANGE_REGION

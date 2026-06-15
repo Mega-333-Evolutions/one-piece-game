@@ -17,7 +17,7 @@ from src.utils.string_utils import get_belly_formatted
 
 
 async def validate_trade(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     devil_fruit: DevilFruit,
     seller: User,
@@ -27,7 +27,7 @@ async def validate_trade(
 ) -> bool:
     """
     Validate the trade
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param devil_fruit: The Devil Fruit
     :param seller: The seller
@@ -51,7 +51,7 @@ async def validate_trade(
         await full_message_send(
             context,
             e.message,
-            update=update,
+            event=event,
             inbound_keyboard=inbound_keyboard,
             add_delete_button=add_delete_button,
             show_alert=show_alert,
@@ -62,14 +62,14 @@ async def validate_trade(
 
 
 async def validate_buy(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     buyer: User,
     devil_fruit_trade: DevilFruitTrade,
 ) -> bool:
     """
     Validate the buy action
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param buyer: The buyer
     :param devil_fruit_trade: The Devil Fruit trade
@@ -87,7 +87,7 @@ async def validate_buy(
 
     except DevilFruitTradeValidationException as e:
         await full_message_send(
-            context, e.message, update=update, answer_callback=True, show_alert=True
+            context, e.message, event=event, answer_callback=True, show_alert=True
         )
         return False
 
@@ -95,7 +95,7 @@ async def validate_buy(
 
 
 async def buy(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     buyer: User,
     devil_fruit_trade: DevilFruitTrade,
@@ -104,7 +104,7 @@ async def buy(
 ) -> str | None:
     """
     Buy the Devil Fruit
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param buyer: The buyer
     :param devil_fruit_trade: The Devil Fruit trade
@@ -114,20 +114,20 @@ async def buy(
     """
 
     # Validate the buy
-    if not await validate_buy(update, context, buyer, devil_fruit_trade):
+    if not await validate_buy(event, context, buyer, devil_fruit_trade):
         return
 
     give_devil_fruit_to_user(devil_fruit, buyer, source, devil_fruit_trade=devil_fruit_trade)
 
     # Remove the belly from the buyer
-    await add_or_remove_bounty(buyer, devil_fruit_trade.price, add=False, update=update)
+    await add_or_remove_bounty(buyer, devil_fruit_trade.price, add=False, event=event)
     buyer.save()
 
     # Add the belly to the seller
     await add_or_remove_bounty(
         devil_fruit_trade.giver,
         devil_fruit_trade.price,
-        update=update,
+        event=event,
         tax_event_type=IncomeTaxEventType.DEVIL_FRUIT_SELL,
         event_id=devil_fruit_trade.id,
         should_save=True,

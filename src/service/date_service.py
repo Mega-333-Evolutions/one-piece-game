@@ -538,7 +538,7 @@ def get_duration_from_string(duration: str) -> int:
 
 
 async def validate_duration(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     duration: str,
     add_delete_button: bool = True,
@@ -548,7 +548,7 @@ async def validate_duration(
 ) -> bool:
     """
     Validates the duration
-    :param update: Telegram update
+    :param event: Telegram event
     :param context: Telegram context
     :param duration: The duration
     :param add_delete_button: Whether to add a delete button to the keyboard
@@ -566,7 +566,7 @@ async def validate_duration(
         await full_message_send(
             context,
             phrases.ACTION_INVALID_DURATION,
-            update=update,
+            event=event,
             add_delete_button=add_delete_button,
             inbound_keyboard=inbound_keyboard,
             previous_screens=previous_screens,

@@ -89,11 +89,11 @@ class DevilFruitListPage(ListPage):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the devil_fruit list screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -110,7 +110,7 @@ async def manage(
     direct_item: DevilFruit = devil_fruit_list_page.get_direct_item()
     if direct_item is not None:
         inbound_keyboard.info[ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY] = direct_item.id
-        await manage_screen_devil_fruit_detail(update, context, inbound_keyboard, user)
+        await manage_screen_devil_fruit_detail(event, context, inbound_keyboard, user)
         return
 
     ot_text, items_keyboard = get_items_text_keyboard(
@@ -138,7 +138,7 @@ async def manage(
     await full_message_send(
         context,
         ot_text,
-        update=update,
+        event=event,
         keyboard=items_keyboard,
         inbound_keyboard=inbound_keyboard,
         excluded_keys_from_back_button=[ReservedKeyboardKeys.PAGE],

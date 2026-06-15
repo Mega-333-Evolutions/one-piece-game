@@ -308,10 +308,10 @@ class Crew(BaseModel):
 
         # Else, set to level / 2
         case_stmt = Case(None, conditions, Crew.level / 2)
-        Crew.update(level=case_stmt).execute()
+        Crew.event(level=case_stmt).execute()
 
         # Reset max allowed members and abilities
-        Crew.update(
+        Crew.event(
             max_members=(Env.CREW_MAX_MEMBERS.get_int() + fn.ROUND((Crew.level - 1) / 2)),
             max_abilities=(Env.CREW_MAX_ABILITIES.get_int() + fn.FLOOR((Crew.level - 1) / 2)),
         ).execute()
@@ -372,7 +372,7 @@ class Crew(BaseModel):
         """
 
         raw_query = (
-            "update crew"
+            "event crew"
             " set is_full = IF(((select count(*) from user where crew_id = crew.id) <"
             " crew.max_members), 0, 1)"
             " where true;"

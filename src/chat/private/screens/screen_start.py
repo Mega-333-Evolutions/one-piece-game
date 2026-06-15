@@ -7,10 +7,10 @@ from src.model.pojo.Keyboard import Keyboard
 from src.service.message_service import full_message_send
 
 
-async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def manage(event: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Manage the start screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :return: None
     """
@@ -51,4 +51,4 @@ async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Settings button
     outbound_keyboard.append([Keyboard(phrases.PVT_KEY_SETTINGS, screen=Screen.PVT_SETTINGS)])
 
-    await full_message_send(context, phrases.PVT_TXT_START, update, keyboard=outbound_keyboard)
+    await full_message_send(context, phrases.PVT_TXT_START, event, keyboard=outbound_keyboard)

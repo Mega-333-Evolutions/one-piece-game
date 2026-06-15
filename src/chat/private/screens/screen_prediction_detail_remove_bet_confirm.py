@@ -16,11 +16,11 @@ from src.service.prediction_service import delete_prediction_option_for_user
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the prediction detail screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -32,25 +32,25 @@ async def manage(
         == inbound_keyboard.get(PredictionRemoveBetReservedKeys.PREDICTION_OPTION_ID)
     )
 
-    await validate_and_delete(context, prediction_option, update, user)
+    await validate_and_delete(context, prediction_option, event, user)
 
     # Go back to the prediction detail remove bet screen
     await manage_prediction_detail_remove_bet(
-        update, context, inbound_keyboard, user, called_from_remove_confirm=True
+        event, context, inbound_keyboard, user, called_from_remove_confirm=True
     )
 
 
-async def validate_and_delete(context: ContextTypes.DEFAULT_TYPE, prediction_option, update, user):
+async def validate_and_delete(context: ContextTypes.DEFAULT_TYPE, prediction_option, event, user):
     """
     Validate and delete the prediction option for the user if valid
     :param context: The context
     :param prediction_option: The prediction option
-    :param update: The update
+    :param event: The event
     :param user: The user
     """
 
     try:
-        await validate(update, user, prediction_option=prediction_option)
+        await validate(event, user, prediction_option=prediction_option)
 
         # Delete the prediction option for the user
         await delete_prediction_option_for_user(user, prediction_option)
@@ -59,4 +59,4 @@ async def validate_and_delete(context: ContextTypes.DEFAULT_TYPE, prediction_opt
         ot_text = pe.message
 
     # Show alert message
-    await full_message_send(context, ot_text, update=update, answer_callback=True, show_alert=True)
+    await full_message_send(context, ot_text, event=event, answer_callback=True, show_alert=True)

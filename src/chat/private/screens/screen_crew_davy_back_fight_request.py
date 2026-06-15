@@ -40,11 +40,11 @@ class ScreenReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage this screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -80,17 +80,17 @@ async def manage(
             Env.DAVY_BACK_FIGHT_MAX_LOSE_PENALTY_DURATION.get_int()
         )
 
-    if not await validate(update, context, inbound_keyboard, challenger_crew, opponent_crew):
+    if not await validate(event, context, inbound_keyboard, challenger_crew, opponent_crew):
         return
 
     # Edit item
     if inbound_keyboard.has_key(ReservedKeyboardKeys.SCREEN_STEP_NO_INPUT):
-        await edit_options(update, context, inbound_keyboard, challenger_crew, opponent_crew, user)
+        await edit_options(event, context, inbound_keyboard, challenger_crew, opponent_crew, user)
         return
 
     # Request confirmation
     if ReservedKeyboardKeys.CONFIRM not in inbound_keyboard.info:
-        await request_confirmation(update, context, inbound_keyboard, opponent_crew, user)
+        await request_confirmation(event, context, inbound_keyboard, opponent_crew, user)
         return
 
     # Sending the join request to the crew captain
@@ -104,13 +104,13 @@ async def manage(
     await full_message_send(
         context,
         phrases.CREW_DAVY_BACK_FIGHT_REQUEST_SUCCESS.format(opponent_crew.get_name_escaped()),
-        update=update,
+        event=event,
         inbound_keyboard=inbound_keyboard,
     )
 
 
 async def validate(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
     challenger_crew: Crew,
@@ -119,7 +119,7 @@ async def validate(
 ) -> bool:
     """
     Validate the Davy Back Fight Request
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param challenger_crew: The challenger
@@ -193,7 +193,7 @@ async def validate(
         await full_message_send(
             context,
             str(e),
-            update=update,
+            event=event,
             answer_callback=True,
             show_alert=True,
             inbound_keyboard=inbound_keyboard,
@@ -203,7 +203,7 @@ async def validate(
 
 
 async def edit_options(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
     challenger_crew: Crew,
@@ -212,7 +212,7 @@ async def edit_options(
 ) -> None:
     """
     Edit the Davy Back Fight options
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param challenger_crew: The crew
@@ -256,7 +256,7 @@ async def edit_options(
     await full_message_send(
         context,
         text=text,
-        update=update,
+        event=event,
         keyboard=numeric_keyboard,
         inbound_keyboard=inbound_keyboard,
         user=user,
@@ -265,7 +265,7 @@ async def edit_options(
 
 
 async def request_confirmation(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
     opponent_crew: Crew,
@@ -273,7 +273,7 @@ async def request_confirmation(
 ) -> None:
     """
     Request confirmation to initiate the DBF
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param opponent_crew: The opponent crew
@@ -329,7 +329,7 @@ async def request_confirmation(
     await full_message_send(
         context,
         ot_text,
-        update=update,
+        event=event,
         keyboard=inline_keyboard,
         inbound_keyboard=inbound_keyboard,
         user=user,

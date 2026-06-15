@@ -9,11 +9,11 @@ from src.service.message_service import full_media_send
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, group_chat: GroupChat
+    event: Update, context: ContextTypes.DEFAULT_TYPE, group_chat: GroupChat
 ) -> None:
     """
     Manage the silence screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param group_chat: The group chat
     :return: None
@@ -28,7 +28,7 @@ async def manage(
     await full_media_send(
         context,
         saved_media_name=SavedMediaName.SILENCE,
-        update=update,
+        event=event,
         caption=phrases.SILENCE_ACTIVE,
         add_delete_button=True,
     )

@@ -13,7 +13,7 @@ from src.service.message_service import full_message_send
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
     user: User,
@@ -21,7 +21,7 @@ async def manage(
 ) -> None:
     """
     Manage the bounty loan detail screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -79,7 +79,7 @@ async def manage(
     await full_message_send(
         context,
         bounty_loan_list_page.get_item_detail_text(),
-        update=update,
+        event=event,
         keyboard=bounty_loan_list_page.get_previous_and_next_object_keyboard(inbound_keyboard)
         + inline_keyboard,
         inbound_keyboard=inbound_keyboard,

@@ -22,11 +22,11 @@ class LogTypeReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the log stats detail screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -36,7 +36,7 @@ async def manage(
     log: Log = get_log_by_type(LogType(inbound_keyboard.get(LogTypeReservedKeys.TYPE)))
     log.user = user
 
-    if await validate(update, context, log, user):
+    if await validate(event, context, log, user):
         # For deep linking
         if Screen.PVT_LOGS_TYPE not in inbound_keyboard.previous_screen_list:
             inbound_keyboard.previous_screen_list.append(Screen.PVT_LOGS_TYPE)
@@ -45,13 +45,13 @@ async def manage(
             await full_message_send(
                 context,
                 phrases.LOG_STATS_TEXT.format(log.get_text_fill_in(), log.get_stats_text()),
-                update=update,
+                event=event,
                 inbound_keyboard=inbound_keyboard,
             )
         except AttributeError:
             await full_message_send(
                 context,
                 phrases.LOG_STATS_NOT_ENOUGH_DATA,
-                update=update,
+                event=event,
                 inbound_keyboard=inbound_keyboard,
             )

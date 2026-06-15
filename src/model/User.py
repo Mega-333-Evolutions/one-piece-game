@@ -206,7 +206,7 @@ class User(BaseModel):
             previous_screen_list = None
 
         if previous_screen_list is not None:
-            self.private_screen_step = None  # Will have to update when Skip button is present
+            self.private_screen_step = None  # Will have to event when Skip button is present
             self.private_screen_list = c.STANDARD_SPLIT_CHAR.join(previous_screen_list)
 
         if self.private_screen_list is None or screen is Screen.PVT_START:
@@ -512,18 +512,18 @@ class User(BaseModel):
         )
 
     async def is_chat_admin(
-        self, update: Update = None, context: ContextTypes.DEFAULT_TYPE = None, chat_id: str = None
+        self, event: Update = None, context: ContextTypes.DEFAULT_TYPE = None, chat_id: str = None
     ) -> bool:
         """
         Returns True if the user is an admin of the chat
-        :param update: The update
+        :param event: The event
         :param context: The context
         :param chat_id: The chat id
         :return: True if the user is an admin of the chat
         """
         from src.service.user_service import user_is_chat_admin
 
-        return await user_is_chat_admin(self, update=update, context=context, tg_group_id=chat_id)
+        return await user_is_chat_admin(self, event=event, context=context, tg_group_id=chat_id)
 
     async def is_chat_member(self, context: ContextTypes.DEFAULT_TYPE, chat_id: str):
         """
@@ -842,7 +842,7 @@ class User(BaseModel):
         :return: None
         """
 
-        User.update(can_collect_daily_reward=True).execute()
+        User.event(can_collect_daily_reward=True).execute()
 
 
 User.create_table()

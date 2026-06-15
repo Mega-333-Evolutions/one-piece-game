@@ -41,11 +41,11 @@ REQUIRES_TEXT = [Step.END, Step.SAVE_DESCRIPTION, Step.SAVE_REQUIRED_BOUNTY]
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the crew create screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -64,7 +64,7 @@ async def manage(
     if not should_ignore_input:
         # Validate that the user can create a crew
         if should_create_item:
-            if not await validate(update, context, inbound_keyboard, user):
+            if not await validate(event, context, inbound_keyboard, user):
                 return
             crew = Crew()
         else:
@@ -77,7 +77,7 @@ async def manage(
         try:
             # Step requires a text input
             if step in REQUIRES_TEXT and inbound_keyboard is None:
-                if update.effective_message.text is None:
+                if event.effective_message.text is None:
                     raise CrewValidationException(phrases.STEP_REQUIRES_TEXT)
 
             match step:
@@ -86,9 +86,9 @@ async def manage(
 
                 case Step.END:  # End
                     # Error raised if invalid
-                    validate_crew_name(update.effective_message.text)
+                    validate_crew_name(event.effective_message.text)
 
-                    crew_name = update.effective_message.text
+                    crew_name = event.effective_message.text
                     # Save crew
                     crew.name = crew_name
 
@@ -127,9 +127,9 @@ async def manage(
                         crew.description = None
                     else:
                         # Error raised if invalid
-                        validate_crew_description(update.effective_message.text)
+                        validate_crew_description(event.effective_message.text)
 
-                        crew.description = update.effective_message.text
+                        crew.description = event.effective_message.text
                     ot_text = phrases.CREW_EDIT_DESCRIPTION_SUCCESS
 
                 case Step.REQUEST_REQUIRED_BOUNTY:  # Request crew required bounty
@@ -144,11 +144,11 @@ async def manage(
                     else:
                         # Error raised if invalid
                         await validate_crew_minimum_required_bounty(
-                            update, context, user, update.effective_message.text
+                            event, context, user, event.effective_message.text
                         )
 
                         crew.required_bounty = get_amount_from_string(
-                            update.effective_message.text, user
+                            event.effective_message.text, user
                         )
                     ot_text = phrases.CREW_EDIT_REQUIRED_BOUNTY_SUCCESS
 
@@ -195,7 +195,7 @@ async def manage(
         await full_message_send(
             context,
             str(ot_text),
-            update=update,
+            event=event,
             inbound_keyboard=inbound_keyboard,
             previous_screens=user.get_private_screen_list(),
             keyboard=inline_keyboard,
@@ -203,11 +203,11 @@ async def manage(
 
 
 async def validate(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> bool:
     """
     Validate the crew create screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -234,7 +234,7 @@ async def validate(
         await full_message_send(
             context,
             str(e),
-            update=update,
+            event=event,
             answer_callback=True,
             show_alert=True,
             inbound_keyboard=inbound_keyboard,
@@ -273,11 +273,11 @@ def validate_crew_description(crew_description: str) -> None:
 
 
 async def validate_crew_minimum_required_bounty(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, text: str
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, text: str
 ) -> None:
     """
     Validate the crew required bounty
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param text: The text
@@ -285,7 +285,7 @@ async def validate_crew_minimum_required_bounty(
     """
 
     if not await validate_amount(
-        update,
+        event,
         context,
         user,
         text,

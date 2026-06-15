@@ -26,13 +26,13 @@ from src.utils.string_utils import get_belly_formatted
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
 ) -> None:
     """
     Displays a user's status
-    :param update: Telegram update
+    :param event: Telegram event
     :param context: Telegram context
     :param inbound_keyboard: The inbound keyboard
     :return: None
@@ -73,17 +73,17 @@ async def manage(
     )
 
     await full_message_send(
-        context, ot_text, update=update, keyboard=inline_keyboard, add_delete_button=True
+        context, ot_text, event=event, keyboard=inline_keyboard, add_delete_button=True
     )
 
 
 async def send_prize_request(
-    context: ContextTypes.DEFAULT_TYPE, update: Update, reward: DailyReward
+    context: ContextTypes.DEFAULT_TYPE, event: Update, reward: DailyReward
 ):
     """
     Sends the prize request
     :param context: Telegram context
-    :param update: Telegram update
+    :param event: Telegram event
     :param reward: The reward
     """
 
@@ -132,7 +132,7 @@ async def send_prize_request(
     message: Message = await full_message_send(
         context,
         ot_text,
-        update=update,
+        event=event,
         keyboard=inline_keyboard,
     )
 

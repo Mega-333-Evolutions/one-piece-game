@@ -14,11 +14,11 @@ from src.service.user_service import user_is_boss
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the log type screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -26,7 +26,7 @@ async def manage(
     """
 
     log: Log = get_log_by_type(LogType(inbound_keyboard.info[LogTypeReservedKeys.TYPE]))
-    if await validate(update, context, log, user):
+    if await validate(event, context, log, user):
         log.user = user
 
         ot_text, items_keyboard = get_items_text_keyboard(
@@ -55,7 +55,7 @@ async def manage(
         await full_message_send(
             context,
             ot_text,
-            update=update,
+            event=event,
             keyboard=items_keyboard,
             inbound_keyboard=inbound_keyboard,
             excluded_keys_from_back_button=[ReservedKeyboardKeys.PAGE],
@@ -63,20 +63,20 @@ async def manage(
 
 
 async def validate(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, log: Log, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, log: Log, user: User
 ) -> bool:
     """
     Validate the log type screen
 
     :param context: The context
-    :param update: The update
+    :param event: The event
     :param log: The log
     :param user: The user
     :return: True if the validation is successful, False otherwise
     """
 
     if log.only_by_boss and not user_is_boss(user):
-        await full_message_send(context, phrases.COMMAND_ONLY_BY_BOSS_ERROR, update=update)
+        await full_message_send(context, phrases.COMMAND_ONLY_BY_BOSS_ERROR, event=event)
         return False
 
     return True

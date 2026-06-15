@@ -25,12 +25,12 @@ from src.service.message_service import full_message_send, get_yes_no_keyboard, 
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage this screen
 
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -43,12 +43,12 @@ async def manage(
 
     crew: Crew = Crew.logical_get(inbound_keyboard.get(ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY))
 
-    if not await validate(update, context, inbound_keyboard, crew, user):
+    if not await validate(event, context, inbound_keyboard, crew, user):
         return
 
     # Not confirmed, show the confirmation screen
     if ReservedKeyboardKeys.CONFIRM not in inbound_keyboard.info:
-        await request_confirmation(update, context, inbound_keyboard, crew)
+        await request_confirmation(event, context, inbound_keyboard, crew)
         return
 
     # Sending the join request to the crew captain
@@ -57,17 +57,17 @@ async def manage(
     await full_message_send(
         context,
         phrases.CREW_SEARCH_JOIN_SUCCESS.format(crew.get_name_escaped()),
-        update=update,
+        event=event,
         inbound_keyboard=inbound_keyboard,
     )
 
 
 async def request_confirmation(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, crew: Crew
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, crew: Crew
 ) -> None:
     """
     Request confirmation to join crew
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param inbound_keyboard: The inbound keyboard
     :param crew: The crew object
@@ -91,14 +91,14 @@ async def request_confirmation(
     await full_message_send(
         context,
         ot_text,
-        update=update,
+        event=event,
         keyboard=inline_keyboard,
         inbound_keyboard=inbound_keyboard,
     )
 
 
 async def validate(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
     crew: Crew,
@@ -106,7 +106,7 @@ async def validate(
 ) -> bool:
     """
     Validate the crew level up screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param crew: The crew
@@ -161,7 +161,7 @@ async def validate(
         await full_message_send(
             context,
             str(e),
-            update=update,
+            event=event,
             answer_callback=True,
             show_alert=True,
             inbound_keyboard=inbound_keyboard,

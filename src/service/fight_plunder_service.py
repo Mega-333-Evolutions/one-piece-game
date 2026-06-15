@@ -103,18 +103,18 @@ def get_scout_fee(user: User, is_group: bool, scout_type: ScoutType) -> int:
 
 
 async def group_send_scout_request(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, scout_type: ScoutType
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, scout_type: ScoutType
 ) -> None:
     """
     Send request to confirm fight
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param scout_type: The scout type
     :return: None
     """
 
-    opponent: User = get_opponent(update)
+    opponent: User = get_opponent(event)
     caption = phrases.FIGHT_PLUNDER_SCOUT_USER_GROUP.format(
         opponent.get_markdown_mention(),
         get_belly_formatted(get_scout_fee(user, False, scout_type)),
@@ -135,7 +135,7 @@ async def group_send_scout_request(
     await full_media_send(
         context,
         saved_media_name=SavedMediaName.FIGHT_PLUNDER_SCOUT,
-        update=update,
+        event=event,
         caption=caption,
         keyboard=inline_keyboard,
         add_delete_button=True,
@@ -144,7 +144,7 @@ async def group_send_scout_request(
 
 
 async def private_send_scout_request(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     scout_type: ScoutType,
@@ -154,7 +154,7 @@ async def private_send_scout_request(
 ) -> None:
     """
     Send request to confirm fight
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param scout_type: The scout type
@@ -273,7 +273,7 @@ async def private_send_scout_request(
     await full_media_send(
         context,
         saved_media_name=SavedMediaName.FIGHT_PLUNDER_SCOUT,
-        update=update,
+        event=event,
         caption=caption,
         keyboard=inline_keyboard,
         add_delete_button=True,
@@ -284,18 +284,18 @@ async def private_send_scout_request(
 
 
 async def private_send_no_opponent_found(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
+    event: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     """
     Send no opponent found message
-    :param update: The update
+    :param event: The event
     :param context: The context
     :return: None
     """
     await full_media_send(
         context,
         saved_media_name=SavedMediaName.FIGHT_PLUNDER_SCOUT,
-        update=update,
+        event=event,
         caption=phrases.FIGHT_PLUNDER_SCOUT_NO_OPPONENT_FOUND,
         add_delete_button=True,
         ignore_bad_request_exception=True,
@@ -303,7 +303,7 @@ async def private_send_no_opponent_found(
 
 
 async def private_manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     inbound_keyboard: Keyboard,
@@ -311,7 +311,7 @@ async def private_manage(
 ) -> None:
     """
     Manage the fight request
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -327,7 +327,7 @@ async def private_manage(
     if not inbound_keyboard.has_key(ReservedKeyboardKeys.CONFIRM) and not inbound_keyboard.has_key(
         FightPlunderReservedKeys.OPPONENT_ID
     ):
-        await private_send_scout_request(update, context, user, scout_type, True, inbound_keyboard)
+        await private_send_scout_request(event, context, user, scout_type, True, inbound_keyboard)
         return
 
     # Next scout, confirm in the keyboard and no opponent
@@ -341,12 +341,12 @@ async def private_manage(
 
         opponent = find_random_opponent(user, used_user_ids, scout_type)
         if opponent is None:
-            await private_send_no_opponent_found(update, context)
+            await private_send_no_opponent_found(event, context)
             return
 
         # Send the opponent with recap
         await private_send_scout_request(
-            update, context, user, scout_type, True, inbound_keyboard, opponent
+            event, context, user, scout_type, True, inbound_keyboard, opponent
         )
         return
 
@@ -357,9 +357,9 @@ async def private_manage(
         and not inbound_keyboard.has_key(FightPlunderReservedKeys.ITEM_ID)
     ):
         if scout_type is scout_type.FIGHT:
-            await fight_send_request(update, context, user, inbound_keyboard)
+            await fight_send_request(event, context, user, inbound_keyboard)
         else:
-            await plunder_send_request(update, context, user, inbound_keyboard)
+            await plunder_send_request(event, context, user, inbound_keyboard)
         return
 
     # Fight confirmation, confirm and fight in keyboard
@@ -367,24 +367,24 @@ async def private_manage(
         FightPlunderReservedKeys.ITEM_ID
     ):
         if scout_type is scout_type.FIGHT:
-            await fight_confirm_request(update, context, user, inbound_keyboard)
+            await fight_confirm_request(event, context, user, inbound_keyboard)
         else:
-            await plunder_confirm_request(update, context, user, inbound_keyboard)
+            await plunder_confirm_request(event, context, user, inbound_keyboard)
         return
 
     raise ValueError("Invalid keyboard")
 
 
-def get_opponent(update: Update = None, keyboard: Keyboard = None) -> User | None:
+def get_opponent(event: Update = None, keyboard: Keyboard = None) -> User | None:
     """
-    Get opponent from update or keyboard
-    :param update: The update object. If None, the opponent is taken from the keyboard
-    :param keyboard: The keyboard object. If None, the opponent is taken from the update
+    Get opponent from event or keyboard
+    :param event: The event object. If None, the opponent is taken from the keyboard
+    :param keyboard: The keyboard object. If None, the opponent is taken from the event
     :return: The opponent object
     """
 
-    if update.callback_query is None:
-        return User.get_or_none(User.tg_user_id == update.message.reply_to_message.from_user.id)
+    if event.callback_query is None:
+        return User.get_or_none(User.tg_user_id == event.message.reply_to_message.from_user.id)
 
     return User.get_by_id(int(keyboard.get_int(FightPlunderReservedKeys.OPPONENT_ID)))
 
@@ -396,13 +396,13 @@ def decrease_scout_count():
     """
 
     (
-        User.update(fight_scout_count=User.fight_scout_count - 1)
+        User.event(fight_scout_count=User.fight_scout_count - 1)
         .where(User.fight_scout_count > 0)
         .execute()
     )
 
     (
-        User.update(plunder_scout_count=User.plunder_scout_count - 1)
+        User.event(plunder_scout_count=User.plunder_scout_count - 1)
         .where(User.plunder_scout_count > 0)
         .execute()
     )
@@ -554,7 +554,7 @@ def fight_get_odds(challenger: User, opponent: User) -> tuple[float, int, int, i
 # noinspection DuplicatedCode
 # Duplicated by plunder validate
 async def fight_validate(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     is_group: bool,
@@ -562,7 +562,7 @@ async def fight_validate(
 ) -> bool:
     """
     Validate the fight request
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param is_group: If the fight is for a group
@@ -575,7 +575,7 @@ async def fight_validate(
 
     # If not query callback
     fight: Fight | None = None
-    if update.callback_query is not None and keyboard.has_key(FightPlunderReservedKeys.ITEM_ID):
+    if event.callback_query is not None and keyboard.has_key(FightPlunderReservedKeys.ITEM_ID):
         fight: Fight = Fight.get_or_none(
             Fight.id == int(keyboard.info[FightPlunderReservedKeys.ITEM_ID])
         )
@@ -600,7 +600,7 @@ async def fight_validate(
                 get_elapsed_duration(attack_fight.date),
             )
             await full_message_or_media_send_or_edit(
-                context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True
+                context, ot_text, event, add_delete_button=True, ignore_bad_request_exception=True
             )
             return False
 
@@ -610,7 +610,7 @@ async def fight_validate(
                 Log.get_deeplink_by_type(LogType.FIGHT, attack_fight.id)
             )
             await full_message_or_media_send_or_edit(
-                context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True
+                context, ot_text, event, add_delete_button=True, ignore_bad_request_exception=True
             )
             return False
 
@@ -624,7 +624,7 @@ async def fight_validate(
             (user.fight_cooldown_end_date - datetime.datetime.now()).total_seconds()
         )
         ot_text = phrases.FIGHT_USER_IN_COOLDOWN.format(remaining_time)
-        await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True)
+        await full_message_or_media_send_or_edit(context, ot_text, event, add_delete_button=True, ignore_bad_request_exception=True)
         return False
 
     # User does not have enough amount to scout
@@ -635,7 +635,7 @@ async def fight_validate(
             if is_group
             else phrases.FIGHT_PLUNDER_PRIVATE_INSUFFICIENT_SCOUT_BOUNTY
         ).format(get_belly_formatted(scout_fee), user.get_bounty_formatted())
-        await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True)
+        await full_message_or_media_send_or_edit(context, ot_text, event, add_delete_button=True, ignore_bad_request_exception=True)
         return False
 
     # Opponent not yet available
@@ -645,7 +645,7 @@ async def fight_validate(
     # Opponent validation
     try:
         # Get opponent
-        opponent: User = get_opponent(update, keyboard)
+        opponent: User = get_opponent(event, keyboard)
 
         # If opponent is not found, send error
         if opponent is None:
@@ -665,10 +665,10 @@ async def fight_validate(
 
     except OpponentValidationException as ove:
         if ove.message is not None:
-            await full_message_or_media_send_or_edit(context, ove.message, update, ignore_bad_request_exception=True)
+            await full_message_or_media_send_or_edit(context, ove.message, event, ignore_bad_request_exception=True)
         else:
             await full_message_or_media_send_or_edit(
-                context, phrases.FIGHT_CANNOT_FIGHT_USER, update=update, add_delete_button=True, ignore_bad_request_exception=True
+                context, phrases.FIGHT_CANNOT_FIGHT_USER, event=event, add_delete_button=True, ignore_bad_request_exception=True
             )
         return False
 
@@ -676,7 +676,7 @@ async def fight_validate(
 
 
 async def fight_send_request(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     keyboard: Keyboard,
@@ -684,7 +684,7 @@ async def fight_send_request(
 ) -> None:
     """
     Send request to confirm fight
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param keyboard: The keyboard
@@ -705,7 +705,7 @@ async def fight_send_request(
         await delete_item_in_chat(context, previous_fight, group_chat, chat_id=user.tg_user_id)
 
     # Get opponent
-    opponent: User = get_opponent(update, keyboard)
+    opponent: User = get_opponent(event, keyboard)
     win_probability, win_amount, lose_amount, final_bounty_if_win, final_bounty_if_lose = (
         fight_get_odds(user, opponent)
     )
@@ -781,7 +781,7 @@ async def fight_send_request(
     message: Message | bool = await full_media_send(
         context,
         saved_media_name=SavedMediaName.FIGHT,
-        update=update,
+        event=event,
         caption=caption,
         keyboard=inline_keyboard,
         ignore_bad_request_exception=True,
@@ -794,7 +794,7 @@ async def fight_send_request(
 
 # noinspection DuplicatedCode
 async def fight_confirm_request(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     inbound_keyboard: Keyboard,
@@ -802,7 +802,7 @@ async def fight_confirm_request(
 ) -> None:
     """
     Keyboard interaction
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param inbound_keyboard: The keyboard
@@ -823,7 +823,7 @@ async def fight_confirm_request(
         if group_chat is not None:
             # Answer callback with retreat message
             await full_message_send(
-                context, phrases.FIGHT_CONFIRMATION_RETREAT, update, answer_callback=True
+                context, phrases.FIGHT_CONFIRMATION_RETREAT, event, answer_callback=True
             )
             return await delete_item_in_chat(context, fight, group_chat)
 
@@ -832,11 +832,11 @@ async def fight_confirm_request(
 
         # In private chat from revenge, delete message
         if is_revenge:
-            return await delete_message(update=update)
+            return await delete_message(event=event)
 
         # Back to scouting
         return await private_send_scout_request(
-            update, context, user, ScoutType.FIGHT, False, inbound_keyboard, opponent
+            event, context, user, ScoutType.FIGHT, False, inbound_keyboard, opponent
         )
 
     opponent: User = fight.opponent
@@ -862,7 +862,7 @@ async def fight_confirm_request(
                 user,
                 win_amount,
                 context=context,
-                update=update,
+                event=event,
                 tax_event_type=IncomeTaxEventType.FIGHT,
                 event_id=fight.id,
                 should_save=True,
@@ -870,7 +870,7 @@ async def fight_confirm_request(
             )
             # Remove bounty from opponent
             await add_or_remove_bounty(
-                opponent, win_amount, add=False, update=update, should_save=True
+                opponent, win_amount, add=False, event=event, should_save=True
             )
         caption = phrases.FIGHT_WIN.format(
             mention_markdown_v2(user.tg_user_id, "you"),
@@ -884,13 +884,13 @@ async def fight_confirm_request(
         fight.belly = lose_amount
         if lose_amount > 0:
             # Remove bounty from challenger
-            await add_or_remove_bounty(user, lose_amount, add=False, update=update, should_save=True)
+            await add_or_remove_bounty(user, lose_amount, add=False, event=event, should_save=True)
             # Add bounty to opponent
             await add_or_remove_bounty(
                 opponent,
                 lose_amount,
                 context=context,
-                update=update,
+                event=event,
                 tax_event_type=IncomeTaxEventType.FIGHT,
                 event_id=fight.id,
                 should_save=True,
@@ -949,7 +949,7 @@ async def fight_confirm_request(
     await full_media_send(
         context,
         caption=caption,
-        update=update,
+        event=event,
         add_delete_button=True,
         edit_only_caption_and_keyboard=True,
         delete_button_text=delete_button_text,
@@ -1011,7 +1011,7 @@ def plunder_get_odds(
 # noinspection DuplicatedCode
 # Duplicated by plunder validate
 async def plunder_validate(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     is_group: bool,
@@ -1019,7 +1019,7 @@ async def plunder_validate(
 ) -> bool:
     """
     Validate the plunder request
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param is_group: If the plunder is for a group
@@ -1032,7 +1032,7 @@ async def plunder_validate(
 
     # If not query callback
     plunder: Plunder | None = None
-    if update.callback_query is not None and keyboard.has_key(FightPlunderReservedKeys.ITEM_ID):
+    if event.callback_query is not None and keyboard.has_key(FightPlunderReservedKeys.ITEM_ID):
         plunder: Plunder = Plunder.get_or_none(
             Plunder.id == int(keyboard.info[FightPlunderReservedKeys.ITEM_ID])
         )
@@ -1057,7 +1057,7 @@ async def plunder_validate(
                 get_elapsed_duration(attack_plunder.date),
             )
             await full_message_or_media_send_or_edit(
-                context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True
+                context, ot_text, event, add_delete_button=True, ignore_bad_request_exception=True
             )
             return False
 
@@ -1067,7 +1067,7 @@ async def plunder_validate(
                 Log.get_deeplink_by_type(LogType.PLUNDER, attack_plunder.id)
             )
             await full_message_or_media_send_or_edit(
-                context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True
+                context, ot_text, event, add_delete_button=True, ignore_bad_request_exception=True
             )
             return False
 
@@ -1081,7 +1081,7 @@ async def plunder_validate(
             (user.plunder_cooldown_end_date - datetime.datetime.now()).total_seconds()
         )
         ot_text = phrases.PLUNDER_USER_IN_COOLDOWN.format(remaining_time)
-        await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True)
+        await full_message_or_media_send_or_edit(context, ot_text, event, add_delete_button=True, ignore_bad_request_exception=True)
         return False
 
     # User does not have enough amount to scout
@@ -1092,7 +1092,7 @@ async def plunder_validate(
             if is_group
             else phrases.FIGHT_PLUNDER_PRIVATE_INSUFFICIENT_SCOUT_BOUNTY
         ).format(get_belly_formatted(scout_fee), user.get_bounty_formatted())
-        await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True)
+        await full_message_or_media_send_or_edit(context, ot_text, event, add_delete_button=True, ignore_bad_request_exception=True)
         return False
 
     # Opponent not yet available
@@ -1102,7 +1102,7 @@ async def plunder_validate(
     # Opponent validation
     try:
         # Get opponent
-        opponent: User = get_opponent(update, keyboard)
+        opponent: User = get_opponent(event, keyboard)
 
         # If opponent is not found, send error
         if opponent is None:
@@ -1122,10 +1122,10 @@ async def plunder_validate(
 
     except OpponentValidationException as ove:
         if ove.message is not None:
-            await full_message_or_media_send_or_edit(context, ove.message, update, ignore_bad_request_exception=True)
+            await full_message_or_media_send_or_edit(context, ove.message, event, ignore_bad_request_exception=True)
         else:
             await full_message_or_media_send_or_edit(
-                context, phrases.PLUNDER_CANNOT_PLUNDER_USER, update=update, add_delete_button=True, ignore_bad_request_exception=True
+                context, phrases.PLUNDER_CANNOT_PLUNDER_USER, event=event, add_delete_button=True, ignore_bad_request_exception=True
             )
         return False
 
@@ -1133,7 +1133,7 @@ async def plunder_validate(
 
 
 async def plunder_send_request(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     keyboard: Keyboard,
@@ -1141,7 +1141,7 @@ async def plunder_send_request(
 ) -> None:
     """
     Send request to confirm plunder
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param keyboard: The keyboard
@@ -1161,7 +1161,7 @@ async def plunder_send_request(
         await delete_item_in_chat(context, previous_plunder, group_chat, chat_id=user.tg_user_id)
 
     # Get opponent
-    opponent: User = get_opponent(update, keyboard)
+    opponent: User = get_opponent(event, keyboard)
     (
         win_probability,
         win_amount,
@@ -1231,7 +1231,7 @@ async def plunder_send_request(
     message: Message | bool = await full_media_send(
         context,
         saved_media_name=SavedMediaName.PLUNDER,
-        update=update,
+        event=event,
         caption=caption,
         keyboard=inline_keyboard,
         ignore_bad_request_exception=True,
@@ -1244,7 +1244,7 @@ async def plunder_send_request(
 
 # noinspection DuplicatedCode
 async def plunder_confirm_request(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     inbound_keyboard: Keyboard,
@@ -1252,7 +1252,7 @@ async def plunder_confirm_request(
 ) -> None:
     """
     Keyboard interaction
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param inbound_keyboard: The keyboard
@@ -1275,19 +1275,19 @@ async def plunder_confirm_request(
         if group_chat is not None:
             # Answer callback with retreat message
             await full_message_send(
-                context, phrases.FIGHT_CONFIRMATION_RETREAT, update, answer_callback=True
+                context, phrases.FIGHT_CONFIRMATION_RETREAT, event, answer_callback=True
             )
             return await delete_item_in_chat(context, plunder, group_chat)
 
         # In private chat from revenge, delete message
         if is_revenge:
-            return await delete_message(update=update)
+            return await delete_message(event=event)
 
         # Back to scouting
         opponent: User = plunder.opponent
         plunder.delete_instance()
         return await private_send_scout_request(
-            update, context, user, ScoutType.PLUNDER, False, inbound_keyboard, opponent
+            event, context, user, ScoutType.PLUNDER, False, inbound_keyboard, opponent
         )
 
     opponent: User = plunder.opponent
@@ -1323,7 +1323,7 @@ async def plunder_confirm_request(
                 user,
                 win_amount,
                 context=context,
-                update=update,
+                event=event,
                 tax_event_type=IncomeTaxEventType.PLUNDER,
                 event_id=plunder.id,
                 should_save=True,
@@ -1331,7 +1331,7 @@ async def plunder_confirm_request(
             )
             # Remove bounty from opponent
             await add_or_remove_bounty(
-                opponent, win_amount, add=False, update=update, should_save=True
+                opponent, win_amount, add=False, event=event, should_save=True
             )
         caption = phrases.PLUNDER_WIN.format(
             user.get_you_markdown_mention(),
@@ -1430,7 +1430,7 @@ async def plunder_confirm_request(
         context,
         saved_media_name=saved_media_name,
         caption=caption,
-        update=update,
+        event=event,
         add_delete_button=True,
         delete_button_text=delete_button_text,
         keyboard=inline_keyboard,

@@ -41,7 +41,7 @@ class GameRRReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     inbound_keyboard: Keyboard,
@@ -51,19 +51,19 @@ async def manage(
 ) -> None:
     """
     Manage the Russian Roulette screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The inbound keyboard
     :param game: The game object
     :param is_auto_move: If the interaction is from auto move
     :param edit_message_id: Message to be edited. Useful for when a user does not interact with the private game before
-        auto-move is triggered, since the message tied with the update would be the start command
+        auto-move is triggered, since the message tied with the event would be the start command
     :return: None
     """
 
     # Get the game from validation, will handle error messages
-    game = await game_service.validate_game(update, context, inbound_keyboard, game)
+    game = await game_service.validate_game(event, context, inbound_keyboard, game)
     if game is None:
         return
 
@@ -76,13 +76,13 @@ async def manage(
     game.last_interaction_date = datetime.now()
 
     # Not invoked from opponent confirmation
-    if inbound_keyboard.screen == get_screen(update):
+    if inbound_keyboard.screen == get_screen(event):
         # Not user's turn
         if not game.is_global() and not board.is_user_turn(user, game):
             await full_message_send(
                 context,
                 phrases.GAME_NOT_YOUR_TURN,
-                update=update,
+                event=event,
                 answer_callback=True,
                 show_alert=True,
             )
@@ -94,7 +94,7 @@ async def manage(
             await full_message_send(
                 context,
                 phrases.RUSSIAN_ROULETTE_GAME_CHAMBER_ALREADY_FIRED,
-                update=update,
+                event=event,
                 answer_callback=True,
                 show_alert=True,
             )
@@ -105,7 +105,7 @@ async def manage(
             await full_message_send(
                 context,
                 phrases.GAME_GLOBAL_WAIT_FOR_OPPONENT,
-                update=update,
+                event=event,
                 answer_callback=True,
                 show_alert=True,
             )
@@ -118,7 +118,7 @@ async def manage(
             await full_message_send(
                 context,
                 get_choice_text(board.bullet_is_fired()),
-                update=update,
+                event=event,
                 answer_callback=True,
             )
 
@@ -134,7 +134,7 @@ async def manage(
             game,
             game_outcome,
             context,
-            update=update,
+            event=event,
             send_outcome_to_user=(
                 game.get_other_player(user) if (game.is_global() or is_auto_move) else None
             ),
@@ -145,8 +145,8 @@ async def manage(
         message: Message = await full_media_send(
             context,
             caption=get_specific_text(game, board, user, other_board),
-            update=update,
-            keyboard=get_outbound_keyboard(context, game, board, update, user),
+            event=event,
+            keyboard=get_outbound_keyboard(context, game, board, event, user),
             authorized_users=game.get_players(),
             edit_only_caption_and_keyboard=True,
             edit_message_id=edit_message_id,
@@ -162,13 +162,13 @@ async def manage(
                     message.id,
                     get_specific_text(game, challenger_board, game.challenger, opponent_board),
                     get_specific_text(game, opponent_board, game.opponent, challenger_board),
-                    get_outbound_keyboard(context, game, other_board, update, user),
+                    get_outbound_keyboard(context, game, other_board, event, user),
                 )
             )
 
         return
 
-    if inbound_keyboard.screen == get_screen(update) and not game.is_global():
+    if inbound_keyboard.screen == get_screen(event) and not game.is_global():
         # Update turn only on regular interaction
         board.set_turn()
 
@@ -176,8 +176,8 @@ async def manage(
     message: Message = await full_media_send(
         context,
         caption=get_specific_text(game, board, user, other_board),
-        update=update,
-        keyboard=get_outbound_keyboard(context, game, board, update, user),
+        event=event,
+        keyboard=get_outbound_keyboard(context, game, board, event, user),
         authorized_users=game.get_players(),
         saved_media_name=SavedMediaName.GAME_RUSSIAN_ROULETTE,
         edit_message_id=edit_message_id,
@@ -193,7 +193,7 @@ async def manage(
                 message.id,
                 get_specific_text(game, challenger_board, game.challenger, opponent_board),
                 get_specific_text(game, opponent_board, game.opponent, challenger_board),
-                get_outbound_keyboard(context, game, other_board, update, user),
+                get_outbound_keyboard(context, game, other_board, event, user),
             )
         )
 
@@ -208,7 +208,7 @@ async def manage(
         # Group game, arriving from opponent confirmation, auto move for both
         context.application.create_task(
             enqueue_auto_move(
-                update, context, game, board.get_user_turn(game), auto_move, message.id
+                event, context, game, board.get_user_turn(game), auto_move, message.id
             )
         )
 
@@ -249,7 +249,7 @@ def get_outbound_keyboard(
     context: ContextTypes.DEFAULT_TYPE,
     game: Game,
     russian_roulette: RussianRoulette,
-    update: Update,
+    event: Update,
     user: User,
 ) -> list[list[Keyboard]]:
     """
@@ -257,7 +257,7 @@ def get_outbound_keyboard(
     :param context: The context
     :param game: The game object
     :param russian_roulette: The russian roulette object
-    :param update: The update
+    :param event: The event
     :param user: The user
     :return: The outbound keyboard
     """
@@ -293,7 +293,7 @@ def get_outbound_keyboard(
                     else:
                         emoji = Emoji.FIRED_EMPTY_CHAMBER
 
-                keyboard_line.append(Keyboard(emoji, info=button_info, screen=get_screen(update)))
+                keyboard_line.append(Keyboard(emoji, info=button_info, screen=get_screen(event)))
 
         outbound_keyboard.append(keyboard_line)
 
@@ -409,21 +409,21 @@ def get_specific_text(
     )
 
 
-def get_screen(update: Update) -> Screen:
+def get_screen(event: Update) -> Screen:
     """
     Get the screen
-    :param update: The update object
+    :param event: The event object
     :return: The screen
     """
 
-    if get_message_source(update) is MessageSource.GROUP:
+    if get_message_source(event) is MessageSource.GROUP:
         return Screen.GRP_RUSSIAN_ROULETTE_GAME
 
     return Screen.PVT_RUSSIAN_ROULETTE_GAME
 
 
 async def auto_move(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     game: Game,
     player: User,
@@ -432,7 +432,7 @@ async def auto_move(
 ) -> None:
     """
     Auto-move for the given player
-    :param update: The update
+    :param event: The event
     :param context: The context object
     :param game: The game object
     :param player: The player object
@@ -459,10 +459,10 @@ async def auto_move(
             GameRRReservedKeys.GAME_ID: game.id,
             GameRRReservedKeys.POSITION: (board.bullet_x, board.bullet_y),
         },
-        screen=get_screen(update),
+        screen=get_screen(event),
     )
 
     player = User.get_by_id(player.id)  # Refresh
     await manage(
-        update, context, player, mock_keyboard, game, is_auto_move=True, edit_message_id=message_id
+        event, context, player, mock_keyboard, game, is_auto_move=True, edit_message_id=message_id
     )

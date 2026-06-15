@@ -27,11 +27,11 @@ class Step(IntEnum):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the place bet send amount screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -54,7 +54,7 @@ async def manage(
             )
 
         try:
-            amount = update.message.text
+            amount = event.message.text
         except AttributeError:
             amount = None
 
@@ -65,7 +65,7 @@ async def manage(
         }
 
         validation_tuple = await validate(
-            update,
+            event,
             context,
             user,
             amount=amount,
@@ -114,7 +114,7 @@ async def manage(
         await full_message_send(
             context,
             str(ot_text),
-            update=update,
+            event=event,
             inbound_keyboard=inbound_keyboard,
             previous_screens=previous_screens,
             previous_screen_list_keyboard_info=previous_screen_list_keyboard_info,

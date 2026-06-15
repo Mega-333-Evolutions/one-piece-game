@@ -48,14 +48,14 @@ class BountyLoan(BaseModel):
     class Meta:
         db_table = "bounty_loan"
 
-    async def pay(self, amount: int, update: Update = None):
+    async def pay(self, amount: int, event: Update = None):
         from src.service.bounty_service import add_or_remove_bounty
         from src.service.date_service import datetime_is_before
 
         """
         Pay the loan
         :param amount: The amount to pay
-        :param update: The update object
+        :param event: The event object
         :return: None
         """
         if amount > self.get_remaining_amount():
@@ -70,12 +70,12 @@ class BountyLoan(BaseModel):
         # Subtract from borrower's bounty
         # noinspection PyTypeChecker
         await add_or_remove_bounty(
-            self.borrower, amount, add=False, update=update, raise_error_if_negative_bounty=False
+            self.borrower, amount, add=False, event=event, raise_error_if_negative_bounty=False
         )
 
         # Add to loaner's bounty
         # noinspection PyTypeChecker
-        await add_or_remove_bounty(self.loaner, amount, check_for_loan=False, update=update)
+        await add_or_remove_bounty(self.loaner, amount, check_for_loan=False, event=event)
 
         self.borrower.save()
         self.loaner.save()

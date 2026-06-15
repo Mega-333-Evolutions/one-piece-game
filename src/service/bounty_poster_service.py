@@ -18,11 +18,11 @@ from src.utils.download_utils import generate_temp_file_path
 
 
 async def get_bounty_poster(
-    update: Update, user: User, telegram_user=None
+    event: Update, user: User, telegram_user=None
 ) -> str:
     """
     Gets the bounty poster of a user
-    :param update: Telegram update
+    :param event: Telegram event
     :param user: The user to get the poster of
     :param telegram_user: Optional Telegram user to fetch the portrait for
     :return: The path to the poster
@@ -36,7 +36,7 @@ async def get_bounty_poster(
     poster_last_name = (user.tg_last_name or "").strip()
 
     wanted_poster = WantedPoster(
-        portrait=await get_user_profile_photo(update, telegram_user),
+        portrait=await get_user_profile_photo(event, telegram_user),
         first_name=poster_last_name,
         last_name=poster_first_name,
         bounty=user.bounty,
@@ -107,7 +107,7 @@ async def reset_bounty_poster_limit(reset_previous_leaderboard: bool = False) ->
             LeaderboardUser.leaderboard == previous_leaderboard
         )
         if previous_leaderboard is not None:
-            User.update(bounty_poster_limit=0).where(
+            User.event(bounty_poster_limit=0).where(
                 User.id.in_(previous_leaderboard_users_id)
             ).execute()
 
@@ -117,6 +117,6 @@ async def reset_bounty_poster_limit(reset_previous_leaderboard: bool = False) ->
         for leaderboard_user in current_leaderboard.leaderboard_users:
             leaderboard_user: LeaderboardUser = leaderboard_user
 
-            User.update(bounty_poster_limit=get_bounty_poster_limit(leaderboard_user)).where(
+            User.event(bounty_poster_limit=get_bounty_poster_limit(leaderboard_user)).where(
                 User.id == leaderboard_user.user
             ).execute()

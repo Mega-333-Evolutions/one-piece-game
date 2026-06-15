@@ -23,11 +23,11 @@ class ScreenReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -46,7 +46,7 @@ async def manage(
         await full_message_send(
             context,
             phrases.RESET_SUCCESSFUL,
-            update=update,
+            event=event,
             answer_callback=True,
         )
         inbound_keyboard.info.pop(ReservedKeyboardKeys.RESET)
@@ -92,7 +92,7 @@ async def manage(
             await full_message_send(
                 context,
                 phrases.SWAP_SUCCESSFUL,
-                update=update,
+                event=event,
                 answer_callback=True,
             )
 
@@ -161,7 +161,7 @@ async def manage(
             phrases.CREW_EDIT_DAVY_BACK_FIGHT_PRIORITY.format(
                 overview_text, items_text, explanation_text
             ),
-            update=update,
+            event=event,
             keyboard=inline_keyboard,
             inbound_keyboard=inbound_keyboard,
         )

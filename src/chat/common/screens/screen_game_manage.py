@@ -41,7 +41,7 @@ from src.service.game_service import (
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
     user: User,
@@ -50,7 +50,7 @@ async def manage(
 ) -> None:
     """
     Manage guessing games
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -60,7 +60,7 @@ async def manage(
     """
 
     # Get the game from validation, will handle error messages
-    game = await validate_game(update, context, inbound_keyboard, game)
+    game = await validate_game(event, context, inbound_keyboard, game)
     if game is None:
         return
 
@@ -86,7 +86,7 @@ async def manage(
     if should_start_immediately:
         # No need to set status, since countdown time is 0, it will be set immediately to IN_PROGRESS
         context.application.create_task(
-            guess_game_countdown_to_start(update, context, game, 0, run_game_function, user)
+            guess_game_countdown_to_start(event, context, game, 0, run_game_function, user)
         )
         return
 
@@ -96,7 +96,7 @@ async def manage(
         game.save()
         context.application.create_task(
             guess_game_countdown_to_start(
-                update, context, game, Env.GAME_START_WAIT_TIME.get_int(), run_game_function, user
+                event, context, game, Env.GAME_START_WAIT_TIME.get_int(), run_game_function, user
             )
         )
         return
@@ -110,7 +110,7 @@ async def manage(
 
 
 async def dispatch_game(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     inbound_keyboard: Keyboard,
@@ -119,7 +119,7 @@ async def dispatch_game(
 ) -> None:
     """
     Dispatch game
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param inbound_keyboard: The inbound keyboard
@@ -138,16 +138,16 @@ async def dispatch_game(
     game_type: GameType = GameType(game.type)
     match game_type:
         case GameType.ROCK_PAPER_SCISSORS:
-            await manage_rps(update, context, user, inbound_keyboard, game)
+            await manage_rps(event, context, user, inbound_keyboard, game)
 
         case GameType.RUSSIAN_ROULETTE:
-            await manage_rr(update, context, user, inbound_keyboard, game)
+            await manage_rr(event, context, user, inbound_keyboard, game)
 
         case (
             GameType.SHAMBLES | GameType.WHOS_WHO | GameType.GUESS_OR_LIFE | GameType.PUNK_RECORDS
         ):
             await manage(
-                update,
+                event,
                 context,
                 inbound_keyboard,
                 user,

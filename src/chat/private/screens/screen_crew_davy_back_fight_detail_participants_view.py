@@ -15,11 +15,11 @@ from src.service.message_service import full_message_send
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -72,7 +72,7 @@ async def manage(
     await full_message_send(
         context,
         phrases.CREW_DAVY_BACK_FIGHT_PARTICIPANTS.format(team_mates_text.rstrip(), opponents_text),
-        update=update,
+        event=event,
         inbound_keyboard=inbound_keyboard,
         keyboard=inline_keyboard,
     )

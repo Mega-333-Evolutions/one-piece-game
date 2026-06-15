@@ -234,7 +234,7 @@ class CrewLeaveNotification(Notification):
 
 
 class LocationUpdateNotification(Notification):
-    """Class for location update notifications."""
+    """Class for location event notifications."""
 
     def __init__(self, user: User = None, location: Location = None):
         """

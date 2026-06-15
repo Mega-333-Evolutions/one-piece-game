@@ -29,7 +29,7 @@ from src.utils.string_utils import get_belly_formatted
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     inbound_keyboard: Keyboard,
@@ -39,7 +39,7 @@ async def manage(
 ) -> None:
     """
     Manage the Bounty gift screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -51,14 +51,14 @@ async def manage(
 
     # Request send a gift
     if inbound_keyboard is None:
-        await send_request(update, context, user, target_user, command, group_chat)
+        await send_request(event, context, user, target_user, command, group_chat)
         return
 
-    await keyboard_interaction(update, context, user, inbound_keyboard)
+    await keyboard_interaction(event, context, user, inbound_keyboard)
 
 
 async def validate(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     sender: User,
     receiver: User,
@@ -67,7 +67,7 @@ async def validate(
 ) -> bool:
     """
     Validate the bounty gift request
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param sender: The user that wants to send a bounty gift
     :param receiver: The user that wants to receive a bounty gift
@@ -80,13 +80,13 @@ async def validate(
     if bounty_gift is None:
         if len(command.parameters) == 0:
             await full_message_send(
-                context, phrases.BOUNTY_GIFT_NO_AMOUNT, update=update, add_delete_button=True
+                context, phrases.BOUNTY_GIFT_NO_AMOUNT, event=event, add_delete_button=True
             )
             return False
 
         # Wager basic validation, error message is sent by validate_wager
         if not await validate_amount(
-            update, context, sender, command.parameters[0], Env.BOUNTY_GIFT_MIN_AMOUNT.get_int()
+            event, context, sender, command.parameters[0], Env.BOUNTY_GIFT_MIN_AMOUNT.get_int()
         ):
             return False
 
@@ -107,7 +107,7 @@ async def validate(
             get_belly_formatted(total_amount),
             get_belly_formatted(max_amount),
         )
-        await full_message_send(context, ot_text, update=update, add_delete_button=True)
+        await full_message_send(context, ot_text, event=event, add_delete_button=True)
         return False
 
     # Wrong status
@@ -118,7 +118,7 @@ async def validate(
 
 
 async def send_request(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     sender: User,
     receiver: User,
@@ -127,7 +127,7 @@ async def send_request(
 ) -> None:
     """
     Send request to send a bounty gift
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param sender: The user that wants to send a bounty gift
     :param receiver: The user to send the bounty gift to
@@ -136,7 +136,7 @@ async def send_request(
     :return: None
     """
 
-    if not await validate(update, context, sender, receiver, command):
+    if not await validate(event, context, sender, receiver, command):
         return
 
     # Get the amounts
@@ -166,7 +166,7 @@ async def send_request(
     ]
 
     message: Message = await full_message_send(
-        context, ot_text, update=update, keyboard=inline_keyboard
+        context, ot_text, event=event, keyboard=inline_keyboard
     )
     bounty_gift.message_id = message.message_id
     bounty_gift.save()
@@ -208,11 +208,11 @@ async def get_amounts(
 
 
 async def keyboard_interaction(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, sender: User, inbound_keyboard: Keyboard
+    event: Update, context: ContextTypes.DEFAULT_TYPE, sender: User, inbound_keyboard: Keyboard
 ) -> None:
     """
     Keyboard interaction
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param sender: The user that wants to send a bounty gift
     :param inbound_keyboard: The inbound keyboard
@@ -227,12 +227,12 @@ async def keyboard_interaction(
     if not inbound_keyboard.info[ReservedKeyboardKeys.CONFIRM]:
         bounty_gift.delete_instance()
         await full_message_send(
-            context, phrases.BOUNTY_GIFT_CANCELLED, update=update, add_delete_button=True
+            context, phrases.BOUNTY_GIFT_CANCELLED, event=event, add_delete_button=True
         )
         return
 
     receiver: User = bounty_gift.receiver
-    if not await validate(update, context, sender, receiver, bounty_gift=bounty_gift):
+    if not await validate(event, context, sender, receiver, bounty_gift=bounty_gift):
         bounty_gift.delete_instance()
         return
 
@@ -248,13 +248,13 @@ async def keyboard_interaction(
 
     # Update sender
     sender.bounty_gift_tax += Env.BOUNTY_GIFT_TAX_INCREASE.get_int()
-    await add_or_remove_bounty(sender, total_amount, add=False, update=update, should_save=True)
+    await add_or_remove_bounty(sender, total_amount, add=False, event=event, should_save=True)
 
     # Update receiver
     await add_or_remove_bounty(
         receiver,
         amount,
-        update=update,
+        event=event,
         tax_event_type=IncomeTaxEventType.BOUNTY_GIFT,
         event_id=bounty_gift.id,
         should_save=True,
@@ -268,7 +268,7 @@ async def keyboard_interaction(
         tax_percentage,
         get_belly_formatted(total_amount),
     )
-    await full_message_send(context, ot_text, update=update, add_delete_button=True)
+    await full_message_send(context, ot_text, event=event, add_delete_button=True)
 
     # Send notification to receiver
     notification = BountyGiftReceivedNotification(sender, amount)

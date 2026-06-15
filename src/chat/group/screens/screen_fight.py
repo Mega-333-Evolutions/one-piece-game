@@ -15,7 +15,7 @@ from src.service.fight_plunder_service import (
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     keyboard: Keyboard,
@@ -23,7 +23,7 @@ async def manage(
 ) -> None:
     """
     Manage the fight request
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param keyboard: The keyboard object
@@ -32,17 +32,17 @@ async def manage(
     """
 
     # Validate the request
-    if not await fight_validate(update, context, user, True, keyboard):
+    if not await fight_validate(event, context, user, True, keyboard):
         return
 
     # Request to fight
     if keyboard is None:
         # Scouting request
-        await group_send_scout_request(update, context, user, ScoutType.FIGHT)
+        await group_send_scout_request(event, context, user, ScoutType.FIGHT)
         return
 
     elif not keyboard.has_key(FightPlunderReservedKeys.ITEM_ID):
-        await fight_send_request(update, context, user, keyboard, group_chat)
+        await fight_send_request(event, context, user, keyboard, group_chat)
         return
 
-    await fight_confirm_request(update, context, user, keyboard, group_chat)
+    await fight_confirm_request(event, context, user, keyboard, group_chat)

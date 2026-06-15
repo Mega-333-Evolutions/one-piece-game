@@ -72,12 +72,12 @@ def escape_valid_markdown_chars(text: str) -> str:
 
 
 def get_chat_id(
-    update: Update = None, chat_id: int = None, send_in_private_chat: bool = False
+    event = None, chat_id: int = None, send_in_private_chat: bool = False
 ) -> int:
     """
     Get chat id
-    :param update: Update object. Required if chat_id is None
-    :param chat_id: Chat id. Required if update is None
+    :param event object. Required if chat_id is None
+    :param chat_id: Chat id. Required if event is None
     :param send_in_private_chat: Send in private chat. Default: False
     :return: Chat id
     """
@@ -85,19 +85,19 @@ def get_chat_id(
     if chat_id is not None:
         return chat_id
 
-    if update is None or update.effective_chat is None or update.effective_chat.id is None:
+    if event is None or event.effective_chat is None or event.chat_id is None:
         raise Exception(phrases.EXCEPTION_CHAT_ID_NOT_PROVIDED)
 
     if send_in_private_chat:
-        return update.effective_user.id
+        return event.sender_id
 
-    return update.effective_chat.id
+    return event.chat_id
 
 
 async def get_keyboard(
     keyboard: list[list[Keyboard]],
-    context: ContextTypes.DEFAULT_TYPE,
-    update: Update = None,
+    client,
+    event = None,
     add_delete_button: bool = False,
     authorized_users: list[User] = None,
     inbound_keyboard: Keyboard = None,
@@ -113,7 +113,7 @@ async def get_keyboard(
 
     :param keyboard: Keyboard object
     :param context: The context
-    :param update: Update object
+    :param event object
     :param add_delete_button: True if the delete button should be added
     :param authorized_users: List of user ids that are allowed to delete the message
     :param inbound_keyboard: Inbound Keyboard object
@@ -131,8 +131,8 @@ async def get_keyboard(
     from src.service.user_service import get_effective_tg_user_id
 
     # Do not validate user interaction for private chats
-    if update is not None:
-        message_source = get_message_source(update)
+    if event is not None:
+        message_source = get_message_source(event)
         if message_source is MessageSource.ND:
             only_authorized_users_can_interact = False
 
@@ -144,12 +144,12 @@ async def get_keyboard(
 
     try:
         # Current user not in authorized users
-        if not any(int(u.tg_user_id) == update.effective_user.id for u in authorized_users):
-            # Get the user that sent the update. Could per user parameter,but to be sure let's
+        if not any(int(u.tg_user_id) == event.sender_id for u in authorized_users):
+            # Get the user that sent the event. Could per user parameter,but to be sure let's
             # re-select it
             user_from_update: User = User.get(
                 User.tg_user_id
-                == await get_effective_tg_user_id(update.effective_user, update.effective_message)
+                == await get_effective_tg_user_id(event.effective_user, event.effective_message)
             )
             authorized_users.append(user_from_update)
     except Exception:  # Catch all exceptions here, including AnonymousAdminException
@@ -205,8 +205,8 @@ async def get_keyboard(
                                     and button.inherit_authorized_users
                                 ):
                                     if (
-                                        update is not None
-                                        and update.effective_chat.type != Chat.PRIVATE
+                                        event is not None
+                                        and event.effective_chat.type != Chat.PRIVATE
                                     ):
                                         button.info[ReservedKeyboardKeys.AUTHORIZED_USERS] = [
                                             u.id for u in authorized_users
@@ -282,18 +282,18 @@ async def get_keyboard(
 
 
 def get_reply_to_message_id(
-    update: Update = None,
+    event = None,
     quote: bool = False,
     reply_to_message_id: int = None,
     quote_if_group: bool = True,
 ) -> int | None:
     """
     Get reply message id
-    :param update: Update object. Required if reply_to_message_id is None
+    :param event object. Required if reply_to_message_id is None
     :param quote: Quote message. Default: False
     :param reply_to_message_id: Reply message id. Default: None
     :param quote_if_group: If the message should be quoted if it is in a filter_by_groups and
-    update is not None. Default: True
+    event is not None. Default: True
     :return: Reply message id
     """
 
@@ -304,26 +304,26 @@ def get_reply_to_message_id(
     try:
         if quote_if_group:
             if (
-                update.effective_chat.type == Chat.GROUP
-                or update.effective_chat.type == Chat.SUPERGROUP
+                event.effective_chat.type == Chat.GROUP
+                or event.effective_chat.type == Chat.SUPERGROUP
             ):
-                return update.effective_message.message_id
+                return event.effective_message.message_id
     except AttributeError:
         pass
 
     if not quote:
         return None
 
-    if update.effective_message is None:
+    if event.effective_message is None:
         raise Exception("No message to quote")
     else:
-        return update.effective_message.message_id
+        return event.effective_message.message_id
 
 
 async def full_message_send(
-    context: ContextTypes.DEFAULT_TYPE,
+    client,
     text: str,
-    update: Update = None,
+    event = None,
     chat_id: int | str = None,
     keyboard: list[list[Keyboard]] = None,
     answer_callback: bool = False,
@@ -359,10 +359,10 @@ async def full_message_send(
     """
     Send a message
 
-    :param context: ContextTypes.DEFAULT_TYPE object
+    :param client object
     :param text: Text to send
-    :param update: Update object. Required if chat_id is None
-    :param chat_id: Chat id. Required if update is None
+    :param event object. Required if chat_id is None
+    :param chat_id: Chat id. Required if event is None
     :param keyboard: Keyboard object
     :param answer_callback: If it is an answer callback
     :param show_alert: If to show an alert in the callback answer
@@ -372,7 +372,7 @@ async def full_message_send(
     :param parse_mode: Parse mode
     :param quote: True if the message should be quoted
     :param quote_if_group: True if the message should be quoted if it is in a filter_by_groups and
-    update is not None
+    event is not None
     :param protect_content: True if the message should be protected from saving and forwarding
     :param disable_web_page_preview: True if the web page preview should be disabled
     :param allow_sending_without_reply: True if the message should be sent if message to be replied
@@ -382,7 +382,7 @@ async def full_message_send(
     :param inbound_keyboard: Inbound Keyboard object. If not None, a back button will be added to
     the keyboard
     :param send_in_private_chat: True if the message should be sent in private chat. Not necessary
-    if update is not None
+    if event is not None
     :param only_authorized_users_can_interact: True if only authorized users can interact with the
     message keyboard
     :param edit_message_id: ID of the message to edit
@@ -404,19 +404,19 @@ async def full_message_send(
     """
 
     message_source: MessageSource = MessageSource.ND
-    if update is None:
+    if event is None:
         if add_delete_button and group_chat is None and should_auto_delete:
             raise ValueError(
-                "Cannot add delete button without an update object, needed to enqueue for auto"
+                "Cannot add delete button without an event object, needed to enqueue for auto"
                 " message deletion"
             )
     else:
-        message_source: MessageSource = get_message_source(update)
+        message_source: MessageSource = get_message_source(event)
 
     if show_alert:
         answer_callback = True
 
-    if update and update.callback_query is None:
+    if event and event.callback_query is None:
         answer_callback = False
 
     if text is not None and parse_mode == c.TG_PARSE_MODE_MARKDOWN and not answer_callback:
@@ -431,7 +431,7 @@ async def full_message_send(
         group: Group = group_chat.group
         chat_id = group.tg_group_id
     elif message_source is MessageSource.GROUP:
-        group_chat = get_group_chat_for_auto_delete(update)
+        group_chat = get_group_chat_for_auto_delete(event)
 
     should_auto_delete = (
         should_auto_delete
@@ -451,12 +451,12 @@ async def full_message_send(
         inbound_keyboard.info |= previous_screen_list_keyboard_info
 
     chat_id = get_chat_id(
-        update=update, chat_id=chat_id, send_in_private_chat=send_in_private_chat
+        event=event, chat_id=chat_id, send_in_private_chat=send_in_private_chat
     )
     keyboard_markup = await get_keyboard(
         keyboard,
         context,
-        update=update,
+        event=event,
         add_delete_button=add_delete_button,
         authorized_users=authorized_users,
         inbound_keyboard=inbound_keyboard,
@@ -470,11 +470,11 @@ async def full_message_send(
 
     # New message
     if (
-        new_message or update is None or update.callback_query is None
+        new_message or event is None or event.callback_query is None
     ) and edit_message_id is None:
         # Message in reply to
         reply_to_message_id = get_reply_to_message_id(
-            update=update,
+            event=event,
             quote=quote,
             reply_to_message_id=reply_to_message_id,
             quote_if_group=quote_if_group,
@@ -506,20 +506,20 @@ async def full_message_send(
             raise e
 
     # No message to edit or answer callback
-    if (update is None or update.callback_query is None) and edit_message_id is None:
+    if (event is None or event.callback_query is None) and edit_message_id is None:
         raise AttributeError(phrases.EXCEPTION_NO_EDIT_MESSAGE)
 
     # Answer callback
     if answer_callback:
         return await context.bot.answer_callback_query(
-            update.callback_query.id, text=text, show_alert=show_alert
+            event.callback_query.id, text=text, show_alert=show_alert
         )
 
     # Edit message
     edit_message_id = (
         edit_message_id
         if edit_message_id is not None
-        else update.callback_query.message.message_id
+        else event.callback_query.message.message_id
     )
     
     try:
@@ -573,9 +573,9 @@ def get_input_media_from_saved_media(
 
 
 async def full_media_send(
-    context: ContextTypes.DEFAULT_TYPE,
+    client,
     saved_media: SavedMedia = None,
-    update: Update = None,
+    event = None,
     chat_id: int | str = None,
     caption: str = None,
     keyboard: list[list[Keyboard]] = None,
@@ -608,10 +608,10 @@ async def full_media_send(
 ) -> Message | bool:
     """
     Send a media
-    :param context: ContextTypes.DEFAULT_TYPE object
+    :param client object
     :param saved_media: SavedMedia object
-    :param update: Update object. Required if chat_id is None
-    :param chat_id: Chat id. Required if update is None
+    :param event object. Required if chat_id is None
+    :param chat_id: Chat id. Required if event is None
     :param caption: Caption
     :param keyboard: Keyboard object
     :param answer_callback: If it is an answer callback
@@ -649,14 +649,14 @@ async def full_media_send(
     """
 
     message_source: MessageSource = MessageSource.ND
-    if update is None:
+    if event is None:
         if add_delete_button and group_chat is None:
             raise ValueError(
-                "Cannot add delete button without an update object, needed to enqueue for auto"
+                "Cannot add delete button without an event object, needed to enqueue for auto"
                 " message deletion"
             )
     else:
-        message_source: MessageSource = get_message_source(update)
+        message_source: MessageSource = get_message_source(event)
     if exceptions_to_ignore is None:
         exceptions_to_ignore = []
 
@@ -702,7 +702,7 @@ async def full_media_send(
         group: Group = group_chat.group
         chat_id = group.tg_group_id
     elif message_source is MessageSource.GROUP:
-        group_chat = get_group_chat_for_auto_delete(update)
+        group_chat = get_group_chat_for_auto_delete(event)
 
     should_auto_delete = (
         should_auto_delete
@@ -712,12 +712,12 @@ async def full_media_send(
     )
 
     chat_id = get_chat_id(
-        update=update, chat_id=chat_id, send_in_private_chat=send_in_private_chat
+        event=event, chat_id=chat_id, send_in_private_chat=send_in_private_chat
     )
     keyboard_markup = await get_keyboard(
         keyboard,
         context,
-        update=update,
+        event=event,
         add_delete_button=add_delete_button,
         authorized_users=authorized_users,
         inbound_keyboard=inbound_keyboard,
@@ -729,11 +729,11 @@ async def full_media_send(
 
     # If current media type to send is different form media of message being edited,
     # then new message
-    if update is not None and saved_media is not None:
+    if event is not None and saved_media is not None:
         media_type_map = {
-            SavedMediaType.PHOTO: update.effective_message.photo,
-            SavedMediaType.VIDEO: update.effective_message.video,
-            SavedMediaType.ANIMATION: update.effective_message.animation,
+            SavedMediaType.PHOTO: event.effective_message.photo,
+            SavedMediaType.VIDEO: event.effective_message.video,
+            SavedMediaType.ANIMATION: event.effective_message.animation,
         }
 
         if media_type_map[saved_media.type] is None or len(media_type_map[saved_media.type]) == 0:
@@ -741,9 +741,9 @@ async def full_media_send(
 
     try:
         # New message
-        if (new_message or update is None or update.callback_query is None) and not is_edit:
+        if (new_message or event is None or event.callback_query is None) and not is_edit:
             reply_to_message_id = get_reply_to_message_id(
-                update=update,
+                event=event,
                 quote=quote,
                 reply_to_message_id=reply_to_message_id,
                 quote_if_group=quote_if_group,
@@ -811,19 +811,19 @@ async def full_media_send(
             return message
 
         # No message to edit or answer callback
-        if (update is None or update.callback_query is None) and edit_message_id is None:
+        if (event is None or event.callback_query is None) and edit_message_id is None:
             raise Exception(phrases.EXCEPTION_NO_EDIT_MESSAGE)
 
         # Answer callback
         if answer_callback:
             return await context.bot.answer_callback_query(
-                update.callback_query.id, text=caption, show_alert=show_alert
+                event.callback_query.id, text=caption, show_alert=show_alert
             )
 
         edit_message_id = (
             edit_message_id
             if edit_message_id is not None
-            else update.callback_query.message.message_id
+            else event.callback_query.message.message_id
         )
 
         # Edit only keyboard
@@ -878,9 +878,9 @@ async def full_media_send(
 
 
 async def full_message_or_media_send_or_edit(
-    context: ContextTypes.DEFAULT_TYPE,
+    client,
     text: str,
-    update: Update = None,
+    event = None,
     chat_id: int | str = None,
     keyboard: list[list[Keyboard]] = None,
     parse_mode: str = c.TG_DEFAULT_PARSE_MODE,
@@ -901,10 +901,10 @@ async def full_message_or_media_send_or_edit(
 ) -> Message:
     """
     Edit a message or media, in case the type of message being edited is unknown
-    :param context: ContextTypes.DEFAULT_TYPE object
+    :param client object
     :param text: Text to send
-    :param update: Update object. Required if chat_id is None
-    :param chat_id: Chat id. Required if update is None
+    :param event object. Required if chat_id is None
+    :param chat_id: Chat id. Required if event is None
     :param keyboard: Keyboard object
     :param parse_mode: Parse mode
     :param protect_content: True if the message should be protected from saving and forwarding
@@ -933,7 +933,7 @@ async def full_message_or_media_send_or_edit(
         return await full_message_send(
             context,
             text,
-            update=update,
+            event=event,
             chat_id=chat_id,
             keyboard=keyboard,
             answer_callback=answer_callback,
@@ -954,7 +954,7 @@ async def full_message_or_media_send_or_edit(
         return await full_media_send(
             context,
             caption=text,
-            update=update,
+            event=event,
             chat_id=chat_id,
             keyboard=keyboard,
             parse_mode=parse_mode,
@@ -972,12 +972,12 @@ async def full_message_or_media_send_or_edit(
 
 
 async def full_inline_query_answer(
-    context: ContextTypes.DEFAULT_TYPE, update: Update, items: list[ContextDataValue]
+    client, event, items: list[ContextDataValue]
 ) -> bool:
     """
     Answer an inline query
     :param context: The context
-    :param update: Update object
+    :param event object
     :param items: List of items to display
     :return: True if the answer was sent
     """
@@ -1005,7 +1005,7 @@ async def full_inline_query_answer(
             )
         )
 
-    await update.inline_query.answer(results)
+    await event.inline_query.answer(results)
 
 
 def is_command(text: str) -> bool:
@@ -1336,8 +1336,8 @@ def get_back_button(
 
 
 async def delete_message(
-    update: Update = None,
-    context: ContextTypes.DEFAULT_TYPE = None,
+    event = None,
+    client = None,
     chat_id: int | str = None,
     message_id: int = None,
     group_chat: GroupChat = None,
@@ -1345,7 +1345,7 @@ async def delete_message(
 ):
     """
     Delete a message with the best effort method
-    :param update: Update object
+    :param event object
     :param context: Context object
     :param chat_id: Chat id
     :param message_id: Message id
@@ -1357,17 +1357,17 @@ async def delete_message(
         group: Group = group_chat.group
         chat_id = group.tg_group_id
 
-    if update is None and (context is None or chat_id is None or message_id is None):
+    if event is None and (context is None or chat_id is None or message_id is None):
         logging.error(
-            "update or context and chat_id and message_id must be specified to delete message"
+            "event or context and chat_id and message_id must be specified to delete message"
         )
         return
 
     try:
-        if update is not None:
-            message_id = update.effective_message.message_id
-            chat_id = update.effective_chat.id
-            await update.effective_message.delete()
+        if event is not None:
+            message_id = event.effective_message.message_id
+            chat_id = event.chat_id
+            await event.effective_message.delete()
         else:
             await context.bot.delete_message(chat_id, message_id)
     except TelegramError:
@@ -1377,27 +1377,27 @@ async def delete_message(
         logging.error(f"Failed to delete message {message_id} in chat {chat_id}")
 
 
-def get_message_source(update: Update) -> MessageSource:
+def get_message_source(event) -> MessageSource:
     """
     Get the message source
-    :param update: Update object
+    :param event object
     :return: MessageSource object
     """
 
     try:
-        if update.effective_chat.type == Chat.PRIVATE:
+        if event.effective_chat.type == Chat.PRIVATE:
             return MessageSource.PRIVATE
 
-        if update.effective_chat.type in [Chat.GROUP, Chat.SUPERGROUP]:
+        if event.effective_chat.type in [Chat.GROUP, Chat.SUPERGROUP]:
             return MessageSource.GROUP
 
         if (
             Env.TG_REST_CHANNEL_ID.get() is not None
-            and update.effective_chat.id == Env.TG_REST_CHANNEL_ID.get_int()
+            and event.chat_id == Env.TG_REST_CHANNEL_ID.get_int()
         ):
             return MessageSource.TG_REST
     except AttributeError:
-        if update.inline_query.query is not None:
+        if event.inline_query.query is not None:
             return MessageSource.INLINE_QUERY
 
     return MessageSource.ND
@@ -1468,12 +1468,12 @@ def get_create_or_edit_status(user: User, inbound_keyboard: Keyboard) -> tuple[b
     return should_ignore_input, should_create_item, should_validate_input
 
 
-async def log_error(context: ContextTypes.DEFAULT_TYPE, text: str, update: Update = None):
+async def log_error(client, text: str, event = None):
     """
     Send an error to the error log chat
     :param context: Context object
     :param text: Text to send
-    :param update: Update object
+    :param event object
     """
 
     text = f"Error: {text}".upper()
@@ -1482,22 +1482,22 @@ async def log_error(context: ContextTypes.DEFAULT_TYPE, text: str, update: Updat
         logging.error(f"Error log chat id is not set: {text}")
         return
 
-    await full_message_send(context, text, update=update, chat_id=error_log_chat_id)
+    await full_message_send(context, text, event=event, chat_id=error_log_chat_id)
 
 
-def message_is_reply(update: Update) -> bool:
+def message_is_reply(event) -> bool:
     """
     Check if the message is a reply. Necessary because, due to a Telegram bug, the reply_to_message
     field is set
     for every message sent in not general topics
-    :param update: Update object
+    :param event object
     :return: True if the message is a reply
     """
 
     try:
         return (
-            update.effective_message.reply_to_message is not None
-            and update.effective_message.reply_to_message.forum_topic_created is None
+            event.effective_message.reply_to_message is not None
+            and event.effective_message.reply_to_message.forum_topic_created is None
         )
     except AttributeError:
         return False
@@ -1532,20 +1532,20 @@ def get_message_url(message_id: int, group_chat: GroupChat = None, chat_id: str 
     return url
 
 
-def get_group_chat_from_update(update: Update) -> GroupChat | None:
+def get_group_chat_from_update(event) -> GroupChat | None:
     """
-    Gets the group chat from the update
-    :param update: The update
+    Gets the group chat from the event
+    :param event: The event
     :return: The group chat
     """
 
-    group = Group.get_or_none(Group.tg_group_id == update.effective_chat.id)
+    group = Group.get_or_none(Group.tg_group_id == event.chat_id)
     if group is None:
         return
 
     tg_topic_id = None
-    if update.effective_chat.is_forum and update.effective_message.is_topic_message:
-        tg_topic_id = update.effective_message.message_thread_id
+    if event.effective_chat.is_forum and event.effective_message.is_topic_message:
+        tg_topic_id = event.effective_message.message_thread_id
 
     group_chat = GroupChat.get_or_none(
         (GroupChat.group == group) & (GroupChat.tg_topic_id == tg_topic_id)
@@ -1555,11 +1555,11 @@ def get_group_chat_from_update(update: Update) -> GroupChat | None:
 
 
 def get_group_chat_for_auto_delete(
-    update: Update, group_chat: GroupChat = None
+    event, group_chat: GroupChat = None
 ) -> GroupChat | None:
     """
     Gets the group chat for auto delete
-    :param update: The update
+    :param event: The event
     :param group_chat: The group chat
     :return: The group chat
     """
@@ -1567,15 +1567,15 @@ def get_group_chat_for_auto_delete(
     if group_chat is not None:
         return group_chat
 
-    if update is None:
-        logging.warning("Cannot add delete button without an update or group chat object")
+    if event is None:
+        logging.warning("Cannot add delete button without an event or group chat object")
         logging.warning(traceback.format_stack())
         return
 
-    if not get_message_source(update) is MessageSource.GROUP:
+    if not get_message_source(event) is MessageSource.GROUP:
         return
 
-    group_chat = get_group_chat_from_update(update)
+    group_chat = get_group_chat_from_update(event)
 
     if group_chat is None:
         raise ValueError("Group chat not found")

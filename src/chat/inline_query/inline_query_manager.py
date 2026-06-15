@@ -9,15 +9,15 @@ from src.service.message_service import full_inline_query_answer
 from src.utils.context_utils import get_user_context_data
 
 
-async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def manage(event: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Main function for the group chat manager
-    :param update: Telegram update
+    :param event: Telegram event
     :param context: Telegram context
     :return: None
     """
 
-    query = update.inline_query.query
+    query = event.inline_query.query
 
     if query == "":
         return
@@ -31,4 +31,4 @@ async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             description=phrases.INLINE_QUERY_ITEM_NOT_FOUND_DESCRIPTION,
         )
 
-    await full_inline_query_answer(context, update, [context_data])
+    await full_inline_query_answer(context, event, [context_data])

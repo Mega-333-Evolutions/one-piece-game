@@ -117,7 +117,7 @@ def get_items_text_keyboard(
     text_overview: str = None,
     context: ContextTypes.DEFAULT_TYPE = None,
     user: User = None,
-    update: Update = None,
+    event: Update = None,
     allow_string_filter: bool = False,
     empty_list_text: str = None,
 ) -> tuple[str, list[list[Keyboard]]]:
@@ -132,7 +132,7 @@ def get_items_text_keyboard(
     :param text_overview: The text overview
     :param context: The context
     :param user: The user
-    :param update: The update
+    :param event: The event
     :param allow_string_filter: Whether to allow string filter
     :param empty_list_text: The empty list text
     :return: The text and keyboard
@@ -157,7 +157,7 @@ def get_items_text_keyboard(
             if inbound_keyboard is None or not getattr(inbound_keyboard, "is_simulated", False):
                 raise AttributeError
 
-            list_page.string_filter = update.effective_message.text
+            list_page.string_filter = event.effective_message.text
             user.set_context_data(
                 context,
                 ContextDataKey.FILTER,

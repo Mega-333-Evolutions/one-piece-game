@@ -35,10 +35,10 @@ from src.service.message_service import full_message_send, escape_valid_markdown
 from src.service.notification_service import send_notification
 
 
-async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def manage(event: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Main function for the group chat manager
-    :param update: Telegram update
+    :param event: Telegram event
     :param context: Telegram context
     :return: None
     """
@@ -49,20 +49,20 @@ async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             # Try parsing object
             try:
                 # If starts with "Error" or "Request", ignore
-                if update.effective_message.text.startswith(
+                if event.effective_message.text.startswith(
                     "Error"
-                ) or update.effective_message.text.startswith("Request"):
+                ) or event.effective_message.text.startswith("Request"):
                     return
             except AttributeError:
                 return
 
-            tg_rest_dict = json.loads(update.effective_message.text)
+            tg_rest_dict = json.loads(event.effective_message.text)
             tg_rest = TgRest(**tg_rest_dict)
         except Exception as tgre:
             raise TgRestException(str(tgre))
 
         # If not intended recipient, ignore
-        if int(tg_rest.bot_id) != int(update.effective_message.get_bot().id):
+        if int(tg_rest.bot_id) != int(event.effective_message.get_bot().id):
             return
 
         match tg_rest.object_type:
@@ -157,9 +157,9 @@ async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
             case _:
                 raise TgRestException("Unknown object type")
-        await full_message_send(context, "Request received", update=update, quote=True)
+        await full_message_send(context, "Request received", event=event, quote=True)
     except TgRestException as e:
         await full_message_send(
-            context, "Error: " + escape_valid_markdown_chars(e.message), update=update, quote=True
+            context, "Error: " + escape_valid_markdown_chars(e.message), event=event, quote=True
         )
         return

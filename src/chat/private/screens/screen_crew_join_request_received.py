@@ -22,12 +22,12 @@ from src.service.notification_service import send_notification
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage this screen
 
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -42,7 +42,7 @@ async def manage(
         crew: Crew = get_crew(user=user, validate_against_crew=join_request.crew)
     except ChatWarning as cw:
         await send_outcome_notification(context, join_request, False)
-        await full_message_send(context, str(cw), update=update, inbound_keyboard=inbound_keyboard)
+        await full_message_send(context, str(cw), event=event, inbound_keyboard=inbound_keyboard)
         return
 
     requesting_user: User = join_request.user
@@ -53,10 +53,10 @@ async def manage(
         ot_text = phrases.CREW_SEARCH_JOIN_CAPTAIN_REJECTED.format(
             requesting_user.get_markdown_mention()
         )
-        await full_message_send(context, ot_text, update=update)
+        await full_message_send(context, ot_text, event=event)
         return
 
-    if not await validate(update, context, inbound_keyboard, crew, requesting_user):
+    if not await validate(event, context, inbound_keyboard, crew, requesting_user):
         await send_outcome_notification(context, join_request, False)
         return
 
@@ -80,11 +80,11 @@ async def manage(
         ]
     ]
 
-    await full_message_send(context, ot_text, update=update, keyboard=inline_keyboard)
+    await full_message_send(context, ot_text, event=event, keyboard=inline_keyboard)
 
 
 async def validate(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
     crew: Crew,
@@ -93,7 +93,7 @@ async def validate(
     """
     Validate the crew level up screen
 
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param crew: The crew
@@ -107,7 +107,7 @@ async def validate(
         await full_message_send(
             context,
             str(e),
-            update=update,
+            event=event,
             answer_callback=True,
             show_alert=True,
             inbound_keyboard=inbound_keyboard,

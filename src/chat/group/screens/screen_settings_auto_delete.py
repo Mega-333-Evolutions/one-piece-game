@@ -13,14 +13,14 @@ from src.service.message_service import full_message_send
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
     group_chat: GroupChat,
 ) -> None:
     """
     Manage the auto delete screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param inbound_keyboard: The inbound keyboard
     :param group_chat: The group chat
@@ -58,7 +58,7 @@ async def manage(
     await full_message_send(
         context,
         ot_text,
-        update=update,
+        event=event,
         keyboard=numeric_keyboard,
         add_delete_button=True,
         use_close_delete=True,

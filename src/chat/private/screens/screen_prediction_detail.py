@@ -35,11 +35,11 @@ class PredictionDetailReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the prediction detail screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -77,7 +77,7 @@ async def manage(
             await full_message_send(
                 context,
                 ot_text,
-                update=update,
+                event=event,
                 keyboard=inline_keyboard,
                 inbound_keyboard=inbound_keyboard,
                 add_back_button=False,
@@ -92,7 +92,7 @@ async def manage(
                 await delete_prediction(prediction)
                 # Return to prediction list
                 await full_message_send(
-                    context, phrases.PREDICTION_DELETE_SUCCESS, update=update, show_alert=True
+                    context, phrases.PREDICTION_DELETE_SUCCESS, event=event, show_alert=True
                 )
                 from src.chat.private.screens.screen_prediction import manage as manage_prediction
 
@@ -101,13 +101,13 @@ async def manage(
 
                 user.remove_last_private_screen()
                 inbound_keyboard.previous_screen_list = user.get_private_screen_list()
-                return await manage_prediction(update, context, inbound_keyboard, user)
+                return await manage_prediction(event, context, inbound_keyboard, user)
 
     # Open prediction
     if PredictionDetailReservedKeys.OPEN in inbound_keyboard.info:
         if prediction.get_status() is not PredictionStatus.NEW:
             await full_message_send(
-                context, phrases.PREDICTION_ALREADY_OPEN, update=update, show_alert=True
+                context, phrases.PREDICTION_ALREADY_OPEN, event=event, show_alert=True
             )
         elif ReservedKeyboardKeys.CONFIRM not in inbound_keyboard.info:
             # Request confirmation
@@ -123,7 +123,7 @@ async def manage(
             await full_message_send(
                 context,
                 ot_text,
-                update=update,
+                event=event,
                 keyboard=inline_keyboard,
                 inbound_keyboard=inbound_keyboard,
                 add_back_button=False,
@@ -140,14 +140,14 @@ async def manage(
                 prediction.save()
 
                 await full_message_send(
-                    context, phrases.PREDICTION_OPEN_SUCCESS, update=update, show_alert=True
+                    context, phrases.PREDICTION_OPEN_SUCCESS, event=event, show_alert=True
                 )
 
     # Close prediction
     if PredictionDetailReservedKeys.CLOSE in inbound_keyboard.info:
         if prediction.get_status() is not PredictionStatus.SENT:
             await full_message_send(
-                context, phrases.PREDICTION_ALREADY_CLOSED, update=update, show_alert=True
+                context, phrases.PREDICTION_ALREADY_CLOSED, event=event, show_alert=True
             )
         elif ReservedKeyboardKeys.CONFIRM not in inbound_keyboard.info:
             # Request confirmation
@@ -163,7 +163,7 @@ async def manage(
             await full_message_send(
                 context,
                 ot_text,
-                update=update,
+                event=event,
                 keyboard=inline_keyboard,
                 inbound_keyboard=inbound_keyboard,
                 add_back_button=False,
@@ -177,7 +177,7 @@ async def manage(
             if is_confirmed:
                 await close_bets(context, prediction)
                 await full_message_send(
-                    context, phrases.PREDICTION_CLOSE_SUCCESS, update=update, show_alert=True
+                    context, phrases.PREDICTION_CLOSE_SUCCESS, event=event, show_alert=True
                 )
 
     if prediction.is_open():
@@ -304,7 +304,7 @@ async def manage(
     await full_message_send(
         context,
         prediction_list_page.get_item_detail_text(),
-        update=update,
+        event=event,
         keyboard=prediction_list_page.get_previous_and_next_object_keyboard(inbound_keyboard)
         + inline_keyboard,
         inbound_keyboard=inbound_keyboard,

@@ -8,11 +8,11 @@ from src.service.message_service import full_message_send
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard
 ) -> None:
     """
     Manage the settings screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :return: None
@@ -31,7 +31,7 @@ async def manage(
     await full_message_send(
         context,
         phrases.TXT_SETTINGS,
-        update=update,
+        event=event,
         keyboard=inline_keyboard,
         inbound_keyboard=inbound_keyboard,
     )

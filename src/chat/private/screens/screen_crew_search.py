@@ -158,11 +158,11 @@ class CrewSearchListPage(ListPage):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the Crew member screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -181,14 +181,14 @@ async def manage(
         text_fill_in=phrases.CREW_SEARCH_ITEM_TEXT_FILL_IN,
         context=context,
         user=user,
-        update=update,
+        event=event,
         allow_string_filter=True,
     )
 
     await full_message_send(
         context,
         ot_text,
-        update=update,
+        event=event,
         keyboard=items_keyboard,
         inbound_keyboard=inbound_keyboard,
         # Excluding DBF request keys here so as long as user stays in Crew search, their preferred

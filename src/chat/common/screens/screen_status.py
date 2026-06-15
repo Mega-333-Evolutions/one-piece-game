@@ -52,7 +52,7 @@ from src.utils.string_utils import get_belly_formatted
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     command: Command.Command,
     user: User,
@@ -62,7 +62,7 @@ async def manage(
 ) -> None:
     """
     Displays a user's status
-    :param update: Telegram update
+    :param event: Telegram event
     :param context: Telegram context
     :param command: Command
     :param user: The original user
@@ -103,7 +103,7 @@ async def manage(
             )
 
             await full_message_send(
-                context, ot_text, update, add_delete_button=True, authorized_users=can_delete_users
+                context, ot_text, event, add_delete_button=True, authorized_users=can_delete_users
             )
             return
 
@@ -137,7 +137,7 @@ async def manage(
                 else phrases.ROOKIE_STATUS_PRIVATE_CHAT_ONLY
             )
             await full_message_send(
-                context, ot_text, update=update, keyboard=outbound_keyboard, add_delete_button=True
+                context, ot_text, event=event, keyboard=outbound_keyboard, add_delete_button=True
             )
             return
 
@@ -303,13 +303,13 @@ async def manage(
         message_text += "\n\n" + phrases.SHOW_USER_STATUS_ADD_REPLY.format(
             user.get_markdown_mention()
         )
-        reply_to_message_id = update.effective_message.reply_to_message.message_id
+        reply_to_message_id = event.effective_message.reply_to_message.message_id
 
     # Send bounty poster if not in reply to a message bounty_poster_limit is -1 or higher than 0
     # and user is not jailed
 
     if should_send_poster(target_user, group_chat, self_status):
-        await send_bounty_poster(context, update, target_user, message_text, reply_to_message_id)
+        await send_bounty_poster(context, event, target_user, message_text, reply_to_message_id)
 
         # Reduce bounty poster limit by 1 if it is not None
         if not user_is_boss(target_user, group_chat=group_chat):
@@ -321,7 +321,7 @@ async def manage(
         await full_message_send(
             context,
             message_text,
-            update,
+            event,
             reply_to_message_id=reply_to_message_id,
             add_delete_button=(inbound_keyboard is None),
             authorized_users=can_delete_users,
@@ -332,7 +332,7 @@ async def manage(
 
 async def send_bounty_poster(
     context: ContextTypes.DEFAULT_TYPE,
-    update: Update,
+    event: Update,
     user: User,
     caption: str = None,
     reply_to_message_id: int = None,
@@ -340,12 +340,12 @@ async def send_bounty_poster(
 ) -> None:
     replied_telegram_user = None
     try:
-        if update.effective_message.reply_to_message is not None:
-            replied_telegram_user = update.effective_message.reply_to_message.from_user
+        if event.effective_message.reply_to_message is not None:
+            replied_telegram_user = event.effective_message.reply_to_message.from_user
     except AttributeError:
         replied_telegram_user = None
 
-    poster_path = await get_bounty_poster(update, user, telegram_user=replied_telegram_user)
+    poster_path = await get_bounty_poster(event, user, telegram_user=replied_telegram_user)
     poster: SavedMedia = SavedMedia(media_type=SavedMediaType.PHOTO)
     with open(poster_path, "rb") as media_id:
         poster.media_id = media_id.read()
@@ -353,7 +353,7 @@ async def send_bounty_poster(
     await full_media_send(
         context,
         saved_media=poster,
-        update=update,
+        event=event,
         caption=caption,
         reply_to_message_id=reply_to_message_id,
         new_message=True,

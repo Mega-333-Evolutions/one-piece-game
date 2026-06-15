@@ -20,15 +20,15 @@ async def send_notification(
     user: User,
     notification: Notification,
     should_forward_message: bool = False,
-    update: Update = None,
+    event: Update = None,
 ) -> None:
     """
     Sends a notification to the user, fire and forget
     :param context: The context object
     :param user: User
     :param notification: Notification
-    :param should_forward_message: If the message of the update should be forwarded
-    :param update: The update object
+    :param should_forward_message: If the message of the event should be forwarded
+    :param event: The event object
     :return: None
     """
 
@@ -41,11 +41,11 @@ async def send_notification(
         should_forward_message
     ):  # Sync since it's for deleted messages, else no message is forwarded before the deletion
         await send_notification_execute(
-            context, user, notification, should_forward_message, update
+            context, user, notification, should_forward_message, event
         )
     else:
         context.application.create_task(
-            send_notification_execute(context, user, notification, should_forward_message, update)
+            send_notification_execute(context, user, notification, should_forward_message, event)
         )
 
 
@@ -54,15 +54,15 @@ async def send_notification_execute(
     user: User,
     notification: Notification,
     should_forward_message: bool = False,
-    update: Update = None,
+    event: Update = None,
 ) -> None:
     """
     Sends a notification to the user
     :param context: The context object
     :param user: User
     :param notification: Notification
-    :param should_forward_message: If the message of the update should be forwarded
-    :param update: The update object
+    :param should_forward_message: If the message of the event should be forwarded
+    :param event: The event object
     :return: None
     """
 
@@ -70,8 +70,8 @@ async def send_notification_execute(
         NotificationTypeReservedKeys,
     )
 
-    if should_forward_message and update is None:
-        raise ValueError("If should_forward_message is not None, update must be not None")
+    if should_forward_message and event is None:
+        raise ValueError("If should_forward_message is not None, event must be not None")
 
     # Notification not enabled
     if not is_enabled(user, notification):
@@ -117,8 +117,8 @@ async def send_notification_execute(
         quote_message_id = None
         if should_forward_message:
             try:
-                if update is not None and getattr(update, "message", None) is not None:
-                    message: Message = await update.message.forward(
+                if event is not None and getattr(event, "message", None) is not None:
+                    message: Message = await event.message.forward(
                         user.tg_user_id, disable_notification=True
                     )
                     quote_message_id = message.message_id

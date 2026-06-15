@@ -29,7 +29,7 @@ class ScreenReservedKeys(StrEnum):
 
 
 async def validate(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     inbound_keyboard: Keyboard,
@@ -38,7 +38,7 @@ async def validate(
 ) -> bool:
     """
     Validate the Davy Back Fight participants select screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param inbound_keyboard: The inbound keyboard
@@ -73,7 +73,7 @@ async def validate(
         await full_message_send(
             context,
             str(e),
-            update=update,
+            event=event,
             answer_callback=True,
             show_alert=True,
             inbound_keyboard=inbound_keyboard,
@@ -83,11 +83,11 @@ async def validate(
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -100,7 +100,7 @@ async def manage(
     crew: Crew = get_crew(user)
 
     # Allow members view even in case they can't be changed, only if no member is selected
-    if not await validate(update, context, user, inbound_keyboard, crew, dbf):
+    if not await validate(event, context, user, inbound_keyboard, crew, dbf):
         return
 
     filter_participant: bool | None = None
@@ -131,7 +131,7 @@ async def manage(
             await full_message_send(
                 context,
                 phrases.SWAP_SUCCESSFUL,
-                update=update,
+                event=event,
                 answer_callback=True,
             )
         else:
@@ -145,7 +145,7 @@ async def manage(
     await full_message_send(
         context,
         ot_text,
-        update=update,
+        event=event,
         keyboard=get_members_keyboard(inbound_keyboard, crew, dbf, filter_participant),
         inbound_keyboard=inbound_keyboard,
     )

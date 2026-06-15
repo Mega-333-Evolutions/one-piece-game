@@ -20,7 +20,7 @@ from src.model.error.CustomException import CrewValidationException
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     inbound_keyboard: Keyboard,
@@ -28,7 +28,7 @@ async def manage(
 ) -> None:
     """
     Manage the Crew invite screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -42,14 +42,14 @@ async def manage(
 
     # Invite to a Crew
     if inbound_keyboard is None:
-        await send_request(update, context, user, target_user, crew)
+        await send_request(event, context, user, target_user, crew)
         return
 
-    await keyboard_interaction(update, context, user, crew, inbound_keyboard)
+    await keyboard_interaction(event, context, user, crew, inbound_keyboard)
 
 
 async def send_request(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     captain: User,
     target_user: User,
@@ -57,7 +57,7 @@ async def send_request(
 ) -> None:
     """
     Send request to invite a user to a Crew
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param captain: The captain issuing the invite
     :param target_user: The user being invited
@@ -69,9 +69,9 @@ async def send_request(
         validate(target_user, crew, specific_user_error=True, specific_crew_error=True)
     except CrewValidationException as e:
         await context.bot.send_message(
-            chat_id=update.effective_chat.id,
+            chat_id=event.effective_chat.id,
             text=str(e),
-            reply_to_message_id=update.message.message_id
+            reply_to_message_id=event.message.message_id
         )
         return
 
@@ -96,7 +96,7 @@ async def send_request(
     await full_media_send(
         context,
         saved_media_name=SavedMediaName.CREW_INVITE,
-        update=update,
+        event=event,
         caption=caption,
         keyboard=inline_keyboard,
         add_delete_button=True,
@@ -104,7 +104,7 @@ async def send_request(
 
 
 async def keyboard_interaction(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     invited_user: User,
     crew: Crew,
@@ -112,7 +112,7 @@ async def keyboard_interaction(
 ) -> None:
     """
     Keyboard interaction
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param invited_user: The invited user
     :param crew: The crew object
@@ -130,7 +130,7 @@ async def keyboard_interaction(
         await full_media_send(
             context,
             caption=ot_text,
-            update=update,
+            event=event,
             add_delete_button=True,
             authorized_users=[captain],
             edit_only_caption_and_keyboard=True,
@@ -143,7 +143,7 @@ async def keyboard_interaction(
         await full_media_send(
             context,
             caption=str(e),
-            update=update,
+            event=event,
             add_delete_button=True,
             authorized_users=[captain, invited_user],
             edit_only_caption_and_keyboard=True,
@@ -160,7 +160,7 @@ async def keyboard_interaction(
     await full_media_send(
         context,
         caption=ot_text,
-        update=update,
+        event=event,
         add_delete_button=True,
         authorized_users=[captain],
         edit_only_caption_and_keyboard=True,

@@ -15,11 +15,11 @@ from src.utils.string_utils import get_belly_formatted
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the bounty loan detail forgiveness screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -34,7 +34,7 @@ async def manage(
         await full_message_send(
             context,
             phrases.BOUNTY_LOAN_ITEM_NOT_ACTIVE,
-            update=update,
+            event=event,
             inbound_keyboard=inbound_keyboard,
         )
         return
@@ -60,7 +60,7 @@ async def manage(
         await full_message_send(
             context,
             ot_text,
-            update=update,
+            event=event,
             keyboard=inline_keyboard,
             inbound_keyboard=inbound_keyboard,
         )
@@ -71,15 +71,15 @@ async def manage(
 
     # Send notification to the borrower
     await send_notification(
-        context, loan.borrower, BountyLoanForgivenNotification(loan), update=update
+        context, loan.borrower, BountyLoanForgivenNotification(loan), event=event
     )
 
     ot_text = phrases.BOUNTY_LOAN_ITEM_FORGIVE_SUCCESS
     # Show callback alert
-    await full_message_send(context, ot_text, update=update, answer_callback=True, show_alert=True)
+    await full_message_send(context, ot_text, event=event, answer_callback=True, show_alert=True)
 
     # Go back to loan detail
     await manage_bounty_loan_detail(
-        update, context, inbound_keyboard, user, called_from_another_screen=True
+        event, context, inbound_keyboard, user, called_from_another_screen=True
     )
     return

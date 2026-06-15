@@ -18,11 +18,11 @@ from src.utils.string_utils import get_belly_formatted
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage this screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -35,13 +35,13 @@ async def manage(
     devil_fruit: DevilFruit = trade.devil_fruit
 
     if not await validate_trade(
-        update,
+        event,
         context,
         devil_fruit,
         trade.giver,
         inbound_keyboard=inbound_keyboard,
         show_alert=True,
-    ) or not await validate_buy(update, context, user, trade):
+    ) or not await validate_buy(event, context, user, trade):
         return
 
     inline_keyboard: list[list[Keyboard]] = []
@@ -66,14 +66,14 @@ async def manage(
         await full_message_send(
             context,
             ot_text,
-            update=update,
+            event=event,
             keyboard=inline_keyboard,
             inbound_keyboard=inbound_keyboard,
         )
         return
 
     # Buy
-    ot_text = await buy(update, context, user, trade, devil_fruit, DevilFruitSource.SHOP)
+    ot_text = await buy(event, context, user, trade, devil_fruit, DevilFruitSource.SHOP)
     if not ot_text:  # Error during buying, message already sent
         return
 
@@ -91,7 +91,7 @@ async def manage(
     await full_message_send(
         context,
         ot_text,
-        update=update,
+        event=event,
         keyboard=inline_keyboard,
         inbound_keyboard=inbound_keyboard,
         back_screen_index=1,

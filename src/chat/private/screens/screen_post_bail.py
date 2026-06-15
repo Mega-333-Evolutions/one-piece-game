@@ -23,11 +23,11 @@ from src.utils.string_utils import get_belly_formatted
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage this screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -45,7 +45,7 @@ async def manage(
         inbound_keyboard.get_int(ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY)
     )
 
-    if not await validate(update, context, user, prisoner):
+    if not await validate(event, context, user, prisoner):
         return
 
     if ReservedKeyboardKeys.CONFIRM not in inbound_keyboard.info:
@@ -69,30 +69,30 @@ async def manage(
         await full_message_send(
             context,
             ot_text,
-            update=update,
+            event=event,
             keyboard=inline_keyboard,
             inbound_keyboard=inbound_keyboard,
         )
         return
 
     impel_down_log: ImpelDownLog = prisoner.get_current_impel_down_log()
-    await post_bail(context, update, impel_down_log, user)
+    await post_bail(context, event, impel_down_log, user)
 
     # Send success message
     await full_message_send(
         context,
         phrases.CREW_POST_BAIL_SUCCESS,
-        update=update,
+        event=event,
         inbound_keyboard=inbound_keyboard,
     )
 
 
 async def validate(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, prisoner: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, prisoner: User
 ) -> bool:
     """
     Validate the user
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param prisoner: The prisoner object
@@ -120,7 +120,7 @@ async def validate(
                 )
             )
     except ImpelDownValidationException as e:
-        await full_message_send(context, e.message, update=update, show_alert=True)
+        await full_message_send(context, e.message, event=event, show_alert=True)
         return False
 
     return True

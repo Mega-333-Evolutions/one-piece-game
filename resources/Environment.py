@@ -1,7 +1,14 @@
 import os
 import sys
 
-from distutils.util import strtobool
+def strtobool(val):
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return 1
+    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return 0
+    else:
+        raise ValueError("invalid truth value %r" % (val,))
 
 from dotenv import load_dotenv
 
@@ -1092,3 +1099,6 @@ IMPEL_DOWN_BAIL_PER_MINUTE = Environment("IMPEL_DOWN_BAIL_PER_MINUTE", default_v
 AUTO_DELETE_DURATION_VALUES = Environment(
     "AUTO_DELETE_DURATION_VALUES", default_value="1|2|5|15|30|60|120|180|360"
 )
+
+API_ID = Environment("API_ID", default_value="12345")
+API_HASH = Environment("API_HASH", default_value="0123456789abcdef0123456789abcdef")

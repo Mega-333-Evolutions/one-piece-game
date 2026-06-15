@@ -32,7 +32,7 @@ class CrewReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     inbound_keyboard: Keyboard,
@@ -40,7 +40,7 @@ async def manage(
 ) -> None:
     """
     Manage the Crew join screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -56,18 +56,18 @@ async def manage(
 
     # Request to join a Crew
     if inbound_keyboard is None:
-        await send_request(update, context, user, crew)
+        await send_request(event, context, user, crew)
         return
 
-    await keyboard_interaction(update, context, crew, inbound_keyboard)
+    await keyboard_interaction(event, context, crew, inbound_keyboard)
 
 
 async def send_request(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, crew: Crew
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, crew: Crew
 ) -> None:
     """
     Send request to join a Crew
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param crew: The crew object
@@ -81,7 +81,7 @@ async def send_request(
         await full_message_send(
             context,
             e.message,
-            update=update,
+            event=event,
             add_delete_button=True,
             authorized_users=[user],
         )
@@ -114,7 +114,7 @@ async def send_request(
     await full_media_send(
         context,
         saved_media_name=SavedMediaName.CREW_JOIN,
-        update=update,
+        event=event,
         caption=caption,
         keyboard=inline_keyboard,
         add_delete_button=True,
@@ -122,14 +122,14 @@ async def send_request(
 
 
 async def keyboard_interaction(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     crew: Crew,
     inbound_keyboard: Keyboard,
 ) -> None:
     """
     Keyboard interaction
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param crew: The crew object
     :param inbound_keyboard: The inbound keyboard
@@ -146,7 +146,7 @@ async def keyboard_interaction(
         await full_media_send(
             context,
             caption=ot_text,
-            update=update,
+            event=event,
             add_delete_button=True,
             authorized_users=[requesting_user],
             edit_only_caption_and_keyboard=True,
@@ -165,7 +165,7 @@ async def keyboard_interaction(
     await full_media_send(
         context,
         caption=ot_text,
-        update=update,
+        event=event,
         add_delete_button=True,
         authorized_users=[requesting_user],
         edit_only_caption_and_keyboard=True,

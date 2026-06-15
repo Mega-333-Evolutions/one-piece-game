@@ -12,11 +12,11 @@ from src.service.message_service import full_message_send, get_yes_no_keyboard
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage this screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -29,7 +29,7 @@ async def manage(
     devil_fruit: DevilFruit = trade.devil_fruit
 
     if not await validate_trade(
-        update, context, devil_fruit, user, inbound_keyboard=inbound_keyboard, show_alert=True
+        event, context, devil_fruit, user, inbound_keyboard=inbound_keyboard, show_alert=True
     ):
         return
 
@@ -50,7 +50,7 @@ async def manage(
         await full_message_send(
             context,
             ot_text,
-            update=update,
+            event=event,
             keyboard=inline_keyboard,
             inbound_keyboard=inbound_keyboard,
         )
@@ -62,5 +62,5 @@ async def manage(
     # Send success message
     ot_text = phrases.DEVIL_FRUIT_SHOP_ITEM_DETAIL_REMOVE_SUCCESS
     await full_message_send(
-        context, ot_text, update=update, inbound_keyboard=inbound_keyboard, back_screen_index=1
+        context, ot_text, event=event, inbound_keyboard=inbound_keyboard, back_screen_index=1
     )

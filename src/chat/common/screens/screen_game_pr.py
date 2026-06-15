@@ -196,11 +196,11 @@ async def run_game(
 
 
 async def validate_answer(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, game: Game, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, game: Game, user: User
 ) -> None:
     """
     Validate the answer
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param game: The game object
     :param user: The user object
@@ -209,7 +209,7 @@ async def validate_answer(
 
     details_text = phrases.PUNK_RECORDS_GAME_RECAP.format(get_recap_details(game, user), "")
     if not await guess_game_should_end_after_answer(
-        update, context, game, user, detail_text=details_text
+        event, context, game, user, detail_text=details_text
     ):
         return
 
@@ -218,7 +218,7 @@ async def validate_answer(
     outcome: GameOutcome = (
         GameOutcome.CHALLENGER_WON if user == challenger else GameOutcome.OPPONENT_WON
     )
-    await end_game(game, outcome, context, update=update)
+    await end_game(game, outcome, context, event=event)
     user.should_update_model = False  # To avoid re-writing bounty
     loser = challenger if user == opponent else opponent
 

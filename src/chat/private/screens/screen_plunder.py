@@ -11,11 +11,11 @@ from src.service.fight_plunder_service import (
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, inbound_keyboard: Keyboard
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, inbound_keyboard: Keyboard
 ) -> None:
     """
     Manage the fight request
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -23,7 +23,7 @@ async def manage(
     """
 
     # Validate the request
-    if not await plunder_validate(update, context, user, False, inbound_keyboard):
+    if not await plunder_validate(event, context, user, False, inbound_keyboard):
         return
 
-    return await private_manage(update, context, user, inbound_keyboard, ScoutType.PLUNDER)
+    return await private_manage(event, context, user, inbound_keyboard, ScoutType.PLUNDER)

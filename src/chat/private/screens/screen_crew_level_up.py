@@ -15,11 +15,11 @@ from src.utils.string_utils import get_belly_formatted
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage this screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -28,12 +28,12 @@ async def manage(
 
     crew: Crew = get_crew(user=user)
 
-    if not await validate(update, context, inbound_keyboard, crew):
+    if not await validate(event, context, inbound_keyboard, crew):
         return
 
     # Not confirmed, show the confirmation screen
     if ReservedKeyboardKeys.CONFIRM not in inbound_keyboard.info:
-        await request_confirmation(update, context, inbound_keyboard, crew)
+        await request_confirmation(event, context, inbound_keyboard, crew)
         return
 
     # Getting the text before adding power-up else it won't be accurate since the crew would be
@@ -44,15 +44,15 @@ async def manage(
     price = crew.get_powerup_price(CrewChestSpendingReason.LEVEL_UP)
     add_powerup(crew, user, CrewChestSpendingReason.LEVEL_UP, price)
 
-    await full_message_send(context, ot_text, update=update, inbound_keyboard=inbound_keyboard)
+    await full_message_send(context, ot_text, event=event, inbound_keyboard=inbound_keyboard)
 
 
 async def request_confirmation(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, crew: Crew
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, crew: Crew
 ) -> None:
     """
     Request confirmation to level up
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param inbound_keyboard: The inbound keyboard
     :param crew: The crew object
@@ -71,18 +71,18 @@ async def request_confirmation(
     await full_message_send(
         context,
         phrases.CREW_LEVEL_UP_CONFIRMATION_REQUEST.format(get_level_up_recap_text(crew)),
-        update=update,
+        event=event,
         keyboard=inline_keyboard,
         inbound_keyboard=inbound_keyboard,
     )
 
 
 async def validate(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, crew: Crew
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, crew: Crew
 ) -> bool:
     """
     Validate the crew level up screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param crew: The crew
@@ -107,7 +107,7 @@ async def validate(
         await full_message_send(
             context,
             str(e),
-            update=update,
+            event=event,
             answer_callback=True,
             show_alert=True,
             inbound_keyboard=inbound_keyboard,

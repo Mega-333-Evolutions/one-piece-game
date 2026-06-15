@@ -64,7 +64,7 @@ class PredictionRemoveBetListPage(ListPage):
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
     user: User,
@@ -72,7 +72,7 @@ async def manage(
 ) -> None:
     """
     Manage the prediction detail screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -102,10 +102,10 @@ async def manage(
     if len(items) == 0 or (len(items) == 1 and not called_from_remove_confirm):
         if len(items) == 1:  # If only one item, directly remove bet
             prediction_option: PredictionOption = items[0]
-            await validate_and_delete(context, prediction_option, update, user)
+            await validate_and_delete(context, prediction_option, event, user)
 
         inbound_keyboard.previous_screen_list.pop()
-        await manage_prediction_detail(update, context, inbound_keyboard, user)
+        await manage_prediction_detail(event, context, inbound_keyboard, user)
         return
 
     ot_text, items_keyboard = get_items_text_keyboard(
@@ -119,7 +119,7 @@ async def manage(
     await full_message_send(
         context,
         ot_text,
-        update=update,
+        event=event,
         keyboard=items_keyboard,
         inbound_keyboard=inbound_keyboard,
         excluded_keys_from_back_button=[ReservedKeyboardKeys.PAGE],

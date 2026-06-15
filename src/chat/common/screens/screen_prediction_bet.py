@@ -20,7 +20,7 @@ from src.service.prediction_service import (
 
 
 async def validate(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     command: Command = None,
@@ -33,7 +33,7 @@ async def validate(
 ) -> tuple[Prediction, PredictionOption, int, int] | tuple[None, None, None, None]:
     """
     Validate the prediction bet
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param command: The command
@@ -55,7 +55,7 @@ async def validate(
                 await full_message_send(
                     context,
                     phrases.PREDICTION_BET_INVALID_FORMAT,
-                    update=update,
+                    event=event,
                     add_delete_button=add_delete_button,
                     inbound_keyboard=inbound_keyboard,
                     previous_screens=previous_screens,
@@ -66,7 +66,7 @@ async def validate(
 
         # Wager basic validation, error message is sent by validate_wager
         if not await validate_amount(
-            update,
+            event,
             context,
             user,
             amount,
@@ -81,13 +81,13 @@ async def validate(
     # Get prediction from message id
     if prediction_option is None:
         prediction: Prediction = get_prediction_from_message_id(
-            group_chat, update.message.reply_to_message.message_id
+            group_chat, event.message.reply_to_message.message_id
         )
         if prediction is None:
             await full_message_send(
                 context,
                 phrases.PREDICTION_NOT_FOUND_IN_REPLY,
-                update=update,
+                event=event,
                 add_delete_button=add_delete_button,
                 inbound_keyboard=inbound_keyboard,
                 previous_screens=previous_screens,
@@ -102,7 +102,7 @@ async def validate(
         await full_message_send(
             context,
             phrases.PREDICTION_CLOSED_FOR_BETS,
-            update=update,
+            event=event,
             add_delete_button=add_delete_button,
             inbound_keyboard=inbound_keyboard,
             previous_screens=previous_screens,
@@ -125,7 +125,7 @@ async def validate(
                 phrases.PREDICTION_OPTION_NOT_FOUND.format(
                     escape_valid_markdown_chars(command.parameters[1])
                 ),
-                update=update,
+                event=event,
                 add_delete_button=add_delete_button,
                 inbound_keyboard=inbound_keyboard,
                 previous_screens=previous_screens,
@@ -144,7 +144,7 @@ async def validate(
             await full_message_send(
                 context,
                 phrases.PREDICTION_ALREADY_BET,
-                update=update,
+                event=event,
                 add_delete_button=add_delete_button,
                 inbound_keyboard=inbound_keyboard,
                 previous_screens=previous_screens,
@@ -163,7 +163,7 @@ async def validate(
             await full_message_send(
                 context,
                 phrases.PREDICTION_ALREADY_BET_ON_OPTION,
-                update=update,
+                event=event,
                 add_delete_button=add_delete_button,
                 inbound_keyboard=inbound_keyboard,
                 previous_screens=previous_screens,

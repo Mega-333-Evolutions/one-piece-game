@@ -79,11 +79,11 @@ def get_win_odd(user: User) -> float:
 
 
 async def validate_play(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, doc_q_game: DocQGame = None
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, doc_q_game: DocQGame = None
 ) -> bool:
     """
     Validate play request
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param doc_q_game: The doc q game
@@ -97,10 +97,10 @@ async def validate_play(
             user.get_bounty_formatted(),
         )
         try:
-            await full_message_send(context, ot_text, update=update, add_delete_button=True)
+            await full_message_send(context, ot_text, event=event, add_delete_button=True)
         except BadRequest:
             await full_message_or_media_send_or_edit(
-                context, ot_text, update=update, add_delete_button=True
+                context, ot_text, event=event, add_delete_button=True
             )
         return False
 
@@ -109,10 +109,10 @@ async def validate_play(
             get_remaining_duration(user.doc_q_cooldown_end_date)
         )
         try:
-            await full_message_send(context, ot_text, update=update, add_delete_button=True)
+            await full_message_send(context, ot_text, event=event, add_delete_button=True)
         except BadRequest:
             await full_message_or_media_send_or_edit(
-                context, ot_text, update=update, add_delete_button=True
+                context, ot_text, event=event, add_delete_button=True
             )
         return False
 
@@ -152,11 +152,11 @@ async def delete_game(context: ContextTypes.DEFAULT_TYPE, doc_q_game: DocQGame) 
 
 
 async def play_request(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, group_chat: GroupChat
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, group_chat: GroupChat
 ) -> None:
     """
     User request to play Doc Q Game
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param group_chat: The group chat
@@ -164,7 +164,7 @@ async def play_request(
     """
     screen = Screen.GRP_DOC_Q_GAME if group_chat is not None else Screen.PVT_DOC_Q_GAME
 
-    if await validate_play(update, context, user):
+    if await validate_play(event, context, user):
         doc_q_game = DocQGame()
         doc_q_game.user = user
         doc_q_game.group_chat = group_chat
@@ -240,7 +240,7 @@ async def play_request(
         message: Message = await full_media_send(
             context,
             saved_media_name=SavedMediaName.DOC_Q,
-            update=update,
+            event=event,
             caption=caption,
             keyboard=inline_keyboard,
         )
@@ -250,11 +250,11 @@ async def play_request(
 
 
 async def keyboard_interaction(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, keyboard: Keyboard
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, keyboard: Keyboard
 ) -> None:
     """
     Keyboard interaction
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param keyboard: The keyboard
@@ -268,12 +268,12 @@ async def keyboard_interaction(
     if doc_q_game is None:
         raise CommonChatException(phrases.DOC_Q_GAME_NOT_FOUND)
 
-    if await validate_play(update, context, user, doc_q_game):
+    if await validate_play(event, context, user, doc_q_game):
         # User clicked on cancel button
         if DocQReservedKeys.CANCEL in keyboard.info:
             # Answer callback with goodbye message
             await full_message_send(
-                context, phrases.DOC_Q_GAME_CANCEL, update, answer_callback=True
+                context, phrases.DOC_Q_GAME_CANCEL, event, answer_callback=True
             )
             await delete_game(context, doc_q_game)
             return
@@ -289,7 +289,7 @@ async def keyboard_interaction(
             await add_or_remove_bounty(
                 user,
                 win_amount,
-                update=update,
+                event=event,
                 tax_event_type=IncomeTaxEventType.DOC_Q_GAME,
                 event_id=doc_q_game.id,
                 should_save=True,
@@ -308,7 +308,7 @@ async def keyboard_interaction(
         else:  # User chose wrong option
             # Decrease user's bounty
             await add_or_remove_bounty(
-                user, lose_amount, add=False, update=update, should_save=True
+                user, lose_amount, add=False, event=event, should_save=True
             )
 
             # Update game status
@@ -327,13 +327,13 @@ async def keyboard_interaction(
         # Send outcome text
         await full_media_send(
             context,
-            update=update,
+            event=event,
             caption=ot_text,
             edit_only_caption_and_keyboard=True,
             add_delete_button=True,
         )
 
-        # Save update
+        # Save event
         user.doc_q_cooldown_end_date = get_ability_adjusted_datetime(
             user,
             DevilFruitAbilityType.DOC_Q_COOLDOWN_DURATION,
@@ -343,7 +343,7 @@ async def keyboard_interaction(
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     keyboard: Keyboard,
@@ -351,7 +351,7 @@ async def manage(
 ) -> None:
     """
     Manage Doc Q Game screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param keyboard: The keyboard
@@ -360,7 +360,7 @@ async def manage(
     """
     # Request to play
     if keyboard is None:
-        await play_request(update, context, user, group_chat)
+        await play_request(event, context, user, group_chat)
         return
 
-    await keyboard_interaction(update, context, user, keyboard)
+    await keyboard_interaction(event, context, user, keyboard)

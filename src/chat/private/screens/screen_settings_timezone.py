@@ -28,11 +28,11 @@ class TimezoneReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the timezone setting screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -43,7 +43,7 @@ async def manage(
 
     if inbound_keyboard is None:
         try:
-            timezone = get_timezone_from_location(update.message.text)
+            timezone = get_timezone_from_location(event.message.text)
         except KeyError:
             timezone = None
 
@@ -51,7 +51,7 @@ async def manage(
             await full_message_send(
                 context,
                 phrases.PVT_TXT_SETTINGS_TIMEZONE_INVALID,
-                update=update,
+                event=event,
                 inbound_keyboard=inbound_keyboard,
                 previous_screens=user.get_private_screen_list()[:-1],
             )
@@ -79,7 +79,7 @@ async def manage(
     await full_message_send(
         context,
         get_text(user),
-        update=update,
+        event=event,
         keyboard=inline_keyboard,
         inbound_keyboard=inbound_keyboard,
         previous_screens=user.get_private_screen_list()[:-1],

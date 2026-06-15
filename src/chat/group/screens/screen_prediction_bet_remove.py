@@ -19,7 +19,7 @@ from src.service.prediction_service import (
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     command: Command,
@@ -27,7 +27,7 @@ async def manage(
 ) -> None:
     """
     Manage the change region request
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param command: The command
@@ -36,14 +36,14 @@ async def manage(
     """
 
     try:
-        validation_tuple = await validate(update, user, command, group_chat=group_chat)
+        validation_tuple = await validate(event, user, command, group_chat=group_chat)
 
         # Need single assignment to enable IDE type detection
         prediction: Prediction = validation_tuple[0]
         prediction_option: PredictionOption = validation_tuple[1]
         prediction_options_user: list[PredictionOptionUser] = validation_tuple[2]
     except PredictionException as pe:
-        await full_message_send(context, pe.message, update=update, add_delete_button=True)
+        await full_message_send(context, pe.message, event=event, add_delete_button=True)
         return
 
     if prediction_option is None:
@@ -54,7 +54,7 @@ async def manage(
         await full_message_send(
             context,
             phrases.PREDICTION_BET_REMOVE_ALL_SUCCESS,
-            update=update,
+            event=event,
             add_delete_button=True,
         )
     else:
@@ -62,7 +62,7 @@ async def manage(
         await delete_prediction_option_for_user(user, prediction_option)
 
         await full_message_send(
-            context, phrases.PREDICTION_BET_REMOVE_SUCCESS, update=update, add_delete_button=True
+            context, phrases.PREDICTION_BET_REMOVE_SUCCESS, event=event, add_delete_button=True
         )
 
     # Update prediction text

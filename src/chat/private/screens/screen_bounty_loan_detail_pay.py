@@ -39,11 +39,11 @@ class BountyLoanDetailActivateReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the bounty loan detail pay screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -68,7 +68,7 @@ async def manage(
 
         step = Step(user.private_screen_step if user.private_screen_step else Step.REQUEST_AMOUNT)
         if not await validate(
-            update,
+            event,
             context,
             user,
             inbound_keyboard,
@@ -112,11 +112,11 @@ async def manage(
                     and BountyLoanDetailActivateReservedKeys.PAY_ALL in inbound_keyboard.info
                 ):
                     amount = loan.get_remaining_amount()
-                    if not await validate(update, context, user, None, loan, amount=amount):
+                    if not await validate(event, context, user, None, loan, amount=amount):
                         return
                 else:
                     amount = loan.get_maximum_payable_amount(
-                        get_amount_from_string(update.message.text, user)
+                        get_amount_from_string(event.message.text, user)
                     )
 
                 ot_text = phrases.BOUNTY_LOAN_ITEM_PAY_CONFIRMATION_REQUEST.format(
@@ -146,7 +146,7 @@ async def manage(
                 amount = int(
                     user.get_context_data(context, ContextDataKey.BOUNTY_LOAN_REPAY_AMOUNT)
                 )
-                await loan.pay(amount, update)
+                await loan.pay(amount, event)
 
                 # Send notification to loaner
                 await send_notification(
@@ -156,7 +156,7 @@ async def manage(
                 ot_text = phrases.BOUNTY_LOAN_ITEM_PAY_SUCCESS.format(get_belly_formatted(amount))
                 # Show callback alert
                 await full_message_send(
-                    context, ot_text, update=update, answer_callback=True, show_alert=True
+                    context, ot_text, event=event, answer_callback=True, show_alert=True
                 )
 
                 # Go back to loan detail
@@ -166,7 +166,7 @@ async def manage(
                     inbound_keyboard.info.pop(ReservedKeyboardKeys.SCREEN_STEP)
 
                 await manage_bounty_loan_detail(
-                    update, context, inbound_keyboard, user, called_from_another_screen=True
+                    event, context, inbound_keyboard, user, called_from_another_screen=True
                 )
                 return
 
@@ -185,7 +185,7 @@ async def manage(
         await full_message_send(
             context,
             str(ot_text),
-            update=update,
+            event=event,
             inbound_keyboard=inbound_keyboard,
             keyboard=inline_keyboard,
             previous_screens=previous_screens,
@@ -195,7 +195,7 @@ async def manage(
 
 
 async def validate(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     inbound_keyboard: Keyboard | None,
@@ -206,7 +206,7 @@ async def validate(
     """
     Validate the bounty loan pay
 
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param loan: The loan
@@ -225,7 +225,7 @@ async def validate(
         if amount is None:
             if inbound_keyboard is None:
                 try:
-                    amount = update.message.text
+                    amount = event.message.text
                 except AttributeError:
                     raise BountyLoanValidationException(phrases.ACTION_INVALID_WAGER_AMOUNT)
             else:
@@ -241,7 +241,7 @@ async def validate(
                 loan.get_remaining_amount(), Env.BOUNTY_LOAN_MIN_AMOUNT.get_int()
             )
             await validate_amount(
-                update,
+                event,
                 context,
                 user,
                 amount,
@@ -255,7 +255,7 @@ async def validate(
         await full_message_send(
             context,
             str(e),
-            update=update,
+            event=event,
             answer_callback=True,
             show_alert=True,
             inbound_keyboard=inbound_keyboard,

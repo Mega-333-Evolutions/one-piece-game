@@ -80,7 +80,7 @@ async def add_sentence(
 
 async def post_bail(
     context: ContextTypes.DEFAULT_TYPE,
-    update: Update,
+    event: Update,
     impel_down_log: ImpelDownLog,
     payer: User,
     should_save_payer: bool = False,
@@ -88,7 +88,7 @@ async def post_bail(
     """
     Post bail
     :param context: The context
-    :param update: The update
+    :param event: The event
     :param impel_down_log: The impel down log
     :param payer: The user posting bail
     :param should_save_payer: If the payer should be saved
@@ -101,7 +101,7 @@ async def post_bail(
 
     # Remove from payer
     await add_or_remove_bounty(
-        payer, bail, add=False, update=update, should_save=should_save_payer
+        payer, bail, add=False, event=event, should_save=should_save_payer
     )
 
     prisoner.impel_down_release_date = datetime.now()
@@ -112,7 +112,7 @@ async def post_bail(
     # Send notification to the prisoner if they did not pay
     if prisoner != payer:
         await send_notification(
-            context, prisoner, ImpelDownBailPostedNotification(impel_down_log), update=update
+            context, prisoner, ImpelDownBailPostedNotification(impel_down_log), event=event
         )
 
     prisoner.save()

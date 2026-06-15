@@ -23,14 +23,14 @@ from src.service.notification_service import send_notification
 
 
 async def validate(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
     davy_back_fight: DavyBackFight,
 ) -> bool:
     """
     Validate the Davy Back Fight opponent conscription
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param davy_back_fight: The Davy Back Fight
@@ -54,7 +54,7 @@ async def validate(
         await full_message_send(
             context,
             str(e),
-            update=update,
+            event=event,
             answer_callback=True,
             show_alert=True,
             inbound_keyboard=inbound_keyboard,
@@ -64,11 +64,11 @@ async def validate(
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -80,12 +80,12 @@ async def manage(
     )
     crew: Crew = get_crew(user)
 
-    if not await validate(update, context, inbound_keyboard, dbf):
+    if not await validate(event, context, inbound_keyboard, dbf):
         return
 
     # Choose conscript
     if not inbound_keyboard.has_key(ReservedKeyboardKeys.DEFAULT_SECONDARY_KEY):
-        await choose_conscript(update, context, inbound_keyboard, crew, dbf)
+        await choose_conscript(event, context, inbound_keyboard, crew, dbf)
         return
 
     # Not confirmed, show the confirmation screen
@@ -93,7 +93,7 @@ async def manage(
         inbound_keyboard.has_key(ReservedKeyboardKeys.CONFIRM)
         and inbound_keyboard.get(ReservedKeyboardKeys.CONFIRM)
     ):
-        await request_confirmation(update, context, inbound_keyboard)
+        await request_confirmation(event, context, inbound_keyboard)
         return
 
     conscript: User = User.get_by_id(
@@ -114,13 +114,13 @@ async def manage(
 
     # Send notification to user and captain
     await send_notification(
-        context, conscript, CrewConscriptionStartNotification(conscript), update=update
+        context, conscript, CrewConscriptionStartNotification(conscript), event=event
     )
     await send_notification(
         context,
         captain_of_previous_crew,
         CrewConscriptionStartCaptainNotification(conscript),
-        update=update,
+        event=event,
     )
 
     # Add view member button
@@ -140,7 +140,7 @@ async def manage(
         phrases.CREW_DAVY_BACK_FIGHT_OPPONENT_CONSCRIPT_SUCCESS.format(
             conscript.get_markdown_mention()
         ),
-        update=update,
+        event=event,
         inbound_keyboard=inbound_keyboard,
         keyboard=inline_keyboard,
         excluded_keys_from_back_button=[ReservedKeyboardKeys.DEFAULT_SECONDARY_KEY],
@@ -148,7 +148,7 @@ async def manage(
 
 
 async def choose_conscript(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
     crew: Crew,
@@ -156,7 +156,7 @@ async def choose_conscript(
 ):
     """
     Get the opponents keyboard
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param crew: The crew
@@ -194,7 +194,7 @@ async def choose_conscript(
         phrases.CREW_DAVY_BACK_FIGHT_OPPONENT_CONSCRIPT_CHOOSE_CONSCRIPT.format(
             davy_back_fight.get_penalty_remaining_time()
         ),
-        update=update,
+        event=event,
         keyboard=keyboard,
         inbound_keyboard=inbound_keyboard,
         excluded_keys_from_back_button=[ReservedKeyboardKeys.DEFAULT_SECONDARY_KEY],
@@ -202,13 +202,13 @@ async def choose_conscript(
 
 
 async def request_confirmation(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
 ):
     """
     Request confirmation to conscript the opponent
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param inbound_keyboard: The inbound keyboard
     :return: None
@@ -236,7 +236,7 @@ async def request_confirmation(
     await full_message_send(
         context,
         ot_text,
-        update=update,
+        event=event,
         keyboard=inline_keyboard,
         inbound_keyboard=inbound_keyboard,
         excluded_keys_from_back_button=[ReservedKeyboardKeys.DEFAULT_SECONDARY_KEY],

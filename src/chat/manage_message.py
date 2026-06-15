@@ -126,39 +126,39 @@ def end(db: MySQLDatabase) -> None:
     db.close()
 
 
-async def manage_regular(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def manage_regular(event: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Manage a regular message
-    :param update: The update
+    :param event: The event
     :param context: The context
     :return: None
     """
 
-    context.application.create_task(manage(update, context, False))
+    context.application.create_task(manage(event, context, False))
 
 
-async def manage_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def manage_callback(event: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Manage a callback message
-    :param update: The update
+    :param event: The event
     :param context: The context
     :return: None
     """
 
-    context.application.create_task(manage(update, context, True))
+    context.application.create_task(manage(event, context, True))
 
 
-async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE, is_callback: bool) -> None:
+async def manage(event: Update, context: ContextTypes.DEFAULT_TYPE, is_callback: bool) -> None:
     """
     Manage a regular message
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param is_callback: True if the message is a callback
     :return: None
     """
     now = datetime.now()
     current_tg_user_id = (
-        str(update.effective_user.id) if update.effective_user is not None else None
+        str(event.effective_user.id) if event.effective_user is not None else None
     )
 
     # Sending message disguised as channel, ignore
@@ -173,11 +173,11 @@ async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE, is_callback
 
     db = init()
     try:
-        await manage_after_db(update, context, is_callback)
+        await manage_after_db(event, context, is_callback)
     except AnonymousAdminException:  # Wasn't able to infer the user
         pass
     except Exception as e:
-        logging.error(update)
+        logging.error(event)
         logging.error(e, exc_info=True)
         # For functions called asynchronously, since the full stacktrace is not printed
         logging.error(traceback.format_stack())
@@ -186,7 +186,7 @@ async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE, is_callback
 
     if is_callback:
         try:
-            await update.callback_query.answer()
+            await event.callback_query.answer()
         except BadRequest:
             pass
 
@@ -195,30 +195,30 @@ async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE, is_callback
 
 
 async def manage_after_db(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, is_callback: bool
+    event: Update, context: ContextTypes.DEFAULT_TYPE, is_callback: bool
 ) -> None:
     """
     Manage a regular message after the database is initialized
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param is_callback: True if the message is a callback
     :return: None
     """
     # Recast necessary for match case to work, don't ask me why
 
-    message_source: MessageSource = MessageSource(get_message_source(update))
+    message_source: MessageSource = MessageSource(get_message_source(event))
 
     user = User()
-    if update.effective_user is not None:
+    if event.effective_user is not None:
         try:
             tg_user_id = await get_effective_tg_user_id(
-                update.effective_user, update.effective_message
+                event.effective_user, event.effective_message
             )
         except AnonymousAdminException:
             # Safely abort if the message is from an anonymous admin or linked channel
             return
             
-        user: User = await get_user(tg_user_id, update.effective_user, should_save=False)
+        user: User = await get_user(tg_user_id, event.effective_user, should_save=False)
 
         # Check if the user is authorized
         if (
@@ -234,11 +234,11 @@ async def manage_after_db(
             # Group not authorized
             if (
                 message_source is MessageSource.GROUP
-                and str(update.effective_chat.id) not in group_ids
+                and str(event.effective_chat.id) not in group_ids
             ):
                 # Leave chat
-                logging.error(f"Unauthorized group {update.effective_chat.id}: Leaving chat")
-                await update.effective_chat.leave()
+                logging.error(f"Unauthorized group {event.effective_chat.id}: Leaving chat")
+                await event.effective_chat.leave()
                 return
 
             # User not a member of an authorized group
@@ -252,9 +252,9 @@ async def manage_after_db(
 
     # Leave chat if not recognized
     if message_source is MessageSource.ND:
-        if str(update.effective_chat.id) != Env.UPDATES_CHAT_ID.get():
-            logging.error(f"Unknown message source for {update.effective_chat.id}: Leaving chat")
-            await update.effective_chat.leave()
+        if str(event.effective_chat.id) != Env.UPDATES_CHAT_ID.get():
+            logging.error(f"Unknown message source for {event.effective_chat.id}: Leaving chat")
+            await event.effective_chat.leave()
         return
 
     # Group
@@ -262,21 +262,21 @@ async def manage_after_db(
     group_chat = None
     if message_source is MessageSource.GROUP:
         group: Group = await add_or_update_group(
-            update, (user if update.effective_user is not None else None)
+            event, (user if event.effective_user is not None else None)
         )
-        group_chat: GroupChat = add_or_update_group_chat(update, group)
-        await add_text_message_bounty(update, context, user, group_chat, is_callback)
+        group_chat: GroupChat = add_or_update_group_chat(event, group)
+        await add_text_message_bounty(event, context, user, group_chat, is_callback)
 
     command: Command.Command = Command.ND
     keyboard = None
     
     # Check for /start command in groups before command parsing
     if (
-        update.message is not None
-        and update.message.text is not None
-        and is_command(update.message.text)
+        event.message is not None
+        and event.message.text is not None
+        and is_command(event.message.text)
         and message_source is MessageSource.GROUP
-        and update.message.text.startswith("/start")
+        and event.message.text.startswith("/start")
     ):
         bot_username = Env.BOT_USERNAME.get()
         start_url = f"https://t.me/{bot_username}?start=start"
@@ -291,16 +291,16 @@ async def manage_after_db(
         await full_message_send(
             context,
             phrases.COMMAND_START_IN_GROUP_ERROR,
-            update=update,
+            event=event,
             keyboard=inline_keyboard,
         )
         return
     
     try:
         try:
-            if is_command(update.message.text):
-                if "/start " in update.message.text:  # Start with parameter
-                    start_parameter = update.message.text.replace("/start ", "")
+            if is_command(event.message.text):
+                if "/start " in event.message.text:  # Start with parameter
+                    start_parameter = event.message.text.replace("/start ", "")
                     try:
                         parameter_decoded = base64.b64decode(start_parameter).decode()
                         keyboard = Keyboard.get_from_callback_query_or_info(
@@ -314,7 +314,7 @@ async def manage_after_db(
                     except (UnicodeDecodeError, ValueError):
                         command_name = start_parameter
                 else:
-                    command_name = (update.message.text.split(" ")[0])[1:].lower()
+                    command_name = (event.message.text.split(" ")[0])[1:].lower()
                     command_name = command_name.replace("@" + Env.BOT_USERNAME.get(), "")
 
                 if keyboard is None:
@@ -322,14 +322,14 @@ async def manage_after_db(
                         command = Command.get_by_name(command_name, message_source)
 
                     try:
-                        command.parameters = update.message.text.split(" ")[1:]
+                        command.parameters = event.message.text.split(" ")[1:]
                     except IndexError:
                         pass
 
         except (AttributeError, ValueError):
             if is_callback:
                 keyboard = Keyboard.get_from_callback_query_or_info(
-                    context, message_source, update.callback_query
+                    context, message_source, event.callback_query
                 )
 
                 if not keyboard.info:
@@ -346,13 +346,13 @@ async def manage_after_db(
         target_user: User | None = None
         if keyboard is None:
             try:
-                if message_is_reply(update):  # REPLY_TO_MESSAGE_BUG_FIX
+                if message_is_reply(event):  # REPLY_TO_MESSAGE_BUG_FIX
                     tg_user_id = await get_effective_tg_user_id(
-                        update.effective_message.reply_to_message.from_user,
-                        update.effective_message.reply_to_message,
+                        event.effective_message.reply_to_message.from_user,
+                        event.effective_message.reply_to_message,
                     )
                     target_user: User = await get_user(
-                        tg_user_id, update.effective_message.reply_to_message.from_user
+                        tg_user_id, event.effective_message.reply_to_message.from_user
                     )
             except AttributeError:
                 pass
@@ -366,15 +366,15 @@ async def manage_after_db(
 
         # Check for spam only if a valid command or private chat
         if command != Command.ND or message_source is MessageSource.PRIVATE:
-            if await is_spam(update, context, message_source, command, user):
+            if await is_spam(event, context, message_source, command, user):
                 logging.warning(
-                    f"Spam detected for chat {update.effective_chat.id}: Ignoring message"
+                    f"Spam detected for chat {event.effective_chat.id}: Ignoring message"
                 )
                 return
 
         if command != Command.ND or is_callback:
             if not await validate(
-                update,
+                event,
                 context,
                 command,
                 user,
@@ -391,20 +391,20 @@ async def manage_after_db(
 
         match message_source:
             case MessageSource.PRIVATE:
-                await manage_private_chat(update, context, command, user, keyboard)
+                await manage_private_chat(event, context, command, user, keyboard)
             case MessageSource.GROUP:
                 await manage_group_chat(
-                    update, context, command, user, keyboard, target_user, is_callback, group_chat
+                    event, context, command, user, keyboard, target_user, is_callback, group_chat
                 )
             case MessageSource.TG_REST:
-                await manage_tgrest_chat(update, context)
+                await manage_tgrest_chat(event, context)
             case MessageSource.INLINE_QUERY:
-                await manage_inline_query(update, context)
+                await manage_inline_query(event, context)
             case _:
                 raise ValueError("Invalid message source")
     except DoesNotExist as dne:
-        await full_message_or_media_send_or_edit(context, phrases.ITEM_NOT_FOUND, update=update)
-        logging.warning(update)
+        await full_message_or_media_send_or_edit(context, phrases.ITEM_NOT_FOUND, event=event)
+        logging.warning(event)
         logging.exception(dne)
     except (TimedOut, NetworkError) as ne:
         logging.warning("Network error")
@@ -421,7 +421,7 @@ async def manage_after_db(
             await full_message_send(
                 context,
                 str(ce),
-                update=update,
+                event=event,
                 previous_screens=previous_screens,
                 from_exception=True,
             )
@@ -430,7 +430,7 @@ async def manage_after_db(
                 await full_message_or_media_send_or_edit(
                     context,
                     str(ce),
-                    update=update,
+                    event=event,
                     previous_screens=previous_screens,
                     from_exception=True,
                 )
@@ -438,14 +438,14 @@ async def manage_after_db(
                 await full_message_or_media_send_or_edit(
                     context,
                     escape_valid_markdown_chars(str(ce)),
-                    update=update,
+                    event=event,
                     previous_screens=previous_screens,
                     from_exception=True,
                 )
     except BadRequest as bre:
         error_str = str(bre).lower()
         if "message is not modified" in error_str:
-            logging.error(f"Updated message same as previous in chat {update.effective_chat.id}")
+            logging.error(f"Updated message same as previous in chat {event.effective_chat.id}")
         elif "query is too old" in error_str or "query id is invalid" in error_str:
             logging.warning("Ignored stale callback query (Query is too old).")
         else:
@@ -454,7 +454,7 @@ async def manage_after_db(
         await full_message_send(
             context,
             phrases.NAVIGATION_LIMIT_REACHED,
-            update=update,
+            event=event,
             answer_callback=True,
             show_alert=True,
         )
@@ -462,13 +462,13 @@ async def manage_after_db(
         await full_message_or_media_send_or_edit(
             context,
             escape_valid_markdown_chars(str(cw)),
-            update=update,
+            event=event,
             inbound_keyboard=keyboard,
             from_exception=True,
             show_alert=True,
         )
     except Exception as e:
-        logging.error(update)
+        logging.error(event)
         logging.error(e, exc_info=True)
         # For functions called asynchronously, since the full stacktrace is not printed
         logging.error(traceback.format_stack())
@@ -478,7 +478,7 @@ async def manage_after_db(
 
 
 async def validate(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     command: Command.Command,
     user: User,
@@ -490,7 +490,7 @@ async def validate(
 ) -> bool:
     """
     Validate the command
-    :param update: Telegram update
+    :param event: Telegram event
     :param context: Telegram context
     :param command: The command
     :param user: The user
@@ -510,7 +510,7 @@ async def validate(
             await full_message_send(
                 context,
                 phrases.KEYBOARD_USE_UNAUTHORIZED,
-                update,
+                event,
                 answer_callback=True,
                 show_alert=True,
             )
@@ -518,7 +518,7 @@ async def validate(
 
         # Delete request, best effort
         if ReservedKeyboardKeys.DELETE in inbound_keyboard.info:
-            await delete_message(update)
+            await delete_message(event)
             return False
 
     # Always accept delete request in private chat
@@ -527,10 +527,10 @@ async def validate(
         and message_source is MessageSource.PRIVATE
         and ReservedKeyboardKeys.DELETE in inbound_keyboard.info
     ):
-        await delete_message(update)
+        await delete_message(event)
         return False
 
-    _message_is_reply = message_is_reply(update)
+    _message_is_reply = message_is_reply(event)
     _is_main_group = group_chat is not None and is_main_group(group_chat)
     is_restricted_feature_error = False
 
@@ -604,7 +604,7 @@ async def validate(
         if command.only_in_reply:
             try:
                 if (
-                    not _message_is_reply or update.message.reply_to_message is None
+                    not _message_is_reply or event.message.reply_to_message is None
                 ):  # REPLY_TO_MESSAGE_BUG_FIX
                     raise CommandValidationException(phrases.COMMAND_NOT_IN_REPLY_ERROR)
             except AttributeError:
@@ -615,7 +615,7 @@ async def validate(
             try:
                 if (
                     _message_is_reply
-                    and update.message.reply_to_message.from_user.id == update.message.from_user.id
+                    and event.message.reply_to_message.from_user.id == event.message.from_user.id
                 ):
                     raise CommandValidationException(phrases.COMMAND_IN_REPLY_TO_ERROR)
             except AttributeError:
@@ -627,7 +627,7 @@ async def validate(
                 # REPLY_TO_MESSAGE_BUG_FIX
                 if (
                     _message_is_reply
-                    and update.effective_message.reply_to_message.from_user.is_bot
+                    and event.effective_message.reply_to_message.from_user.is_bot
                     and target_user is None
                 ):
                     raise CommandValidationException(phrases.COMMAND_IN_REPLY_TO_BOT_ERROR)
@@ -663,7 +663,7 @@ async def validate(
 
         # Can only be used by a chat admin
         if command.only_by_chat_admin:
-            if not await user.is_chat_admin(update):
+            if not await user.is_chat_admin(event):
                 raise CommandValidationException(phrases.COMMAND_ONLY_BY_CHAT_ADMIN_ERROR)
 
         if not is_callback:
@@ -691,13 +691,13 @@ async def validate(
         if is_restricted_feature_error:  # Restricted feature in group_chat, no error message
             return False
         if not command.answer_callback and user_is_muted(user, group_chat):
-            await delete_message(update)
+            await delete_message(event)
         else:
             if (command.answer_callback and is_callback) or command.send_message_if_error:
                 await full_message_or_media_send_or_edit(
                     context,
                     str(cve),
-                    update=update,
+                    event=event,
                     add_delete_button=(inbound_keyboard is None),
                     answer_callback=command.answer_callback,
                     show_alert=command.show_alert,
@@ -713,14 +713,14 @@ async def get_user(
     tg_user_id: str, effective_user: TelegramUser, should_save: bool = True
 ) -> User:
     """
-    Create or update the user
+    Create or event the user
     :param tg_user_id: The Telegram user ID
     :param effective_user: The Telegram user
     :param should_save: True if the user should be saved
     :return: The user
     """
 
-    # Insert or update user
+    # Insert or event user
     user = User.get_or_none(User.tg_user_id == tg_user_id)
     if user is None:
         user = User()
@@ -741,34 +741,34 @@ async def get_user(
     return user
 
 
-async def add_or_update_group(update, user: User) -> Group:
+async def add_or_update_group(event, user: User) -> Group:
     """
     Adds or updates a group_chat
-    :param update: Telegram update
+    :param event: Telegram event
     :param user: User object
     :return: Group object
     """
-    group = Group.get_or_none(Group.tg_group_id == update.effective_chat.id)
+    group = Group.get_or_none(Group.tg_group_id == event.effective_chat.id)
 
     if group is None:
         group = Group()
-        group.tg_group_id = update.effective_chat.id
+        group.tg_group_id = event.effective_chat.id
 
-    # If the group chat has been migrated, update the ID
+    # If the group chat has been migrated, event the ID
     try:
-        if update.message.migrate_to_chat_id is not None:
-            group.tg_group_id = update.message.migrate_to_chat_id
+        if event.message.migrate_to_chat_id is not None:
+            group.tg_group_id = event.message.migrate_to_chat_id
     except AttributeError:
         pass
 
-    group.tg_group_name = update.effective_chat.title
-    group.tg_group_username = update.effective_chat.username
-    group.is_forum = update.effective_chat.is_forum is not None and update.effective_chat.is_forum
+    group.tg_group_name = event.effective_chat.title
+    group.tg_group_username = event.effective_chat.username
+    group.is_forum = event.effective_chat.is_forum is not None and event.effective_chat.is_forum
     group.last_message_date = datetime.now()
     group.is_active = True
     group.save()
 
-    # Add or update the group user
+    # Add or event the group user
     if user is not None:
         group_user = GroupUser.get_or_none((GroupUser.group == group) & (GroupUser.user == user))
         if group_user is None:
@@ -778,23 +778,23 @@ async def add_or_update_group(update, user: User) -> Group:
 
         group_user.last_message_date = datetime.now()
         group_user.is_active = True
-        group_user.is_admin = await user.is_chat_admin(update)
+        group_user.is_admin = await user.is_chat_admin(event)
         group_user.save()
 
     return group
 
 
-def add_or_update_group_chat(update, group: Group) -> GroupChat:
+def add_or_update_group_chat(event, group: Group) -> GroupChat:
     """
     Adds or updates a group_chat
-    :param update: Telegram update
+    :param event: Telegram event
     :param group: Group object
     :return: GroupChat object
     """
 
     tg_topic_id = None
-    if update.effective_chat.is_forum and update.effective_message.is_topic_message:
-        tg_topic_id = update.effective_message.message_thread_id
+    if event.effective_chat.is_forum and event.effective_message.is_topic_message:
+        tg_topic_id = event.effective_message.message_thread_id
 
     group_chat = GroupChat.get_or_none(
         (GroupChat.group == group) & (GroupChat.tg_topic_id == tg_topic_id)
@@ -806,7 +806,7 @@ def add_or_update_group_chat(update, group: Group) -> GroupChat:
         group_chat.tg_topic_id = tg_topic_id
 
     try:
-        group_chat.tg_topic_name = update.message.reply_to_message.forum_topic_created.name
+        group_chat.tg_topic_name = event.message.reply_to_message.forum_topic_created.name
     except AttributeError:
         pass
 
@@ -818,7 +818,7 @@ def add_or_update_group_chat(update, group: Group) -> GroupChat:
 
 
 async def add_text_message_bounty(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     group_chat: GroupChat,
@@ -831,19 +831,19 @@ async def add_text_message_bounty(
     if is_callback or user is None or user.tg_user_id is None:
         return
 
-    if update.message is None or update.message.text is None:
+    if event.message is None or event.message.text is None:
         return
 
-    if update.message.text.startswith(("/", ".", "!")):
+    if event.message.text.startswith(("/", ".", "!")):
         return
 
-    if update.message.forward_origin is not None:
+    if event.message.forward_origin is not None:
         return
 
-    if len(update.message.text.split()) <= 3:
+    if len(event.message.text.split()) <= 3:
         return
 
-    if update.effective_user is not None and update.effective_user.is_bot:
+    if event.effective_user is not None and event.effective_user.is_bot:
         return
 
     if not is_main_group(group_chat) or user.is_arrested():
@@ -853,12 +853,12 @@ async def add_text_message_bounty(
         user,
         Env.MAIN_GROUP_TEXT_MESSAGE_BOUNTY_REWARD.get_int(),
         context=context,
-        update=update,
+        event=event,
     )
 
 
 async def is_spam(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     message_source: MessageSource,
     command: Command,
@@ -866,7 +866,7 @@ async def is_spam(
 ) -> bool:
     """
     Check if the message is spam, which would cause flooding
-    :param update: Telegram update
+    :param event: Telegram event
     :param context: Telegram context
     :param message_source: The message source
     :param command: The command
@@ -879,7 +879,7 @@ async def is_spam(
         inner_key = None
     elif message_source is MessageSource.GROUP:
         context_data_type = ContextDataType.BOT
-        inner_key = str(update.effective_chat.id)
+        inner_key = str(event.effective_chat.id)
     else:
         return False  # Not managing spam for other message sources
 
@@ -931,7 +931,7 @@ async def is_spam(
             await full_message_send(
                 context,
                 phrases.ANTI_SPAM_WARNING,
-                update=update,
+                event=event,
                 quote_if_group=False,
                 new_message=True,
             )

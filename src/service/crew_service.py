@@ -180,7 +180,7 @@ async def disband_crew(
     Disbands a crew
 
     :param context: The context
-    :param captain: The captain, necessary to directly update the user object
+    :param captain: The captain, necessary to directly event the user object
     :param should_notify_captain: Whether to notify the captain
     :return: None
     """

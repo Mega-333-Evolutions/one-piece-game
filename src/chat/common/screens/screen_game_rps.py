@@ -45,7 +45,7 @@ class GameRPSReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     inbound_keyboard: Keyboard,
@@ -55,26 +55,26 @@ async def manage(
 ) -> None:
     """
     Manage the Rock Paper Scissors game screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The inbound keyboard
     :param game: The game object
     :param is_auto_move: If the interaction is from auto move
     :param edit_message_id: Message to be edited. Useful for when a user does not interact with the private game before
-        auto-move is triggered, since the message tied with the update would be the start command
+        auto-move is triggered, since the message tied with the event would be the start command
     :return: None
     """
 
     # Get the game from validation, will handle error messages
-    game = await game_service.validate_game(update, context, inbound_keyboard, game)
+    game = await game_service.validate_game(event, context, inbound_keyboard, game)
     if game is None:
         return
 
     rock_paper_scissors: RockPaperScissors = get_board(game)
     game.last_interaction_date = datetime.now()
 
-    if inbound_keyboard.screen == get_screen(update):
+    if inbound_keyboard.screen == get_screen(event):
         rps_choice = RPSChoice(inbound_keyboard.info[GameRPSReservedKeys.CHOICE])
         # Save choice
         if user == game.challenger:
@@ -90,7 +90,7 @@ async def manage(
             await full_message_send(
                 context,
                 get_choice_text(rps_choice),
-                update=update,
+                event=event,
                 answer_callback=True,
                 show_alert=True,
             )
@@ -108,7 +108,7 @@ async def manage(
             game,
             game_outcome,
             context,
-            update=update,
+            event=event,
             send_outcome_to_user=(
                 game.get_other_player(user) if (game.is_global() or is_auto_move) else None
             ),
@@ -119,8 +119,8 @@ async def manage(
         message: Message = await full_media_send(
             context,
             caption=get_text(game, rock_paper_scissors, user),
-            update=update,
-            keyboard=get_outbound_keyboard(context, game, update, user),
+            event=event,
+            keyboard=get_outbound_keyboard(context, game, event, user),
             authorized_users=game.get_players(),
             edit_only_caption_and_keyboard=True,
             edit_message_id=edit_message_id,
@@ -136,7 +136,7 @@ async def manage(
                     message.id,
                     get_text(game, rock_paper_scissors, game.challenger),
                     get_text(game, rock_paper_scissors, game.opponent),
-                    get_outbound_keyboard(context, game, update, user),
+                    get_outbound_keyboard(context, game, event, user),
                 )
             )
 
@@ -147,8 +147,8 @@ async def manage(
         message: Message = await full_media_send(
             context,
             caption=get_text(game, rock_paper_scissors, user),
-            update=update,
-            keyboard=get_outbound_keyboard(context, game, update, user),
+            event=event,
+            keyboard=get_outbound_keyboard(context, game, event, user),
             authorized_users=game.get_players(),
             saved_media_name=SavedMediaName.GAME_ROCK_PAPER_SCISSORS,
             edit_message_id=edit_message_id,
@@ -164,7 +164,7 @@ async def manage(
                     message.id,
                     get_text(game, rock_paper_scissors, game.challenger),
                     get_text(game, rock_paper_scissors, game.opponent),
-                    get_outbound_keyboard(context, game, update, user),
+                    get_outbound_keyboard(context, game, event, user),
                 )
             )
 
@@ -181,7 +181,7 @@ async def manage(
 
             # Group game, arriving from opponent confirmation, auto move for both
             if not game.is_global():
-                if inbound_keyboard.screen != get_screen(update):
+                if inbound_keyboard.screen != get_screen(event):
                     should_auto_move_challenger = True
                     should_auto_move_opponent = True
             else:
@@ -200,7 +200,7 @@ async def manage(
             if should_auto_move_challenger:
                 context.application.create_task(
                     enqueue_auto_move(
-                        update, context, game, game.challenger, auto_move, message.id
+                        event, context, game, game.challenger, auto_move, message.id
                     )
                 )
 
@@ -210,7 +210,7 @@ async def manage(
                 )  # To avoid overlapping message edits
                 context.application.create_task(
                     enqueue_auto_move(
-                        update,
+                        event,
                         context,
                         game,
                         game.opponent,
@@ -226,13 +226,13 @@ async def manage(
 
 
 def get_outbound_keyboard(
-    context: ContextTypes.DEFAULT_TYPE, game: Game, update: Update, user: User
+    context: ContextTypes.DEFAULT_TYPE, game: Game, event: Update, user: User
 ) -> list[list[Keyboard]]:
     """
     Get the outbound keyboard
     :param context: The context
     :param game: The game object
-    :param update: The update object
+    :param event: The event object
     :param user: The user
     :return: The outbound keyboard
     """
@@ -247,18 +247,18 @@ def get_outbound_keyboard(
         GameRPSReservedKeys.GAME_ID: game.id,
         GameRPSReservedKeys.CHOICE: RPSChoice.ROCK,
     }
-    keyboard_line.append(Keyboard(Emoji.ROCK, info=button_info_rock, screen=get_screen(update)))
+    keyboard_line.append(Keyboard(Emoji.ROCK, info=button_info_rock, screen=get_screen(event)))
     button_info_paper = {
         GameRPSReservedKeys.GAME_ID: game.id,
         GameRPSReservedKeys.CHOICE: RPSChoice.PAPER,
     }
-    keyboard_line.append(Keyboard(Emoji.PAPER, info=button_info_paper, screen=get_screen(update)))
+    keyboard_line.append(Keyboard(Emoji.PAPER, info=button_info_paper, screen=get_screen(event)))
     button_info_scissors = {
         GameRPSReservedKeys.GAME_ID: game.id,
         GameRPSReservedKeys.CHOICE: RPSChoice.SCISSORS,
     }
     keyboard_line.append(
-        Keyboard(Emoji.SCISSORS, info=button_info_scissors, screen=get_screen(update))
+        Keyboard(Emoji.SCISSORS, info=button_info_scissors, screen=get_screen(event))
     )
     outbound_keyboard.append(keyboard_line)
 
@@ -422,21 +422,21 @@ def get_choice_emoji(rps_choice: RPSChoice) -> str:
             raise ValueError(f"Unknown Rock Paper Scissors choice: {rps_choice}")
 
 
-def get_screen(update: Update) -> Screen:
+def get_screen(event: Update) -> Screen:
     """
     Get the screen
-    :param update: The update object
+    :param event: The event object
     :return: The screen
     """
 
-    if get_message_source(update) is MessageSource.GROUP:
+    if get_message_source(event) is MessageSource.GROUP:
         return Screen.GRP_ROCK_PAPER_SCISSORS_GAME
 
     return Screen.PVT_ROCK_PAPER_SCISSORS_GAME
 
 
 async def auto_move(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     game: Game,
     player: User,
@@ -445,7 +445,7 @@ async def auto_move(
 ) -> None:
     """
     Auto-move for the given player
-    :param update: The update
+    :param event: The event
     :param context: The context object
     :param game: The game object
     :param player: The player object
@@ -479,10 +479,10 @@ async def auto_move(
             GameRPSReservedKeys.GAME_ID: game.id,
             GameRPSReservedKeys.CHOICE: choice,
         },
-        screen=get_screen(update),
+        screen=get_screen(event),
     )
 
     player = User.get_by_id(player.id)  # Refresh
     await manage(
-        update, context, player, mock_keyboard, game, is_auto_move=True, edit_message_id=message_id
+        event, context, player, mock_keyboard, game, is_auto_move=True, edit_message_id=message_id
     )

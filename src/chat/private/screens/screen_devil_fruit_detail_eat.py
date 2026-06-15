@@ -35,11 +35,11 @@ class DevilFruitEatReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the Devil Fruit eat screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -55,7 +55,7 @@ async def manage(
         validate(devil_fruit, user)
     except DevilFruitValidationException as ve:
         await full_message_send(
-            context, ve.message, update=update, inbound_keyboard=inbound_keyboard
+            context, ve.message, event=event, inbound_keyboard=inbound_keyboard
         )
         return
 
@@ -85,7 +85,7 @@ async def manage(
         await full_message_send(
             context,
             ot_text,
-            update=update,
+            event=event,
             keyboard=inline_keyboard,
             inbound_keyboard=inbound_keyboard,
         )
@@ -116,7 +116,7 @@ async def manage(
     ot_text = phrases.DEVIL_FRUIT_EAT_CONFIRMATION_CONFIRMED.format(
         devil_fruit.get_full_name(), get_devil_fruit_abilities_text(devil_fruit, add_header=False)
     )
-    await full_message_send(context, ot_text, update=update, inbound_keyboard=inbound_keyboard)
+    await full_message_send(context, ot_text, event=event, inbound_keyboard=inbound_keyboard)
 
     # Alert user if it will be disbanded if they don't appear in the next leaderboard
     context.application.create_task(

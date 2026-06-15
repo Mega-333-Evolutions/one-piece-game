@@ -24,11 +24,11 @@ class CrewDisbandReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the Crew disband screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -39,7 +39,7 @@ async def manage(
         get_crew(user=user)
     except CrewValidationException as cve:
         await full_message_send(
-            context, cve.message, update=update, inbound_keyboard=inbound_keyboard
+            context, cve.message, event=event, inbound_keyboard=inbound_keyboard
         )
         return
 
@@ -58,7 +58,7 @@ async def manage(
         await full_message_send(
             context,
             ot_text,
-            update=update,
+            event=event,
             keyboard=inline_keyboard,
             inbound_keyboard=inbound_keyboard,
         )
@@ -69,5 +69,5 @@ async def manage(
     # Send success message
     ot_text = phrases.CREW_DISBAND_SUCCESS
     await full_message_send(
-        context, ot_text, update=update, inbound_keyboard=inbound_keyboard, back_screen_index=1
+        context, ot_text, event=event, inbound_keyboard=inbound_keyboard, back_screen_index=1
     )

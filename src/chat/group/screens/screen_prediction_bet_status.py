@@ -16,11 +16,11 @@ from src.service.prediction_service import (
 
 
 async def validate(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, group_chat: GroupChat = None
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, group_chat: GroupChat = None
 ) -> tuple[Prediction, list[PredictionOptionUser]] | tuple[None, None]:
     """
     Validate the prediction bet
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param group_chat: The group chat from which to get the prediction if getting from message id
@@ -31,11 +31,11 @@ async def validate(
 
     # Get prediction from message id
     prediction: Prediction = get_prediction_from_message_id(
-        group_chat, update.message.reply_to_message.message_id
+        group_chat, event.message.reply_to_message.message_id
     )
     if prediction is None:
         await full_message_send(
-            context, phrases.PREDICTION_NOT_FOUND_IN_REPLY, update=update, add_delete_button=True
+            context, phrases.PREDICTION_NOT_FOUND_IN_REPLY, event=event, add_delete_button=True
         )
         return error_tuple
 
@@ -47,17 +47,17 @@ async def validate(
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, group_chat: GroupChat
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, group_chat: GroupChat
 ) -> None:
     """
     Manage the change region request
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param group_chat: The group chat
     :return: None
     """
-    validation_tuple = await validate(update, context, user, group_chat=group_chat)
+    validation_tuple = await validate(event, context, user, group_chat=group_chat)
 
     # Need single assignment to enable IDE type detection
     prediction: Prediction = validation_tuple[0]
@@ -67,6 +67,6 @@ async def manage(
         return
 
     ot_text = get_user_prediction_status_text(prediction, user, prediction_options_user)
-    await full_message_send(context, ot_text, update=update, add_delete_button=True)
+    await full_message_send(context, ot_text, event=event, add_delete_button=True)
 
     await refresh(context, prediction, group_chat=group_chat)

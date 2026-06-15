@@ -25,7 +25,7 @@ from src.service.message_service import full_message_send, delete_message
 
 def is_main_group(group_chat: GroupChat) -> bool:
     """
-    Checks if the update is from the main group_chat
+    Checks if the event is from the main group_chat
     :param group_chat: The group chat
     :return: True if the message is from the main group_chat, False otherwise
     """
@@ -292,13 +292,13 @@ def deactivate_inactive_group_chats() -> None:
     inactive_days = Env.INACTIVE_GROUP_DAYS.get_int()
 
     (
-        Group.update(is_active=False)
+        Group.event(is_active=False)
         .where(Group.last_message_date < datetime.now() - timedelta(days=inactive_days))
         .execute()
     )
 
     (
-        GroupChat.update(is_active=False)
+        GroupChat.event(is_active=False)
         .where(GroupChat.last_message_date < datetime.now() - timedelta(days=inactive_days))
         .execute()
     )
@@ -315,13 +315,13 @@ def deactivate_inactive_group_users() -> None:
     inactive_days = Env.INACTIVE_GROUP_USER_DAYS.get_int()
 
     (
-        GroupUser.update(is_active=False)
+        GroupUser.event(is_active=False)
         .where(GroupUser.last_message_date < datetime.now() - timedelta(days=inactive_days))
         .execute()
     )
 
     (
-        User.update(is_active=False)
+        User.event(is_active=False)
         .where(User.last_message_date < datetime.now() - timedelta(days=inactive_days))
         .execute()
     )

@@ -27,7 +27,7 @@ class FeaturesReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard,
     group_chat: GroupChat,
@@ -35,7 +35,7 @@ async def manage(
 ) -> None:
     """
     Manage the features screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param inbound_keyboard: The inbound keyboard
     :param group_chat: The group chat
@@ -100,7 +100,7 @@ async def manage(
     await full_message_send(
         context,
         ot_text,
-        update=update,
+        event=event,
         keyboard=outbound_keyboard,
         add_delete_button=True,
         use_close_delete=True,

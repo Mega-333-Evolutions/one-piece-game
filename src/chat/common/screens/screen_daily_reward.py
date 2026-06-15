@@ -31,14 +31,14 @@ from src.utils.string_utils import object_to_json_string, get_belly_formatted
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     group_chat: GroupChat = None,
 ) -> None:
     """
     Displays a user's status
-    :param update: Telegram update
+    :param event: Telegram event
     :param context: Telegram context
     :param user: User
     :param group_chat: Group chat
@@ -87,7 +87,7 @@ async def manage(
         ot_text = phrases.DAILY_REWARD_ALREADY_COLLECTED.format(
             DailyReward.get_remaining_time_to_next_reward(), extra_text
         )
-        await full_message_send(context, ot_text, update=update, add_delete_button=True)
+        await full_message_send(context, ot_text, event=event, add_delete_button=True)
         return
 
     reward_parts: int = DailyReward.get_daily_reward_reset_times()
@@ -126,7 +126,7 @@ async def manage(
         user,
         reward.total_amount,
         should_tax=False,
-        update=update,
+        event=event,
         context=context,
         should_update_location=True,
     )
@@ -160,7 +160,7 @@ async def manage(
     message: Message = await full_media_send(
         context,
         saved_media_name=SavedMediaName.DAILY_REWARD,
-        update=update,
+        event=event,
         caption=ot_text,
         add_delete_button=True,
     )
@@ -170,4 +170,4 @@ async def manage(
 
     # Prize day
     if reward.should_award_prize():
-        await send_prize_request(context, update, reward)
+        await send_prize_request(context, event, reward)

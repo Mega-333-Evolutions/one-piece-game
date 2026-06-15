@@ -234,11 +234,11 @@ class CrewDavyBackFightListPage(ListPage):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage this screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -261,7 +261,7 @@ async def manage(
         if direct_item is not None:
             inbound_keyboard.info[ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY] = direct_item.id
             inbound_keyboard.info[ReservedKeyboardKeys.DIRECT_ITEM] = True
-            await manage_davy_back_fight_detail(update, context, inbound_keyboard, user)
+            await manage_davy_back_fight_detail(event, context, inbound_keyboard, user)
             return
 
     ot_text, items_keyboard = get_items_text_keyboard(
@@ -278,7 +278,7 @@ async def manage(
     await full_message_send(
         context,
         ot_text,
-        update=update,
+        event=event,
         keyboard=items_keyboard,
         inbound_keyboard=inbound_keyboard,
         excluded_keys_from_back_button=[

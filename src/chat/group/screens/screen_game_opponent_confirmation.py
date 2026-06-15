@@ -29,11 +29,11 @@ class GameOpponentConfirmationReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, inbound_keyboard: Keyboard
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, inbound_keyboard: Keyboard
 ) -> None:
     """
     Manage the game screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The inbound keyboard
@@ -41,7 +41,7 @@ async def manage(
     """
 
     # Get the game from validation, will handle error messages
-    game = await validate_game(update, context, inbound_keyboard)
+    game = await validate_game(event, context, inbound_keyboard)
     if game is None:
         return
 
@@ -58,24 +58,24 @@ async def manage(
             await full_media_send(
                 context,
                 caption=ot_text,
-                update=update,
+                event=event,
                 add_delete_button=True,
                 authorized_users=game.get_players(),
                 edit_only_caption_and_keyboard=True,
             )
 
-        await delete_game(context, update, game, should_delete_message=should_delete_message)
+        await delete_game(context, event, game, should_delete_message=should_delete_message)
         user.should_update_model = False
         return
 
     # Opponent does not have enough bounty
     if user.bounty < game.wager:
         if game.opponent is not None:
-            await delete_game(context, update, game, should_delete_message=False)
+            await delete_game(context, event, game, should_delete_message=False)
             await full_media_send(
                 context,
                 caption=phrases.ACTION_INSUFFICIENT_BOUNTY.format(get_belly_formatted(game.wager)),
-                update=update,
+                event=event,
                 add_delete_button=True,
                 edit_only_caption_and_keyboard=True,
             )
@@ -85,7 +85,7 @@ async def manage(
             await full_message_send(
                 context,
                 phrases.ACTION_INSUFFICIENT_BOUNTY.format(get_belly_formatted(game.wager)),
-                update=update,
+                event=event,
                 show_alert=True,
             )
             return
@@ -94,7 +94,7 @@ async def manage(
     challenger: User = game.challenger
     if user == challenger:
         await full_message_send(
-            context, phrases.KEYBOARD_USE_UNAUTHORIZED, update=update, show_alert=True
+            context, phrases.KEYBOARD_USE_UNAUTHORIZED, event=event, show_alert=True
         )
         return
 
@@ -104,7 +104,7 @@ async def manage(
 
     # Will save game later to avoid doubling wager without actually starting game
     await collect_game_wagers_and_set_in_progress(
-        update, game, challenger=challenger, opponent=user, should_save_game=False
+        event, game, challenger=challenger, opponent=user, should_save_game=False
     )
 
-    await dispatch_game(update, context, user, inbound_keyboard, game)
+    await dispatch_game(event, context, user, inbound_keyboard, game)

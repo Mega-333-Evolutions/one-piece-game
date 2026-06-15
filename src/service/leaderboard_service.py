@@ -159,10 +159,10 @@ async def send_leaderboard(context: ContextTypes.DEFAULT_TYPE) -> None:
     context.application.create_task(reset_bounty_poster_limit(reset_previous_leaderboard=True))
 
     # Reset can join crew flag
-    User.update(can_join_crew=True).execute()
+    User.event(can_join_crew=True).execute()
 
     # Reset crew can accept new members and promote First Mate flag
-    Crew.update(can_accept_new_members=True, can_promote_first_mate=True).execute()
+    Crew.event(can_accept_new_members=True, can_promote_first_mate=True).execute()
 
     # Reset bounty if last leaderboard of the month
     now: datetime.datetime = datetime.datetime.now(datetime.timezone.utc)

@@ -222,11 +222,11 @@ async def schedule_devil_fruit_release(context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 async def release_devil_fruit_to_user(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, group_chat: GroupChat
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, group_chat: GroupChat
 ) -> None:
     """
     Release a Devil Fruit to a user
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param user: The user
     :param group_chat: The group chat
@@ -294,7 +294,7 @@ async def release_devil_fruit_to_user(
                 saved_media_name=SavedMediaName.DEVIL_FRUIT_NEW,
                 caption=text,
                 keyboard=inline_keyboard,
-                update=update,
+                event=event,
                 new_message=True,
                 quote_if_group=False,
             )

@@ -28,11 +28,11 @@ from src.utils.string_utils import get_belly_formatted
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the game input screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -50,7 +50,7 @@ async def manage(
 
     # Challenger trying to accept this own challenge, simply redirect
     if game.is_challenger(user):
-        await dispatch_game(update, context, user, inbound_keyboard, game)
+        await dispatch_game(event, context, user, inbound_keyboard, game)
         return
 
     # Challenge has an opponent
@@ -60,18 +60,18 @@ async def manage(
             await full_message_or_media_send_or_edit(
                 context, 
                 text=phrases.GAME_GLOBAL_ALREADY_ACCEPTED, 
-                update=update
+                event=event
             )
             return
 
-        await dispatch_game(update, context, user, inbound_keyboard, game)
+        await dispatch_game(event, context, user, inbound_keyboard, game)
         return
 
     if game_status is not GameStatus.IN_PROGRESS:
         await full_message_or_media_send_or_edit(
             context, 
             text=phrases.ITEM_IN_WRONG_STATUS, 
-            update=update
+            event=event
         )
         return
 
@@ -80,7 +80,7 @@ async def manage(
         await full_message_or_media_send_or_edit(
             context,
             text=phrases.ACTION_INSUFFICIENT_BOUNTY.format(get_belly_formatted(game.wager)),
-            update=update
+            event=event
         )
         return
 
@@ -93,7 +93,7 @@ async def manage(
         await full_message_or_media_send_or_edit(
             context, 
             text=ot_text, 
-            update=update
+            event=event
         )
         return
 
@@ -116,7 +116,7 @@ async def manage(
         await full_media_send(
             context,
             caption=ot_text,
-            update=update,
+            event=event,
             keyboard=outbound_keyboard,
             saved_media_name=game.get_saved_media_name(),
         )
@@ -125,7 +125,7 @@ async def manage(
     # Confirmed (if "No" was pressed, the message would be deleted), collect opponent wager
     game.global_opponent_start_date = datetime.datetime.now()
     await collect_game_wagers_and_set_in_progress(
-        update,
+        event,
         game,
         opponent=user,
         should_remove_bounty_challenger=False,
@@ -137,7 +137,7 @@ async def manage(
     await full_message_send(
         context,
         text=phrases.GAME_GLOBAL_CHALLENGE_ACCEPTED_ALERT,
-        update=update,
+        event=event,
         answer_callback=True,
     )
 
@@ -178,7 +178,7 @@ async def manage(
                 caption=ot_text,
                 keyboard=outbound_keyboard,
                 edit_only_caption_and_keyboard=True,
-                update=update,
+                event=event,
             )
         )
 
@@ -187,5 +187,5 @@ async def manage(
     game.save()
 
     await dispatch_game(
-        update, context, user, inbound_keyboard, game, should_start_immediately=True
+        event, context, user, inbound_keyboard, game, should_start_immediately=True
     )

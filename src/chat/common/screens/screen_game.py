@@ -41,7 +41,7 @@ class GameReservedKeys(StrEnum):
 
 
 async def validate(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     challenger: User,
     opponent: User,
@@ -49,7 +49,7 @@ async def validate(
 ) -> bool:
     """
     Validate the fight request
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param challenger: The challenger object
     :param opponent: The opponent object
@@ -63,14 +63,14 @@ async def validate(
         await full_message_send(
             context,
             phrases.GAME_NO_WAGER_AMOUNT + global_challenges_text,
-            update=update,
+            event=event,
             add_delete_button=True,
         )
         return False
 
     # Wager basic validation, error message is sent by validate_wager
     if not await validate_amount(
-        update, context, challenger, command.parameters[0], Env.GAME_MIN_WAGER.get_int()
+        event, context, challenger, command.parameters[0], Env.GAME_MIN_WAGER.get_int()
     ):
         return False
 
@@ -107,7 +107,7 @@ async def validate(
                     )
 
                 await full_message_send(
-                    context, ot_text, update=update, keyboard=outbound_keyboard, add_delete_button=True
+                    context, ot_text, event=event, keyboard=outbound_keyboard, add_delete_button=True
                 )
                 return False
         else:
@@ -129,12 +129,12 @@ async def validate(
 
         except OpponentValidationException as ove:
             if ove.message is not None:
-                await full_message_send(context, ove.message, update)
+                await full_message_send(context, ove.message, event)
             else:
                 await full_message_send(
                     context,
                     phrases.GAME_CANNOT_CHALLENGE_USER,
-                    update=update,
+                    event=event,
                     add_delete_button=True,
                 )
             return False
@@ -143,7 +143,7 @@ async def validate(
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     command: Command,
@@ -151,7 +151,7 @@ async def manage(
 ) -> None:
     """
     Manage the game screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param command: The command
@@ -160,7 +160,7 @@ async def manage(
     """
     try:
         opponent: User | None = User.get_or_none(
-            User.tg_user_id == update.message.reply_to_message.from_user.id
+            User.tg_user_id == event.message.reply_to_message.from_user.id
         )
 
         if opponent is None:
@@ -169,7 +169,7 @@ async def manage(
         opponent = None
 
     # Validate the request
-    if not await validate(update, context, user, opponent, command):
+    if not await validate(event, context, user, opponent, command):
         return
 
     # Create game
@@ -181,15 +181,15 @@ async def manage(
     game.save()
 
     # Display available games
-    await display_games(game, update, context)
+    await display_games(game, event, context)
     return
 
 
-async def display_games(game: Game, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def display_games(game: Game, event: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Display the available games
     :param game: The game object
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :return: None
     """
@@ -201,7 +201,7 @@ async def display_games(game: Game, update: Update, context: ContextTypes.DEFAUL
         GameReservedKeys.GAME_TYPE: GameType.GUESS_OR_LIFE,
     }
     btn_gol: Keyboard = Keyboard(
-        GameType.GUESS_OR_LIFE.get_name(), info=button_info, screen=get_next_screen(update)
+        GameType.GUESS_OR_LIFE.get_name(), info=button_info, screen=get_next_screen(event)
     )
     inline_keyboard.append([btn_gol])
 
@@ -211,7 +211,7 @@ async def display_games(game: Game, update: Update, context: ContextTypes.DEFAUL
         GameReservedKeys.GAME_TYPE: GameType.ROCK_PAPER_SCISSORS,
     }
     btn_rps: Keyboard = Keyboard(
-        GameType.ROCK_PAPER_SCISSORS.get_name(), info=button_info, screen=get_next_screen(update)
+        GameType.ROCK_PAPER_SCISSORS.get_name(), info=button_info, screen=get_next_screen(event)
     )
     inline_keyboard.append([btn_rps])
 
@@ -221,7 +221,7 @@ async def display_games(game: Game, update: Update, context: ContextTypes.DEFAUL
         GameReservedKeys.GAME_TYPE: GameType.PUNK_RECORDS,
     }
     btn_pr: Keyboard = Keyboard(
-        GameType.PUNK_RECORDS.get_name(), info=button_info, screen=get_next_screen(update)
+        GameType.PUNK_RECORDS.get_name(), info=button_info, screen=get_next_screen(event)
     )
     inline_keyboard.append([btn_pr])
 
@@ -231,7 +231,7 @@ async def display_games(game: Game, update: Update, context: ContextTypes.DEFAUL
         GameReservedKeys.GAME_TYPE: GameType.RUSSIAN_ROULETTE,
     }
     btn_rr: Keyboard = Keyboard(
-        GameType.RUSSIAN_ROULETTE.get_name(), info=button_info, screen=get_next_screen(update)
+        GameType.RUSSIAN_ROULETTE.get_name(), info=button_info, screen=get_next_screen(event)
     )
     inline_keyboard.append([btn_rr])
 
@@ -241,7 +241,7 @@ async def display_games(game: Game, update: Update, context: ContextTypes.DEFAUL
         GameReservedKeys.GAME_TYPE: GameType.SHAMBLES,
     }
     btn_shambles: Keyboard = Keyboard(
-        GameType.SHAMBLES.get_name(), info=button_info, screen=get_next_screen(update)
+        GameType.SHAMBLES.get_name(), info=button_info, screen=get_next_screen(event)
     )
     inline_keyboard.append([btn_shambles])
 
@@ -251,7 +251,7 @@ async def display_games(game: Game, update: Update, context: ContextTypes.DEFAUL
         GameReservedKeys.GAME_TYPE: GameType.WHOS_WHO,
     }
     btn_ww: Keyboard = Keyboard(
-        GameType.WHOS_WHO.get_name(), info=button_info, screen=get_next_screen(update)
+        GameType.WHOS_WHO.get_name(), info=button_info, screen=get_next_screen(event)
     )
     inline_keyboard.append([btn_ww])
 
@@ -260,7 +260,7 @@ async def display_games(game: Game, update: Update, context: ContextTypes.DEFAUL
         context,
         saved_media_name=SavedMediaName.GAME,
         caption=ot_text,
-        update=update,
+        event=event,
         keyboard=inline_keyboard,
         add_delete_button=True,
         authorized_users=[game.challenger],
@@ -269,14 +269,14 @@ async def display_games(game: Game, update: Update, context: ContextTypes.DEFAUL
     game.save()
 
 
-def get_next_screen(update: Update) -> Screen:
+def get_next_screen(event: Update) -> Screen:
     """
     Get the screen
-    :param update: The update object
+    :param event: The event object
     :return: The screen
     """
 
-    if get_message_source(update) is MessageSource.GROUP:
+    if get_message_source(event) is MessageSource.GROUP:
         return Screen.GRP_GAME_SELECTION
 
     return Screen.PVT_GAME_SELECTION

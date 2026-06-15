@@ -14,7 +14,7 @@ from src.service.notification_service import send_notification
 async def update_location(
     user: User,
     context: ContextTypes.DEFAULT_TYPE = None,
-    update: Update = None,
+    event: Update = None,
     cap_to_paradise: bool = True,
     region: Region = None,
     requested_by_user: bool = False,
@@ -25,13 +25,13 @@ async def update_location(
     Refresh the location of the user
     :param user: The user object
     :param context: Telegram context
-    :param update: Telegram update
+    :param event: Telegram event
     :param cap_to_paradise: If the move should be capped to Paradise max level when user is in
     Paradise
     :param region: The region to move the user to
-    :param requested_by_user: If the user requested the update
+    :param requested_by_user: If the user requested the event
     :param can_scale_down: If the new location can be lower than the current one
-    :param should_passive_update: If the update should be passive, without any output message
+    :param should_passive_update: If the event should be passive, without any output message
     :return: The user object
     """
 
@@ -62,7 +62,7 @@ async def update_location(
                 await full_message_send(
                     context,
                     location_update_notification.build(),
-                    update=update,
+                    event=event,
                     disable_web_page_preview=False,
                     add_delete_button=True,
                 )
@@ -83,11 +83,11 @@ async def update_location(
         and user.should_propose_new_world  # User has not been proposed to move to New World yet
         and user.can_change_region  # User can change region
         and (
-            requested_by_user  # User requested the update
+            requested_by_user  # User requested the event
             or Env.SEND_MESSAGE_MOVE_TO_NEW_WORLD_PROPOSAL.get_bool()
         )
     ):  # Auto proposal enabled
-        await send_new_world_proposal(update, context, user, Region.NEW_WORLD)
+        await send_new_world_proposal(event, context, user, Region.NEW_WORLD)
         user.should_propose_new_world = False
 
 
@@ -102,10 +102,10 @@ def reset_location() -> None:
     for location in reversed(Location.LOCATIONS):
         conditions.append((User.bounty >= location.required_bounty, location.level))
     case_stmt = Case(None, conditions)
-    User.update(location_level=case_stmt).execute()
+    User.event(location_level=case_stmt).execute()
 
     # Reset new world proposal
-    User.update(should_propose_new_world=True).where(
+    User.event(should_propose_new_world=True).where(
         User.should_propose_new_world is False
     ).execute()
 
@@ -117,4 +117,4 @@ def reset_can_change_region() -> None:
     :return: None
     """
 
-    User.update(can_change_region=True).execute()
+    User.event(can_change_region=True).execute()

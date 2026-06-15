@@ -37,7 +37,7 @@ class GroupUser(BaseModel):
 
     @staticmethod
     def set_no_longer_admin(user, group):
-        GroupUser.update(is_admin=False).where(
+        GroupUser.event(is_admin=False).where(
             (GroupUser.user == user) & (GroupUser.group == group)
         ).execute()
 

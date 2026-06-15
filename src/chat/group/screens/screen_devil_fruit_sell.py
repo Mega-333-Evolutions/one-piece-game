@@ -51,7 +51,7 @@ class Step(IntEnum):
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     inbound_keyboard: Keyboard,
@@ -61,7 +61,7 @@ async def manage(
 ) -> None:
     """
     Manage the Devil Fruit sell screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user
     :param inbound_keyboard: The inbound keyboard
@@ -72,7 +72,7 @@ async def manage(
     """
 
     if inbound_keyboard is None:  # Send the list of Devil Fruits and save trade
-        return await send_list_of_fruits(update, context, user, target_user, command, group_chat)
+        return await send_list_of_fruits(event, context, user, target_user, command, group_chat)
 
     # Get the Devil Fruit trade
     try:
@@ -91,18 +91,18 @@ async def manage(
 
     devil_fruit: DevilFruit = devil_fruit_trade.devil_fruit
     if not await validate_trade(
-        update, context, devil_fruit, devil_fruit_trade.giver, add_delete_button=True
+        event, context, devil_fruit, devil_fruit_trade.giver, add_delete_button=True
     ):
         devil_fruit_trade.delete_instance()
         return
 
     match inbound_keyboard.get(DevilFruitSellReservedKeys.STEP):
         case Step.SELECT_FRUIT:
-            return await send_sell_proposal(update, context, user, devil_fruit_trade, devil_fruit)
+            return await send_sell_proposal(event, context, user, devil_fruit_trade, devil_fruit)
 
         case Step.BUY:
             ot_text = await buy(
-                update, context, user, devil_fruit_trade, devil_fruit, DevilFruitSource.USER
+                event, context, user, devil_fruit_trade, devil_fruit, DevilFruitSource.USER
             )
             if ot_text:
                 # Add deeplink button
@@ -112,7 +112,7 @@ async def manage(
                 await full_message_send(
                     context,
                     ot_text,
-                    update=update,
+                    event=event,
                     keyboard=inline_keyboard,
                     add_delete_button=True,
                 )
@@ -124,11 +124,11 @@ async def manage(
 
 
 async def validate_new_request(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User, command: Command
+    event: Update, context: ContextTypes.DEFAULT_TYPE, user: User, command: Command
 ) -> bool:
     """
     Validate a new request
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user
     :param command: The command
@@ -142,7 +142,7 @@ async def validate_new_request(
 
         # Amount basic validation, error message is sent by validate_wager
         if not await validate_amount(
-            update,
+            event,
             context,
             user,
             command.parameters[0],
@@ -159,14 +159,14 @@ async def validate_new_request(
 
     except DevilFruitTradeValidationException as e:
         if e.message is not None:
-            await full_message_send(context, e.message, update=update, add_delete_button=True)
+            await full_message_send(context, e.message, event=event, add_delete_button=True)
         return False
 
     return True
 
 
 async def send_list_of_fruits(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     target_user: User,
@@ -175,7 +175,7 @@ async def send_list_of_fruits(
 ) -> None:
     """
     Send the list of fruits
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user
     :param target_user: The target user
@@ -184,7 +184,7 @@ async def send_list_of_fruits(
     :return: None
     """
 
-    if not await validate_new_request(update, context, user, command):
+    if not await validate_new_request(event, context, user, command):
         return
 
     # Save the trade
@@ -218,7 +218,7 @@ async def send_list_of_fruits(
 
     # Send the message
     message: Message = await full_message_send(
-        context, ot_text, update=update, keyboard=outbound_keyboard, add_delete_button=True
+        context, ot_text, event=event, keyboard=outbound_keyboard, add_delete_button=True
     )
 
     trade.message_id = message.id
@@ -226,7 +226,7 @@ async def send_list_of_fruits(
 
 
 async def send_sell_proposal(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     devil_fruit_trade: DevilFruitTrade,
@@ -234,7 +234,7 @@ async def send_sell_proposal(
 ) -> None:
     """
     Send the sell proposal
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user
     :param devil_fruit_trade: The Devil Fruit trade
@@ -289,5 +289,5 @@ async def send_sell_proposal(
     )
 
     await full_message_send(
-        context, ot_text, update=update, keyboard=outbound_keyboard, add_delete_button=True
+        context, ot_text, event=event, keyboard=outbound_keyboard, add_delete_button=True
     )

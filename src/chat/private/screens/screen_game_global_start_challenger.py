@@ -21,11 +21,11 @@ from src.utils.string_utils import get_belly_formatted
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the game input screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -36,20 +36,20 @@ async def manage(
 
     # User is not a player of the game
     if not game.is_player(user):
-        await full_message_send(context, phrases.GAME_INPUT_NOT_PLAYER, update=update)
+        await full_message_send(context, phrases.GAME_INPUT_NOT_PLAYER, event=event)
         return
 
     game_status: GameStatus = GameStatus(game.status)
 
     # May be in progress, may be ended, dunno don't care, let the manage of the game handle it
     if game_status is not GameStatus.AWAITING_OPPONENT_CONFIRMATION:
-        await dispatch_game(update, context, user, inbound_keyboard, game)
+        await dispatch_game(event, context, user, inbound_keyboard, game)
         return
 
     # Collect wagers
     game.global_challenger_start_date = datetime.datetime.now()
     await collect_game_wagers_and_set_in_progress(
-        update, game, challenger=user, should_remove_bounty_opponent=False
+        event, game, challenger=user, should_remove_bounty_opponent=False
     )
 
     # Edit group message to show that it's now a global challenge, best effort
@@ -105,10 +105,10 @@ async def manage(
                 caption=ot_text,
                 keyboard=outbound_keyboard,
                 edit_only_caption_and_keyboard=True,
-                update=update,
+                event=event,
             )
         )
 
     await dispatch_game(
-        update, context, user, inbound_keyboard, game, should_start_immediately=True
+        event, context, user, inbound_keyboard, game, should_start_immediately=True
     )

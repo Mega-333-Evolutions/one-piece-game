@@ -7,10 +7,10 @@ from src.model.pojo.Keyboard import Keyboard
 from src.service.message_service import full_message_send
 
 
-async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def manage(event: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Manage the settings screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :return: None
     """
@@ -25,7 +25,7 @@ async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await full_message_send(
         context,
         phrases.TXT_SETTINGS,
-        update=update,
+        event=event,
         keyboard=inline_keyboard,
         add_delete_button=True,
         use_close_delete=True,

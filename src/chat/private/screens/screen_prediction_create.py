@@ -67,7 +67,7 @@ class PredictionCreateReservedKeys(StrEnum):
 # Disable inspection for prediction object might be referenced before assignment
 # noinspection PyUnboundLocalVariable
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard | None,
     user: User | None,
@@ -75,7 +75,7 @@ async def manage(
 ) -> None:
     """
     Manage the prediction create screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -90,7 +90,7 @@ async def manage(
 
     if not should_ignore_input:
         # Validate that the user can create a prediction
-        if not await validate(update, context, inbound_keyboard, user):
+        if not await validate(event, context, inbound_keyboard, user):
             return
 
         if user.private_screen_step is None:
@@ -140,7 +140,7 @@ async def manage(
                         prediction is not None and prediction.id is not None
                     ):  # From edit, go back to prediction detail
                         return await go_to_prediction_detail(
-                            context, inbound_keyboard, prediction, update, user
+                            context, inbound_keyboard, prediction, event, user
                         )
 
                     ot_text = phrases.PREDICTION_CREATE_REQUEST_POLL
@@ -168,7 +168,7 @@ async def manage(
                                 raise StepValidationException(
                                     phrases.PREDICTION_CAN_EDIT_POLL_ONLY_IF_NEW
                                 )
-                            poll = update.message.poll
+                            poll = event.message.poll
                             # Less than 2 options
                             if len(poll.options) < 2:
                                 raise StepValidationException(
@@ -371,7 +371,7 @@ async def manage(
                             )
                         try:
                             close_date = get_datetime_from_natural_language(
-                                update.message.text, user
+                                event.message.text, user
                             )
                             if datetime_is_before(close_date):
                                 raise DateValidationException(
@@ -386,7 +386,7 @@ async def manage(
                             # Go back to request settings
                             user.private_screen_step = Step.REQUEST_SETTINGS
                             return await manage(
-                                update, context, inbound_keyboard, user, is_refresh=True
+                                event, context, inbound_keyboard, user, is_refresh=True
                             )
                         except (AttributeError, DateValidationException) as e:
                             timezone_text, offset_text = get_user_timezone_and_offset_text(user)
@@ -443,12 +443,12 @@ async def manage(
                             # Go back to request settings
                             user.private_screen_step = Step.REQUEST_SETTINGS
                             return await manage(
-                                update, context, inbound_keyboard, user, is_refresh=True
+                                event, context, inbound_keyboard, user, is_refresh=True
                             )
                     else:  # Validate cut off date
                         try:
                             cut_off_date = get_datetime_from_natural_language(
-                                update.message.text, user
+                                event.message.text, user
                             )
                             try:
                                 validate_cut_off_date(cut_off_date, prediction, user)
@@ -514,10 +514,10 @@ async def manage(
                     user.reset_private_screen()
                     # Show saved alert
                     ot_text = phrases.PREDICTION_CREATE_SUCCESS
-                    await full_message_send(context, str(ot_text), update=update, show_alert=True)
+                    await full_message_send(context, str(ot_text), event=event, show_alert=True)
 
                     return await go_to_prediction_detail(
-                        context, inbound_keyboard, prediction, update, user
+                        context, inbound_keyboard, prediction, event, user
                     )
                 case _:
                     raise PrivateChatException(PrivateChatError.UNKNOWN_EXTRA_STEP)
@@ -554,7 +554,7 @@ async def manage(
         await full_message_send(
             context,
             str(ot_text),
-            update=update,
+            event=event,
             inbound_keyboard=inbound_keyboard,
             previous_screens=user.get_private_screen_list(),
             keyboard=inline_keyboard,
@@ -639,7 +639,7 @@ async def go_to_prediction_detail(
     context: ContextTypes.DEFAULT_TYPE,
     inbound_keyboard: Keyboard | None,
     prediction: Prediction,
-    update: Update,
+    event: Update,
     user: User,
 ):
     """
@@ -647,7 +647,7 @@ async def go_to_prediction_detail(
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param prediction: The prediction
-    :param update: The update
+    :param event: The event
     :param user: The user
     :return: None
     """
@@ -665,15 +665,15 @@ async def go_to_prediction_detail(
         manage as prediction_detail_manage,
     )
 
-    return await prediction_detail_manage(update, context, inbound_keyboard, user)
+    return await prediction_detail_manage(event, context, inbound_keyboard, user)
 
 
 async def validate(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> bool:
     """
     Validate the prediction create screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
@@ -688,7 +688,7 @@ async def validate(
                 )
             )
     except PredictionException as e:
-        await full_message_send(context, str(e), update=update, inbound_keyboard=inbound_keyboard)
+        await full_message_send(context, str(e), event=event, inbound_keyboard=inbound_keyboard)
         return False
 
     return True

@@ -69,7 +69,7 @@ async def reset_bounty(context: ContextTypes.DEFAULT_TYPE) -> None:
     await remove_all_bets(context)
 
     # Return all pending bounty
-    User.update(bounty=User.bounty + User.pending_bounty, pending_bounty=0).execute()
+    User.event(bounty=User.bounty + User.pending_bounty, pending_bounty=0).execute()
 
     # If the bounty / 2 is higher than the required bounty for the first new world location, cap it
     # If the bounty / 2 is lower than base daily belly reward, set it to 0
@@ -82,13 +82,13 @@ async def reset_bounty(context: ContextTypes.DEFAULT_TYPE) -> None:
         ((User.bounty / 2) < Env.DAILY_REWARD_BONUS_BASE_AMOUNT.get_int(), 0),
     ]
     case_stmt = Case(None, conditions, User.bounty / 2)
-    User.update(bounty=case_stmt).execute()
+    User.event(bounty=case_stmt).execute()
 
     # Reset location
     reset_location()
 
     # Reset can create crew flag
-    User.update(can_create_crew=True).execute()
+    User.event(can_create_crew=True).execute()
 
     # Delete all pending bounty gifts
     BountyGift.delete().where(
@@ -101,10 +101,10 @@ async def reset_bounty(context: ContextTypes.DEFAULT_TYPE) -> None:
     ).execute()
 
     # Reset bounty gift tax
-    User.update(bounty_gift_tax=0).execute()
+    User.event(bounty_gift_tax=0).execute()
 
     # Reset total gained bounty
-    User.update(total_gained_bounty=0).execute()
+    User.event(total_gained_bounty=0).execute()
 
     # Delete tax events
     IncomeTaxEvent.delete().execute()
@@ -117,7 +117,7 @@ async def reset_bounty(context: ContextTypes.DEFAULT_TYPE) -> None:
         )
     ]
     case_stmt = Case(None, conditions, Crew.chest_amount)
-    Crew.update(
+    Crew.event(
         chest_amount=case_stmt, from_reset_chest_amount=case_stmt, total_gained_chest_amount=0
     ).execute()
 
@@ -144,7 +144,7 @@ async def reset_bounty(context: ContextTypes.DEFAULT_TYPE) -> None:
     Crew.reset_level()
 
     # Reset can promote to Captain
-    Crew.update(can_promote_captain=True).execute()
+    Crew.event(can_promote_captain=True).execute()
 
     # Disband inactive crews
     context.application.create_task(disband_inactive_crews(context))
@@ -154,7 +154,7 @@ async def add_or_remove_bounty(
     user: User,
     amount: int = None,
     context: ContextTypes.DEFAULT_TYPE = None,
-    update: Update = None,
+    event: Update = None,
     should_update_location: bool = False,
     pending_belly_amount: int = None,
     add: bool = True,
@@ -172,8 +172,8 @@ async def add_or_remove_bounty(
     :param context: Telegram context
     :param user: The user to add the bounty to
     :param amount: The amount to add to the bounty
-    :param update: Telegram update
-    :param should_update_location: Whether to update the user's location
+    :param event: Telegram event
+    :param should_update_location: Whether to event the user's location
     :param pending_belly_amount: How much of the amount is from pending belly, so not newly
     acquired. Will be used to calculate eventual taxes
     :param add: Whether to add or remove the bounty
@@ -185,7 +185,7 @@ async def add_or_remove_bounty(
     :param raise_error_if_negative_bounty: Whether to raise an error if the user has negative
     :param opponent: The opponent from which the bounty is being taken
     contribution if there is an active challenge
-    bounty after the update
+    bounty after the event
     :param should_tax: Whether to tax the bounty
 
     :return: The updated user
@@ -230,7 +230,7 @@ async def add_or_remove_bounty(
                 logging.exception(
                     f"User {user.id} has negative bounty: {user.bounty} after removing "
                     f"{amount} bounty in event "
-                    f"{update.to_dict() if update is not None else 'None'}"
+                    f"{event.to_dict() if event is not None else 'None'}"
                     f"\n{traceback.print_stack()}"
                 )
 
@@ -249,7 +249,7 @@ async def add_or_remove_bounty(
                     f"User {user.id} had pending bounty {previous_pending_bounty}, "
                     f"attempted to remove {amount if pending_belly_amount is None else pending_belly_amount}, "
                     f"result would be {user.pending_bounty}. Clamped to 0.\n"
-                    f"Event: {update.to_dict() if update is not None else 'None'}\n"
+                    f"Event: {event.to_dict() if event is not None else 'None'}\n"
                     f"Stack trace:\n{traceback.format_stack()}"
                 )
                 user.pending_bounty = 0
@@ -323,7 +323,7 @@ async def add_or_remove_bounty(
                     amount_for_repay = loan.get_maximum_payable_amount(int(amount_for_repay))
 
                     # Pay loan
-                    await loan.pay(amount_for_repay, update)
+                    await loan.pay(amount_for_repay, event)
 
                     # Subtract from amount
                     amount_to_add -= amount_for_repay
@@ -344,7 +344,7 @@ async def add_or_remove_bounty(
     if should_update_location:
         if context is None:
             raise ValueError("Context is required when updating the location")
-        await update_location(user, context, update)
+        await update_location(user, context, event)
 
 
 def get_amount_from_string(amount: str, user: User) -> int:
@@ -366,7 +366,7 @@ def get_amount_from_string(amount: str, user: User) -> int:
 
 
 async def validate_amount(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     wager_str: str | int,
@@ -383,7 +383,7 @@ async def validate_amount(
     Validates the wager. Checks if the wager is a valid number, the user has enough belly, and if
     the wager is
     higher than the required belly
-    :param update: Telegram update
+    :param event: Telegram event
     :param context: Telegram context
     :param user: The user to validate the wager for
     :param wager_str: The wager string
@@ -425,7 +425,7 @@ async def validate_amount(
             await full_message_or_media_send_or_edit(
                 context,
                 e.message,
-                update=update,
+                event=event,
                 add_delete_button=add_delete_button,
                 inbound_keyboard=inbound_keyboard,
                 previous_screens=previous_screens,

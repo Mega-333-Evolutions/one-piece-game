@@ -8,11 +8,11 @@ from src.service.message_service import full_message_send
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, group_chat: GroupChat
+    event: Update, context: ContextTypes.DEFAULT_TYPE, group_chat: GroupChat
 ) -> None:
     """
     Manage the silence end screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param group_chat: The group chat
     :return: None
@@ -20,7 +20,7 @@ async def manage(
 
     if not group_chat.is_muted:
         await full_message_send(
-            context, phrases.SILENCE_NOT_ACTIVE, update=update, add_delete_button=True
+            context, phrases.SILENCE_NOT_ACTIVE, event=event, add_delete_button=True
         )
         return
 
@@ -30,4 +30,4 @@ async def manage(
     UnmutedUser.delete().where(UnmutedUser.group_chat == group_chat).execute()
 
     # Confirmation message
-    await full_message_send(context, phrases.SILENCE_END, update=update, add_delete_button=True)
+    await full_message_send(context, phrases.SILENCE_END, event=event, add_delete_button=True)

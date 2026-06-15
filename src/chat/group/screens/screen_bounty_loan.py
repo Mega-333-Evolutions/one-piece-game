@@ -41,7 +41,7 @@ from src.utils.string_utils import get_belly_formatted
 
 
 async def manage(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     user: User,
     inbound_keyboard: Keyboard,
@@ -51,7 +51,7 @@ async def manage(
 ) -> None:
     """
     Manage the Bounty loan screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -63,14 +63,14 @@ async def manage(
 
     # Request initiate a loan
     if inbound_keyboard is None:
-        await send_request(update, context, user, target_user, command, group_chat)
+        await send_request(event, context, user, target_user, command, group_chat)
         return
 
-    await keyboard_interaction(update, context, inbound_keyboard, user)
+    await keyboard_interaction(event, context, inbound_keyboard, user)
 
 
 async def validate(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     loaner: User,
     borrower: User,
@@ -79,7 +79,7 @@ async def validate(
 ) -> bool:
     """
     Validate the bounty loan request
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param loaner: The user that wants to loan
     :param borrower: The user that wants to borrow
@@ -92,24 +92,24 @@ async def validate(
     if loan is None:
         if len(command.parameters) != 3:
             await full_message_send(
-                context, phrases.BOUNTY_LOAN_INVALID_COMMAND, update=update, add_delete_button=True
+                context, phrases.BOUNTY_LOAN_INVALID_COMMAND, event=event, add_delete_button=True
             )
             return False
 
         # Loan amount validation, error message is sent by validate_wager
         if not await validate_amount(
-            update, context, loaner, command.parameters[0], Env.BOUNTY_LOAN_MIN_AMOUNT.get_int()
+            event, context, loaner, command.parameters[0], Env.BOUNTY_LOAN_MIN_AMOUNT.get_int()
         ):
             return False
 
         # Repayment amount validation, error message is sent by validate_wager
         if not await validate_amount(
-            update, context, loaner, command.parameters[1], should_validate_user_has_amount=False
+            event, context, loaner, command.parameters[1], should_validate_user_has_amount=False
         ):
             return False
 
         # Deadline validation, error message is sent by validate_duration
-        if not await validate_duration(update, context, command.parameters[2]):
+        if not await validate_duration(event, context, command.parameters[2]):
             return False
 
     # Get the amounts
@@ -129,7 +129,7 @@ async def validate(
             get_belly_formatted(total_amount),
             get_belly_formatted(max_amount),
         )
-        await full_message_send(context, ot_text, update=update, add_delete_button=True)
+        await full_message_send(context, ot_text, event=event, add_delete_button=True)
         return False
 
     # Sender in cooldown
@@ -140,7 +140,7 @@ async def validate(
         await full_message_send(
             context,
             phrases.BOUNTY_LOAN_ISSUE_COOLDOWN_ACTIVE.format(remaining_time),
-            update=update,
+            event=event,
             add_delete_button=True,
         )
         return False
@@ -151,7 +151,7 @@ async def validate(
         await full_message_send(
             context,
             phrases.BOUNTY_LOAN_MAX_DURATION_EXCEEDED,
-            update=update,
+            event=event,
             add_delete_button=True,
         )
         return False
@@ -164,7 +164,7 @@ async def validate(
 
 
 async def send_request(
-    update: Update,
+    event: Update,
     context: ContextTypes.DEFAULT_TYPE,
     loaner: User,
     borrower: User,
@@ -173,7 +173,7 @@ async def send_request(
 ) -> None:
     """
     Send request to initiate a loan
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param loaner: The user that wants to loan
     :param borrower: The user  that wants to borrow
@@ -182,7 +182,7 @@ async def send_request(
     :return: None
     """
 
-    if not await validate(update, context, loaner, borrower, command):
+    if not await validate(event, context, loaner, borrower, command):
         return
 
     # Get the amounts
@@ -212,7 +212,7 @@ async def send_request(
 
     try:
         message: Message = await full_message_send(
-            context, ot_text, update=update, keyboard=inline_keyboard, add_delete_button=True
+            context, ot_text, event=event, keyboard=inline_keyboard, add_delete_button=True
         )
         loan.message_id = message.message_id
         loan.save()
@@ -312,11 +312,11 @@ async def get_amounts(
 
 
 async def keyboard_interaction(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Keyboard interaction
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param inbound_keyboard: The inbound keyboard
     :param user: The user object
@@ -331,13 +331,13 @@ async def keyboard_interaction(
     if not inbound_keyboard.info[ReservedKeyboardKeys.CONFIRM]:
         loan.delete_instance()
         await full_message_send(
-            context, phrases.BOUNTY_LOAN_CANCELLED, update=update, add_delete_button=True
+            context, phrases.BOUNTY_LOAN_CANCELLED, event=event, add_delete_button=True
         )
         return
 
     loaner: User = loan.loaner
     borrower: User = loan.borrower
-    if not await validate(update, context, loaner, borrower, loan=loan):
+    if not await validate(event, context, loaner, borrower, loan=loan):
         loan.delete_instance()
         return
 
@@ -357,7 +357,7 @@ async def keyboard_interaction(
             get_yes_no_keyboard(borrower, screen=Screen.GRP_BOUNTY_LOAN, primary_key=loan.id)
         ]
         await full_message_send(
-            context, ot_text, update=update, keyboard=inline_keyboard, add_delete_button=True
+            context, ot_text, event=event, keyboard=inline_keyboard, add_delete_button=True
         )
         return
 
@@ -370,13 +370,13 @@ async def keyboard_interaction(
     loaner.bounty_loan_issue_cool_down_end_date = get_datetime_in_future_hours(
         Env.BOUNTY_LOAN_ISSUE_COOLDOWN_DURATION.get_int()
     )
-    await add_or_remove_bounty(loaner, total_amount, add=False, update=update, should_save=True)
+    await add_or_remove_bounty(loaner, total_amount, add=False, event=event, should_save=True)
 
     # Update receiver
     await add_or_remove_bounty(
         user,
         amount,
-        update=update,
+        event=event,
         tax_event_type=IncomeTaxEventType.BOUNTY_LOAN,
         event_id=loan.id,
         should_save=True,
@@ -384,8 +384,8 @@ async def keyboard_interaction(
 
     # 0 repay amount, pay immediately
     if repay_amount == 0:
-        await loan.pay(0, update=update)
+        await loan.pay(0, event=event)
 
     # Send message
     ot_text = get_text(loan, tax_amount, total_amount)
-    await full_message_send(context, ot_text, update=update)
+    await full_message_send(context, ot_text, event=event)

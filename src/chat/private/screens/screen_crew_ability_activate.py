@@ -24,11 +24,11 @@ class CrewAbilityActivateReservedKeys(StrEnum):
 
 
 async def manage(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
 ) -> None:
     """
     Manage the Crew ability activate choose screen
-    :param update: The update object
+    :param event: The event object
     :param context: The context object
     :param user: The user object
     :param inbound_keyboard: The keyboard object
@@ -37,7 +37,7 @@ async def manage(
 
     crew: Crew = get_crew(user=user)
 
-    if not await validate(update, context, inbound_keyboard, crew):
+    if not await validate(event, context, inbound_keyboard, crew):
         return
 
     allowed_ability_types = DevilFruitAbilityType.get_allowed_ability_types_from_random()
@@ -64,18 +64,18 @@ async def manage(
     await full_message_send(
         context,
         phrases.CREW_ABILITY_ACTIVATE_CHOOSE,
-        update=update,
+        event=event,
         keyboard=inline_keyboard,
         inbound_keyboard=inbound_keyboard,
     )
 
 
 async def validate(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, crew: Crew
+    event: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, crew: Crew
 ) -> bool:
     """
     Validate the crew ability add screen
-    :param update: The update
+    :param event: The event
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param crew: The crew
@@ -103,7 +103,7 @@ async def validate(
         await full_message_send(
             context,
             str(e),
-            update=update,
+            event=event,
             answer_callback=True,
             show_alert=True,
             inbound_keyboard=inbound_keyboard,
