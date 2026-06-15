@@ -75,7 +75,7 @@ def get_game_from_keyboard(inbound_keyboard: Keyboard) -> Game:
             inbound_keyboard.info[ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY]
         )
         return game
-    except (DoesNotExist, IndexError, KeyError):
+    except (DoesNotExist, IndexError, KeyError, AttributeError):
         raise CommonChatException(phrases.GAME_NOT_FOUND)
 
 
