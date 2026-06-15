@@ -147,6 +147,11 @@ async def send_notification_execute(
         )
     except Forbidden:  # User has blocked the bot or hasn't started it
         pass
+    except BadRequest as e: # Trying to send a DM to another bot
+        if "bot_to_bot" in str(e).lower():
+            pass
+        else:
+            raise e
 
 
 def is_enabled(user: User, notification: Notification) -> bool:
