@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 import asyncio
 
 from telethon import TelegramClient, events
-from apscheduler.schedulers.asyncio import AsyncIOScheduler  # Added import
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 import constants as c
 import resources.Environment as Env
@@ -46,7 +46,6 @@ async def post_init(client: TelegramClient, scheduler: AsyncIOScheduler) -> None
     :param scheduler: the APScheduler instance
     :return: None
     """
-    # Passed the scheduler down to the timer service
     await set_timers(client, scheduler)
 
 
@@ -101,10 +100,21 @@ async def async_main() -> None:
 
     client = TelegramClient('bot_session', api_id, api_hash)
 
+    # ====================================================
+    # PTB COMPATIBILITY PATCH FOR MESSAGE HANDLERS
+    # ====================================================
+    class MockApplication:
+        def create_task(self, coro):
+            return asyncio.create_task(coro)
+
+    client.application = MockApplication()
+    client.bot = client
+    # ====================================================
+
     # Activate timers logging configuration
     logging.getLogger("apscheduler.executors.default").propagate = False
 
-    # Initialize and start APScheduler using the environment's timezone
+    # Initialize and start APScheduler
     scheduler = AsyncIOScheduler(timezone=ZoneInfo(Env.TZ.get()))
     scheduler.start()
 
@@ -119,7 +129,6 @@ async def async_main() -> None:
     # Regular message handler
     @client.on(events.NewMessage())
     async def new_message_handler(event):
-        # Prevent handling inline queries or callbacks as new messages if they overlap
         if event.text == '/chatid':
             return
         await manage_regular_message(event, client)
