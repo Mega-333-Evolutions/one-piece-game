@@ -331,7 +331,7 @@ SHOULD_RUN_ON_STARTUP_REDDIT_POST_ONE_PIECE = Environment(
 )
 # Reddit Meme post Piece. Default: Every day at 06:00 and 18:00
 CRON_REDDIT_POST_MEME_PIECE = Environment(
-    "CRON_REDDIT_POST_MEME_PIECE", default_value="0 */2 * * *"
+    "CRON_REDDIT_POST_MEME_PIECE", default_value="0 1-23/2 * * *"
 )
 ENABLE_TIMER_REDDIT_POST_MEME_PIECE = Environment(
     "ENABLE_TIMER_REDDIT_POST_MEME_PIECE", default_value="True"
