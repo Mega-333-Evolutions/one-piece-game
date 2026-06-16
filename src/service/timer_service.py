@@ -37,6 +37,10 @@ class MockJob:
         self.data = timer
         self.name = timer.name
 
+class MockApplication:
+    def create_task(self, coro):
+        return asyncio.create_task(coro)
+
 class TelethonContext:
     """
     A lightweight wrapper that mimics the python-telegram-bot context 
@@ -46,6 +50,7 @@ class TelethonContext:
         self.client = client
         self.bot = client  # Routes calls expecting context.bot straight to Telethon
         self.job = MockJob(timer)
+        self.application = MockApplication()  # Added to prevent application attribute errors!
 
 
 # ==========================================
@@ -116,55 +121,4 @@ async def run(client: TelegramClient, timer: Timer.Timer) -> None:
     :param timer: The specific Timer enum to run
     :return: None
     """
-    # Create the simulated context for internal services
-    context = TelethonContext(client, timer)
-
-    db = init()
-
-    if timer.should_log:
-        logging.info(f"Running timer {timer.name}")
-
-    try:
-        match timer:
-            case Timer.REDDIT_POST_ONE_PIECE | Timer.REDDIT_POST_MEME_PIECE:
-                await send_reddit_post(context, timer.info)
-            case Timer.TEMP_DIR_CLEANUP:
-                cleanup_temp_dir()
-            case Timer.TIMER_SEND_LEADERBOARD:
-                await send_leaderboard(context)
-            case Timer.RESET_BOUNTY_POSTER_LIMIT:
-                await reset_bounty_poster_limit()
-            case Timer.RESET_CAN_CHANGE_REGION:
-                reset_can_change_region()
-            case Timer.SEND_SCHEDULED_PREDICTIONS:
-                await send_scheduled_predictions(context)
-            case Timer.CLOSE_SCHEDULED_PREDICTIONS:
-                await close_scheduled_predictions(context)
-            case Timer.REFRESH_ACTIVE_PREDICTIONS_GROUP_MESSAGE:
-                await send_prediction_status_change_message_or_refresh_dispatch(
-                    context, should_refresh=True
-                )
-            case Timer.SCHEDULE_DEVIL_FRUIT_ZOAN_RELEASE:
-                await schedule_devil_fruit_release(context)
-            case Timer.RESPAWN_DEVIL_FRUIT:
-                await respawn_devil_fruit(context)
-            case Timer.DEACTIVATE_INACTIVE_GROUP_CHATS:
-                deactivate_inactive_group_chats()
-            case Timer.END_INACTIVE_GAMES:
-                await end_inactive_games(context)
-            case Timer.SET_EXPIRED_BOUNTY_LOANS:
-                await set_expired_bounty_loans(context)
-            case Timer.MINUTE_TASKS:
-                await run_minute_tasks(context)
-            case Timer.DAILY_REWARD:
-                DailyReward.reset()
-            case Timer.FIGHT_PLUNDER_SCOUT_COUNT_DECREASE:
-                decrease_scout_count()
-            case _:
-                raise ValueError(f"Unknown timer {timer.name}")
-    except Exception as e:
-        logging.error(f"Error occurred while running timer {timer.name}: {e}", exc_info=True)
-    finally:
-        if timer.should_log:
-            logging.info(f"Finished timer {timer.name}")
-        end(db)
+    # Create
