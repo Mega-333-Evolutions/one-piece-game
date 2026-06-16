@@ -30,6 +30,10 @@ async def manage(
     :return: None
     """
 
+    # Guard clause: If there is no keyboard payload (e.g., user typed raw text), abort.
+    if inbound_keyboard is None:
+        return
+
     if called_from_another_screen:
         # Set this screen as the current screen
         inbound_keyboard.screen = Screen.PVT_BOUNTY_LOAN_DETAIL
