@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 import asyncio
 
 from telethon import TelegramClient, events
+from apscheduler.schedulers.asyncio import AsyncIOScheduler  # Added for task scheduling
 
 import constants as c
 import resources.Environment as Env
@@ -38,14 +39,15 @@ def pre_init():
         env.get()
 
 
-async def post_init(client: TelegramClient) -> None:
+async def post_init(client: TelegramClient, scheduler: AsyncIOScheduler) -> None:
     """
     Post init
     :param client: the telethon client
+    :param scheduler: the APScheduler instance
     :return: None
     """
-    # APScheduler start logic is likely moved to set_timers or handled elsewhere
-    await set_timers(client)
+    # Pass both the client and the scheduler to your timer service
+    await set_timers(client, scheduler)
 
 
 async def async_main() -> None:
@@ -93,21 +95,21 @@ async def async_main() -> None:
             ],
         )
 
-    # In Telethon, parse_mode and other defaults are handled when sending messages.
-    # Telethon supports passing API ID and API HASH. Since this bot previously only
-    # required BOT_TOKEN, we can use placeholder API ID and Hash if needed or standard.
-    # Typically telethon requires api_id and api_hash. If not provided by Env, we can't start.
     api_id = Env.API_ID.get_int() if hasattr(Env, 'API_ID') else 12345
     api_hash = Env.API_HASH.get() if hasattr(Env, 'API_HASH') else '0123456789abcdef0123456789abcdef'
     bot_token = Env.BOT_TOKEN.get()
 
     client = TelegramClient('bot_session', api_id, api_hash)
 
-    # Activate timers
+    # Activate timers logging configuration
     logging.getLogger("apscheduler.executors.default").propagate = False
 
+    # Initialize and start APScheduler with your configured timezone
+    scheduler = AsyncIOScheduler(timezone=ZoneInfo(Env.TZ.get()))
+    scheduler.start()
+
     await client.start(bot_token=bot_token)
-    await post_init(client)
+    await post_init(client, scheduler)
 
     # Chat id handler
     @client.on(events.NewMessage(pattern='/chatid'))
@@ -130,9 +132,10 @@ async def async_main() -> None:
     # Inline query handler
     @client.on(events.InlineQuery())
     async def inline_query_handler(event):
-        await manage_regular_message(event, client) # Need to check how manage_regular handles inline queries
+        await manage_regular_message(event, client) 
 
     await client.run_until_disconnected()
+
 
 def main() -> None:
     """
@@ -140,6 +143,7 @@ def main() -> None:
     :return: None
     """
     asyncio.run(async_main())
+
 
 if __name__ == "__main__":
     main()
