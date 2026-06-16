@@ -4,6 +4,7 @@ import sys
 import time
 from zoneinfo import ZoneInfo
 import asyncio
+from collections import defaultdict
 
 from telethon import TelegramClient, events
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -16,6 +17,34 @@ from src.chat.manage_message import (
 )
 from src.service.message_service import full_message_send
 from src.service.timer_service import set_timers
+
+
+# ====================================================
+# PTB COMPATIBILITY LAYER: MEMORY STORAGE
+# ====================================================
+GLOBAL_BOT_DATA = {}
+GLOBAL_USER_DATA = defaultdict(dict)
+GLOBAL_CHAT_DATA = defaultdict(dict)
+
+class MockApplication:
+    def create_task(self, coro):
+        return asyncio.create_task(coro)
+
+class PTBContextMock:
+    """Mimics PTB's Context object for downstream services"""
+    def __init__(self, client, event):
+        self.client = client
+        self.bot = client
+        self.application = MockApplication()
+        self.bot_data = GLOBAL_BOT_DATA
+        
+        # Safely extract IDs to route to the correct memory dictionaries
+        user_id = getattr(event, 'sender_id', None)
+        chat_id = getattr(event, 'chat_id', None)
+        
+        self.user_data = GLOBAL_USER_DATA[user_id] if user_id else {}
+        self.chat_data = GLOBAL_CHAT_DATA[chat_id] if chat_id else {}
+# ====================================================
 
 
 async def chat_id(event) -> None:
@@ -33,7 +62,6 @@ def pre_init():
     Pre init checks
     :return: None, raises Exception if something is wrong
     """
-
     # Check that all the required environment variables are set
     for env in Env.Environment.instances:
         env.get()
@@ -100,17 +128,6 @@ async def async_main() -> None:
 
     client = TelegramClient('bot_session', api_id, api_hash)
 
-    # ====================================================
-    # PTB COMPATIBILITY PATCH FOR MESSAGE HANDLERS
-    # ====================================================
-    class MockApplication:
-        def create_task(self, coro):
-            return asyncio.create_task(coro)
-
-    client.application = MockApplication()
-    client.bot = client
-    # ====================================================
-
     # Activate timers logging configuration
     logging.getLogger("apscheduler.executors.default").propagate = False
 
@@ -131,17 +148,22 @@ async def async_main() -> None:
     async def new_message_handler(event):
         if event.text == '/chatid':
             return
-        await manage_regular_message(event, client)
+        
+        # Build our custom mock context and pass that instead of the raw client!
+        context = PTBContextMock(client, event)
+        await manage_regular_message(event, context)
 
     # Callback query handler
     @client.on(events.CallbackQuery())
     async def callback_query_handler(event):
-        await manage_callback_message(event, client)
+        context = PTBContextMock(client, event)
+        await manage_callback_message(event, context)
 
     # Inline query handler
     @client.on(events.InlineQuery())
     async def inline_query_handler(event):
-        await manage_regular_message(event, client) 
+        context = PTBContextMock(client, event)
+        await manage_regular_message(event, context) 
 
     await client.run_until_disconnected()
 
