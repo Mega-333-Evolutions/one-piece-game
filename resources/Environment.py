@@ -318,7 +318,7 @@ SHOULD_RUN_ON_STARTUP_RESET_BOUNTY_MESSAGE_LIMIT = Environment(
 
 # Reddit post One Piece. Default: Every day at 00:00 and 12:00
 CRON_REDDIT_POST_ONE_PIECE = Environment(
-    "CRON_REDDIT_POST_ONE_PIECE", default_value="0 0,12 * * *"
+    "CRON_REDDIT_POST_ONE_PIECE", default_value="0 */2 * * *"
 )
 ENABLE_TIMER_REDDIT_POST_ONE_PIECE = Environment(
     "ENABLE_TIMER_REDDIT_POST_ONE_PIECE", default_value="True"
@@ -331,7 +331,7 @@ SHOULD_RUN_ON_STARTUP_REDDIT_POST_ONE_PIECE = Environment(
 )
 # Reddit Meme post Piece. Default: Every day at 06:00 and 18:00
 CRON_REDDIT_POST_MEME_PIECE = Environment(
-    "CRON_REDDIT_POST_MEME_PIECE", default_value="0 6,18 * * *"
+    "CRON_REDDIT_POST_MEME_PIECE", default_value="0 */2 * * *"
 )
 ENABLE_TIMER_REDDIT_POST_MEME_PIECE = Environment(
     "ENABLE_TIMER_REDDIT_POST_MEME_PIECE", default_value="True"
