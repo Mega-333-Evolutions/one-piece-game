@@ -173,7 +173,7 @@ ANTI_SPAM_TIME_INTERVAL_SECONDS = Environment(
 
 # REDDIT
 # Enable reddit posts from r/onepiece and r/memepiece
-ENABLE_REDDIT_POSTS = Environment("ENABLE_REDDIT_POSTS", default_value="False")
+ENABLE_REDDIT_POSTS = Environment("ENABLE_REDDIT_POSTS", default_value="True")
 # Reddit client id
 REDDIT_CLIENT_ID = Environment("REDDIT_CLIENT_ID", can_be_empty=True)
 # Reddit client secret
