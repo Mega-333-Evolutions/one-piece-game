@@ -212,6 +212,7 @@ async def end_game(
                 edit_only_caption_and_keyboard=True,
                 group_chat=game.group_chat,
                 authorized_users=[game.challenger],
+                ignore_bad_request_exception=True,
             )
         )
 
@@ -537,6 +538,7 @@ async def validate_game(
                         add_delete_button=True,
                         authorized_users=game.get_players(),
                         edit_only_caption_and_keyboard=True,
+                        ignore_bad_request_exception=True,
                     )
                     return None
             else:
@@ -824,6 +826,7 @@ async def guess_game_countdown_to_start(
                 keyboard=play_deeplink_button,
                 edit_only_caption_and_keyboard=True,
                 edit_message_id=game.message_id,
+                ignore_bad_request_exception=True,
             )
 
         # Run game
@@ -973,6 +976,7 @@ async def guess_game_validate_answer(
             group_chat=game.group_chat,
             edit_message_id=game.message_id,
             edit_only_caption_and_keyboard=True,
+            ignore_bad_request_exception=True,
         )
 
 
@@ -1096,6 +1100,7 @@ async def end_text_based_game(
             group_chat=group_chat,
             edit_message_id=game.message_id,
             edit_only_caption_and_keyboard=True,
+            ignore_bad_request_exception=True,
         )
 
 
