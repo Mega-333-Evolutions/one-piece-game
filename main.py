@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 import asyncio
 
 from telethon import TelegramClient, events
-from apscheduler.schedulers.asyncio import AsyncIOScheduler  # Added for task scheduling
+from apscheduler.schedulers.asyncio import AsyncIOScheduler  # Added import
 
 import constants as c
 import resources.Environment as Env
@@ -46,7 +46,7 @@ async def post_init(client: TelegramClient, scheduler: AsyncIOScheduler) -> None
     :param scheduler: the APScheduler instance
     :return: None
     """
-    # Pass both the client and the scheduler to your timer service
+    # Passed the scheduler down to the timer service
     await set_timers(client, scheduler)
 
 
@@ -104,7 +104,7 @@ async def async_main() -> None:
     # Activate timers logging configuration
     logging.getLogger("apscheduler.executors.default").propagate = False
 
-    # Initialize and start APScheduler with your configured timezone
+    # Initialize and start APScheduler using the environment's timezone
     scheduler = AsyncIOScheduler(timezone=ZoneInfo(Env.TZ.get()))
     scheduler.start()
 
