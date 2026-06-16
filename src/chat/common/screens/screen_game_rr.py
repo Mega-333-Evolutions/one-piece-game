@@ -1,34 +1,81 @@
+import asyncio
 import json
-from datetime import datetime
-from enum import StrEnum
+import logging
+from datetime import datetime, timedelta
+from typing import Tuple, Callable
 
-from telegram import Update, Message
+from peewee import DoesNotExist
+from telegram import Update
+from telegram.error import RetryAfter
 from telegram.ext import ContextTypes
 
-import resources.Environment as Env
-import resources.phrases as phrases
-import src.service.game_service as game_service
+import constants as c
+from resources import phrases as phrases, Environment as Env
 from src.model.Game import Game
+from src.model.GroupChat import GroupChat
 from src.model.User import User
+from src.model.enums.ContextDataKey import ContextDataKey
 from src.model.enums.Emoji import Emoji
-from src.model.enums.MessageSource import MessageSource
-from src.model.enums.SavedMediaName import SavedMediaName
+from src.model.enums.GameStatus import GameStatus
+from src.model.enums.Notification import GameTurnNotification, GameOutcomeNotification
+from src.model.enums.ReservedKeyboardKeys import ReservedKeyboardKeys
+from src.model.enums.SavedMedia import SavedMedia
+from src.model.enums.SavedMediaType import SavedMediaType
 from src.model.enums.Screen import Screen
+from src.model.enums.devil_fruit.DevilFruitAbilityType import DevilFruitAbilityType
+from src.model.enums.income_tax.IncomeTaxEventType import IncomeTaxEventType
+from src.model.error.CommonChatError import CommonChatException
 from src.model.game.GameBoard import GameBoard
 from src.model.game.GameOutcome import GameOutcome
 from src.model.game.GameTurn import GameTurn
+from src.model.game.GameType import GameType
+from src.model.game.punkrecords.PunkRecords import PunkRecords
+from src.model.game.shambles.Shambles import Shambles
+from src.model.game.whoswho.WhosWho import WhosWho
+from src.model.pojo.ContextDataValue import ContextDataValue
+from src.model.pojo.Keyboard import Keyboard
+from src.model.wiki.Character import Character
+from src.model.wiki.SupabaseRest import SupabaseRest
+from src.model.wiki.Terminology import Terminology
+from src.service.bounty_service import add_or_remove_bounty, validate_amount
+from src.service.date_service import (
+    convert_seconds_to_duration,
+    get_remaining_duration,
+    get_elapsed_duration,
+)
+from src.service.devil_fruit_service import get_ability_adjusted_datetime
+from src.service.message_service import (
+    mention_markdown_user,
+    delete_message,
+    full_media_send,
+    get_message_url,
+    full_message_send,
+    full_message_or_media_send_or_edit,
+    get_deeplink,
+)
+from src.service.notification_service import send_notification
+from src.utils.context_utils import (
+    get_bot_context_data,
+    set_bot_context_data,
+    get_random_user_context_inner_query_key,
+)
+from src.utils.phrase_utils import get_outcome_text
+from src.utils.string_utils import get_belly_formatted
+import src.service.game_service as game_service
 from src.model.game.russianroulette.RussianRoulette import RussianRoulette
 from src.model.game.russianroulette.RussianRouletteChamberStatus import (
     RussianRouletteChamberStatus as RRChamberStatus,
 )
-from src.model.pojo.Keyboard import Keyboard
+from src.service.message_service import get_message_source
+from src.model.enums.MessageSource import MessageSource
+from src.model.enums.SavedMediaName import SavedMediaName
 from src.service.game_service import (
     edit_other_player_message,
     enqueue_auto_move,
     get_global_share_keyboard,
     end_global_game_player,
 )
-from src.service.message_service import full_message_send, full_media_send, get_message_source
+from enum import StrEnum
 
 
 class GameRRReservedKeys(StrEnum):
@@ -150,6 +197,7 @@ async def manage(
             authorized_users=game.get_players(),
             edit_only_caption_and_keyboard=True,
             edit_message_id=edit_message_id,
+            ignore_bad_request_exception=True,
         )
 
         # Global game, modify opponent message
@@ -159,7 +207,7 @@ async def manage(
                     context,
                     game,
                     user,
-                    message.id,
+                    message.id if message else None,
                     get_specific_text(game, challenger_board, game.challenger, opponent_board),
                     get_specific_text(game, opponent_board, game.opponent, challenger_board),
                     get_outbound_keyboard(context, game, other_board, update, user),
@@ -181,6 +229,7 @@ async def manage(
         authorized_users=game.get_players(),
         saved_media_name=SavedMediaName.GAME_RUSSIAN_ROULETTE,
         edit_message_id=edit_message_id,
+        ignore_bad_request_exception=True,
     )
 
     # Global game, modify opponent message
@@ -190,7 +239,7 @@ async def manage(
                 context,
                 game,
                 user,
-                message.id,
+                message.id if message else None,
                 get_specific_text(game, challenger_board, game.challenger, opponent_board),
                 get_specific_text(game, opponent_board, game.opponent, challenger_board),
                 get_outbound_keyboard(context, game, other_board, update, user),
@@ -204,7 +253,7 @@ async def manage(
         await game_service.notify_game_turn(context, game, board.game_turn)
 
     # Auto-move
-    if not board.is_finished():
+    if not board.is_finished() and message:
         # Group game, arriving from opponent confirmation, auto move for both
         context.application.create_task(
             enqueue_auto_move(
