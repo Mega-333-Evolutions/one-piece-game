@@ -60,11 +60,15 @@ async def manage(
     if not should_ignore_input:
         # Validate that the user can pay this loan
         if inbound_keyboard is not None:
-            loan: BountyLoan = BountyLoan.get_by_id(
-                inbound_keyboard.get(ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY)
-            )
+            loan_id = inbound_keyboard.get(ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY)
         else:
-            loan: BountyLoan = BountyLoan.get_by_id(user.private_screen_in_edit_id)
+            loan_id = user.private_screen_in_edit_id
+            
+        # Guard clause: If we lost the loan context, safely abort
+        if loan_id is None:
+            return
+            
+        loan: BountyLoan = BountyLoan.get_by_id(loan_id)
 
         step = Step(user.private_screen_step if user.private_screen_step else Step.REQUEST_AMOUNT)
         if not await validate(
@@ -101,7 +105,7 @@ async def manage(
                                 BountyLoanDetailActivateReservedKeys.PAY_ALL: 1,
                                 ReservedKeyboardKeys.SCREEN_STEP: Step.REQUEST_CONFIRMATION,
                             },
-                            inbound_info=inbound_keyboard.info,
+                            inbound_info=inbound_keyboard.info if inbound_keyboard else None,
                         )
                     ]
                 )
