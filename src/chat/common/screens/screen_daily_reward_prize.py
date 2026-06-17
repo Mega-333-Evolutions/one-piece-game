@@ -38,6 +38,10 @@ async def manage(
     :return: None
     """
 
+    # Guard clause: If there is no keyboard payload (e.g., user typed raw text), abort.
+    if inbound_keyboard is None:
+        return
+
     reward: DailyReward = DailyReward.get_by_id(
         inbound_keyboard.get_int(ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY)
     )
