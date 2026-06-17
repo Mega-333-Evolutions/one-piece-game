@@ -19,8 +19,10 @@ from src.model.error.CommonChatError import CommonChatException
 from src.model.error.CustomException import OpponentValidationException
 from src.model.game.GameType import GameType
 from src.model.pojo.Keyboard import Keyboard
+from src.model.enums.devil_fruit.DevilFruitAbilityType import DevilFruitAbilityType
 from src.service.bounty_service import get_amount_from_string, validate_amount
 from src.service.date_service import get_remaining_duration
+from src.service.devil_fruit_service import get_ability_value
 from src.service.game_service import get_global_challenges_section_text
 from src.service.message_service import (
     full_message_send,
@@ -78,7 +80,11 @@ async def validate(
     now = datetime.now()
     challenge_limit: int = Env.GAME_CHALLENGE_LIMIT.get_int()
     if challenger.game_cooldown_start_time is not None:
-        cooldown_duration_hours: int = Env.GAME_COOLDOWN_DURATION.get_int()
+        cooldown_duration_hours: float = get_ability_value(
+            challenger,
+            DevilFruitAbilityType.GAME_COOLDOWN_DURATION,
+            Env.GAME_COOLDOWN_DURATION.get_int(),
+        )
         cooldown_end = challenger.game_cooldown_start_time + dt.timedelta(hours=cooldown_duration_hours)
         if now < cooldown_end:
             # Still inside the cooldown window — block only if all challenges are used
