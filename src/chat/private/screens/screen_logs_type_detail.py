@@ -23,6 +23,10 @@ async def manage(
     :return: None
     """
 
+    # Guard clause: If there is no keyboard payload (e.g., user typed/edited raw text), abort.
+    if inbound_keyboard is None:
+        return
+
     log: Log = get_log_by_type(LogType(inbound_keyboard.get(LogTypeReservedKeys.TYPE)))
 
     if await validate(update, context, log, user):
