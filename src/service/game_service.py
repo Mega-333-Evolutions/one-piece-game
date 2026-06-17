@@ -43,7 +43,7 @@ from src.service.date_service import (
     get_remaining_duration,
     get_elapsed_duration,
 )
-from src.service.devil_fruit_service import get_ability_adjusted_datetime
+from src.service.devil_fruit_service import get_ability_adjusted_datetime, get_ability_value
 from src.service.message_service import (
     mention_markdown_user,
     delete_message,
@@ -523,8 +523,13 @@ async def validate_game(
         now = datetime.now()
         challenge_limit: int = Env.GAME_CHALLENGE_LIMIT.get_int()
         if challenger.game_cooldown_start_time is not None:
+            cooldown_duration_hours: float = get_ability_value(
+                challenger,
+                DevilFruitAbilityType.GAME_COOLDOWN_DURATION,
+                Env.GAME_COOLDOWN_DURATION.get_int(),
+            )
             cooldown_end = challenger.game_cooldown_start_time + timedelta(
-                hours=Env.GAME_COOLDOWN_DURATION.get_int()
+                hours=cooldown_duration_hours
             )
             if now < cooldown_end:
                 if challenger.game_challenge_count >= challenge_limit:
@@ -1183,7 +1188,11 @@ async def collect_game_wagers_and_set_in_progress(
         
     if should_set_cooldown_challenger:
         now = datetime.now()
-        cooldown_duration_hours: int = Env.GAME_COOLDOWN_DURATION.get_int()
+        cooldown_duration_hours: float = get_ability_value(
+            challenger,
+            DevilFruitAbilityType.GAME_COOLDOWN_DURATION,
+            Env.GAME_COOLDOWN_DURATION.get_int(),
+        )
         # Start the cooldown timer only on the first challenge of a new window
         if (
             challenger.game_cooldown_start_time is None
