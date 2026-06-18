@@ -171,3 +171,16 @@ DEPRECATED = [
 ALLOW_SEARCH_INPUT = [Screen.PVT_CREW_SEARCH]
 
 HAS_CONTEXT_FILTER = [Screen.PVT_CREW_SEARCH]
+
+# Screens that use private_screen_step to track a multi-step input flow (e.g. step 0, 1, 2...).
+# Used to disambiguate a legitimate "step 0" from a stale/default private_screen_step value
+# left over on the user row (e.g. from the DB default) when the user is not actually in one
+# of these flows. Keep in sync with any screen that reads/writes user.private_screen_step.
+SCREENS_WITH_STEP = [
+    Screen.PVT_CREW_CREATE_OR_EDIT,
+    Screen.PVT_PREDICTION_CREATE,
+    Screen.PVT_PREDICTION_DETAIL_PLACE_BET_SEND_AMOUNT,
+    Screen.PVT_DEVIL_FRUIT_DETAIL_SELL,
+    Screen.PVT_SETTINGS_TIMEZONE,
+    Screen.PVT_BOUNTY_LOAN_DETAIL_PAY,
+]
