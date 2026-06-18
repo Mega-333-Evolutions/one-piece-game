@@ -98,39 +98,70 @@ async def end_game(
     :return: None
     """
 
-    # Idempotent check: fetch latest game status from database to prevent race conditions
-    try:
-        latest_game = Game.get_by_id(game.id)
-        if latest_game.get_status() != GameStatus.IN_PROGRESS:
-            logging.warning(
-                f"Game {game.id} is not IN_PROGRESS (status: {latest_game.get_status()}), "
-                f"skipping end_game to prevent double processing"
-            )
-            return
-    except Game.DoesNotExist:
-        logging.warning(f"Game {game.id} no longer exists, skipping end_game")
-        return
-
-    challenger: User = game.challenger
-    opponent: User = game.opponent
+    # Determine the final status up front (pure computation, no I/O) so the atomic claim
+    # below can move the row directly from IN_PROGRESS to its final status in one step.
     half_wager: int = int(game.wager / 2)
-    previous_status: GameStatus = game.get_status()
 
     bounty_for_challenger = bounty_for_opponent = 0
     pending_bounty_for_challenger = pending_bounty_for_opponent = int(game.wager / 2)
     if game_outcome == GameOutcome.CHALLENGER_WON:
         # Challenger won
-        game.status = GameStatus.WON
+        final_status = GameStatus.WON
         bounty_for_challenger = game.wager
     elif game_outcome == GameOutcome.OPPONENT_WON:
         # Opponent won
-        game.status = GameStatus.LOST
+        final_status = GameStatus.LOST
         bounty_for_opponent = game.wager
     else:
         # No one won
         bounty_for_challenger = half_wager
         bounty_for_opponent = half_wager
-        game.status = GameStatus.FORCED_END if is_forced_end else GameStatus.DRAW
+        final_status = GameStatus.FORCED_END if is_forced_end else GameStatus.DRAW
+
+    # Idempotent check: atomically claim the IN_PROGRESS -> final status transition with a
+    # single conditional UPDATE. Using a conditional UPDATE (instead of a separate read,
+    # followed much later by a save) closes the race window where two near-simultaneous
+    # calls (e.g. a duplicated/retried Telegram callback, or a player's move overlapping with
+    # an auto-move/timeout thread) could both read a still-IN_PROGRESS status and both try to
+    # process the result. Only the caller whose UPDATE actually matches a row is allowed to
+    # continue with bounty processing, notifications, and log saving; everyone else exits
+    # immediately before producing any side effect, while the winner of the race always
+    # completes the full flow (notification + log) for both players.
+    try:
+        latest_game = Game.get_by_id(game.id)
+    except Game.DoesNotExist:
+        logging.warning(f"Game {game.id} no longer exists, skipping end_game")
+        return
+
+    previous_status: GameStatus = latest_game.get_status()
+    if previous_status != GameStatus.IN_PROGRESS:
+        logging.warning(
+            f"Game {game.id} is not IN_PROGRESS (status: {previous_status}), "
+            f"skipping end_game to prevent double processing"
+        )
+        return
+
+    claimed_rows = (
+        Game.update(status=final_status)
+        .where((Game.id == game.id) & (Game.status == GameStatus.IN_PROGRESS))
+        .execute()
+    )
+    if claimed_rows == 0:
+        logging.warning(
+            f"Game {game.id} status changed concurrently before claim, "
+            f"skipping end_game to prevent double processing"
+        )
+        return
+
+    # Refresh challenger/opponent/wager from the latest row, and reflect the now-persisted
+    # final status on the in-memory game object used for the rest of this function
+    game.challenger = latest_game.challenger
+    game.opponent = latest_game.opponent
+    game.wager = latest_game.wager
+    game.status = final_status
+
+    challenger: User = game.challenger
+    opponent: User = game.opponent
 
     if not previous_status.no_wager_was_collected():
         await add_or_remove_bounty(
@@ -369,7 +400,7 @@ def get_global_time_based_text(game: Game, user: User) -> str:
     if (not is_finished and challenger_has_finished and is_opponent) or (
         (is_finished and not (outcome is GameOutcome.CHALLENGER_WON and is_challenger))
     ):
-        other_time = challenger_seconds if is_opponent else challenger_seconds
+        other_time = challenger_seconds if is_opponent else opponent_seconds
         text_list.append(
             phrases.GAME_GLOBAL_OPPONENT_TIME.format(
                 convert_seconds_to_duration(other_time, show_full=True)
@@ -1330,7 +1361,7 @@ async def enqueue_auto_move(
     updated_game = Game.get_by_id(game.id)
 
     # Game already ended
-    if game.is_finished():
+    if updated_game.is_finished():
         return
 
     await auto_move_function(update, context, updated_game, user, message_id, game)
@@ -1467,7 +1498,7 @@ async def enqueue_timeout_opponent_guess_game(
     updated_game = Game.get_by_id(game.id)
 
     # Game already ended
-    if game.is_finished():
+    if updated_game.is_finished():
         return
 
     await timeout_opponent_guess_game(context, updated_game)
@@ -1486,7 +1517,7 @@ async def end_global_game_player(
     if is_challenger:
         game.global_challenger_end_date = datetime.now()
     else:
-        game.global_challenger_end_date = datetime.now()
+        game.global_opponent_end_date = datetime.now()
 
     game.save()
 
