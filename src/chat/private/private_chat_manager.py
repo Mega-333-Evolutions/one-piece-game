@@ -184,7 +184,7 @@ from src.model.SystemUpdateUser import SystemUpdateUser
 from src.model.User import User
 from src.model.enums.ContextDataKey import ContextDataKey
 from src.model.enums.ReservedKeyboardKeys import ReservedKeyboardKeys
-from src.model.enums.Screen import Screen, ALLOW_SEARCH_INPUT, HAS_CONTEXT_FILTER
+from src.model.enums.Screen import Screen, ALLOW_SEARCH_INPUT, HAS_CONTEXT_FILTER, SCREENS_WITH_STEP
 from src.model.error.CustomException import UnauthorizedToViewItemException
 from src.model.error.PrivateChatError import PrivateChatError, PrivateChatException
 from src.model.pojo.Keyboard import Keyboard
@@ -296,7 +296,15 @@ async def dispatch_screens(
 
                 if command is Command.ND or command.name == "":
                     # Text message but not in edit mode and screen is not start, return
-                    if not user.in_edit_mode() and screen not in ALLOW_SEARCH_INPUT:
+                    if not user.in_edit_mode(current_screen=screen) and screen not in ALLOW_SEARCH_INPUT:
+                        # Self-heal a stale private_screen_step left over from a screen that
+                        # doesn't use it (e.g. DB default), so it doesn't keep masking this
+                        # check on every subsequent random message
+                        if (
+                            user.private_screen_step is not None
+                            and screen not in SCREENS_WITH_STEP
+                        ):
+                            user.private_screen_step = None
                         return
 
         # Remove context filters if current screen and none of previous manage filters
