@@ -763,6 +763,8 @@ async def full_media_send(
                         allow_sending_without_reply=allow_sending_without_reply,
                         protect_content=protect_content,
                         message_thread_id=topic_id,
+                        read_timeout=60,
+                        write_timeout=60,
                     )
 
                 case SavedMediaType.VIDEO:  # Video
@@ -777,6 +779,8 @@ async def full_media_send(
                         allow_sending_without_reply=allow_sending_without_reply,
                         protect_content=protect_content,
                         message_thread_id=topic_id,
+                        read_timeout=60,
+                        write_timeout=60,
                     )
 
                 case SavedMediaType.ANIMATION:  # Animation
@@ -791,6 +795,8 @@ async def full_media_send(
                         allow_sending_without_reply=allow_sending_without_reply,
                         protect_content=protect_content,
                         message_thread_id=topic_id,
+                        read_timeout=60,
+                        write_timeout=60,
                     )
                 case _:
                     raise ValueError(f"Invalid saved media type: {saved_media.type}")
@@ -860,6 +866,8 @@ async def full_media_send(
             message_id=edit_message_id,
             media=input_media,
             reply_markup=keyboard_markup,
+            read_timeout=60,
+            write_timeout=60,
         )
         # Enqueue for auto deletion
         if should_auto_delete:
