@@ -77,7 +77,7 @@ class User(BaseModel):
     )
     last_system_interaction_date: datetime.datetime | DateTimeField = DateTimeField(null=True)
     private_screen_list: str | CharField | None = CharField(max_length=99)
-    private_screen_step: int | SmallIntegerField | None = SmallIntegerField()
+    private_screen_step: int | SmallIntegerField | None = SmallIntegerField(null=True)
     private_screen_in_edit_id: int | IntegerField | None = IntegerField(null=True)
     bounty_gift_tax: int | IntegerField = IntegerField(default=0)
     is_admin: bool | BooleanField = BooleanField(default=False)
@@ -229,13 +229,32 @@ class User(BaseModel):
         if len(self.private_screen_list) == 0:
             self.private_screen_list = None
 
-    def in_edit_mode(self):
+    def in_edit_mode(self, current_screen=None):
         """
-        Returns True if the user is in edit mode
+        Returns True if the user is in edit mode, i.e. is expected to send a text input
+        as part of a multi-step flow (e.g. crew creation, prediction creation) or is editing
+        an existing item.
+        :param current_screen: The screen currently resolved for this request. Required to
+        correctly detect edit mode based on private_screen_step, since that field is only
+        meaningful while the user is actually on one of the screens that use it
+        (see Screen.SCREENS_WITH_STEP). Without it, a stale/default private_screen_step value
+        left on the user row would incorrectly be treated as "in edit mode" forever.
         :return: True if the user is in edit mode
         """
 
-        return self.private_screen_step is not None or self.private_screen_in_edit_id is not None
+        from src.model.enums.Screen import SCREENS_WITH_STEP
+
+        if self.private_screen_in_edit_id is not None:
+            return True
+
+        if self.private_screen_step is None:
+            return False
+
+        if current_screen is None:
+            # Caller didn't provide the current screen, fall back to the saved one
+            current_screen = self.get_current_private_screen()
+
+        return current_screen in SCREENS_WITH_STEP
 
     def get_private_screen_list(self) -> list[Screen]:
         """
@@ -869,3 +888,19 @@ try:
     )
 except Exception:
     pass  # Column already exists
+
+# Auto-migrate: private_screen_step was originally created as NOT NULL with no default,
+# causing new rows to default to 0 instead of NULL. Since 0 is a valid step value for some
+# screens, this made User.in_edit_mode() always evaluate as True, which silently disabled
+# the safeguard against replaying the last completed action on unrelated text messages.
+# Safe to run on every startup: MODIFYing an already-nullable column to NULL is a no-op.
+try:
+    from playhouse.migrate import MySQLMigrator, migrate as pw_migrate
+    from src.model.BaseModel import db_obj
+
+    _migrator = MySQLMigrator(db_obj.get_db())
+    pw_migrate(
+        _migrator.drop_not_null('user', 'private_screen_step'),
+    )
+except Exception:
+    pass  # Column already nullable or migration not needed
