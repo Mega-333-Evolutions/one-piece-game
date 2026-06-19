@@ -511,9 +511,15 @@ async def full_message_send(
 
     # Answer callback
     if answer_callback:
-        return await context.bot.answer_callback_query(
-            update.callback_query.id, text=text, show_alert=show_alert
-        )
+        try:
+            return await context.bot.answer_callback_query(
+                update.callback_query.id, text=text, show_alert=show_alert
+            )
+        except BadRequest as e:
+            if "query is too old" in str(e).lower() or "query id is invalid" in str(e).lower():
+                logging.warning(f"Callback query expired before it could be answered: {e}")
+                return False
+            raise e
 
     # Edit message
     edit_message_id = (
@@ -822,9 +828,15 @@ async def full_media_send(
 
         # Answer callback
         if answer_callback:
-            return await context.bot.answer_callback_query(
-                update.callback_query.id, text=caption, show_alert=show_alert
-            )
+            try:
+                return await context.bot.answer_callback_query(
+                    update.callback_query.id, text=caption, show_alert=show_alert
+                )
+            except BadRequest as e:
+                if "query is too old" in str(e).lower() or "query id is invalid" in str(e).lower():
+                    logging.warning(f"Callback query expired before it could be answered: {e}")
+                    return False
+                raise e
 
         edit_message_id = (
             edit_message_id
