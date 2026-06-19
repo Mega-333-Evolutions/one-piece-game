@@ -14,7 +14,7 @@ from src.model.enums.Notification import (
 from src.model.enums.ReservedKeyboardKeys import ReservedKeyboardKeys
 from src.model.enums.Screen import Screen
 from src.model.error.CustomException import CrewValidationException
-from src.model.error.PrivateChatError import PrivateChatException
+from src.model.error.PrivateChatError import PrivateChatError, PrivateChatException
 from src.model.pojo.Keyboard import Keyboard
 from src.service.crew_service import get_crew
 from src.service.date_service import (
@@ -40,9 +40,11 @@ async def manage(
     """
     from src.chat.private.screens.screen_crew_davy_back_fight_request import validate
 
-    davy_back_fight: DavyBackFight = DavyBackFight.get_by_id(
-        inbound_keyboard.get_int(ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY)
+    davy_back_fight: DavyBackFight = DavyBackFight.get_or_none(
+        DavyBackFight.id == inbound_keyboard.get_int(ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY)
     )
+    if davy_back_fight is None:
+        raise PrivateChatException(PrivateChatError.ITEM_NOT_FOUND)
 
     try:
         crew: Crew = get_crew(user=user, validate_against_crew=davy_back_fight.opponent_crew)
