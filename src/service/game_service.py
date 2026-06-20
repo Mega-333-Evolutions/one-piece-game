@@ -6,7 +6,7 @@ from typing import Tuple, Callable
 
 from peewee import DoesNotExist
 from telegram import Update
-from telegram.error import RetryAfter
+from telegram.error import RetryAfter, BadRequest
 from telegram.ext import ContextTypes
 
 import constants as c
@@ -1388,27 +1388,49 @@ async def edit_other_player_message(
     :return: None
     """
     if game.is_challenger(player):
-        game.challenger_message_id = sent_message_id
+        # Only overwrite the stored id if we have a new one, otherwise a failed send upstream
+        # would wipe out a previously valid id
+        if sent_message_id is not None:
+            game.challenger_message_id = sent_message_id
         other_player: User = game.opponent
         other_player_message_id = game.opponent_message_id
         other_player_text = opponent_text
     else:
-        game.opponent_message_id = sent_message_id
+        if sent_message_id is not None:
+            game.opponent_message_id = sent_message_id
         other_player: User = game.challenger
         other_player_message_id = game.challenger_message_id
         other_player_text = challenger_text
 
-    if other_player is not None:
-        await full_media_send(
-            context,
-            caption=other_player_text,
-            keyboard=outbound_keyboard,
-            authorized_users=game.get_players(),
-            chat_id=other_player.tg_user_id,
-            edit_message_id=other_player_message_id,
-            ignore_bad_request_exception=True,
-            ignore_forbidden_exception=True,
-            edit_only_caption_and_keyboard=True,
+    # This runs as a fire-and-forget background task (called via
+    # context.application.create_task). If there is no message id to edit (e.g. the other
+    # player has not received their first message yet), full_media_send has no update object to
+    # fall back on and raises a generic Exception, not a BadRequest, so it bypasses
+    # ignore_bad_request_exception entirely. An uncaught exception here aborts the task silently
+    # and, critically, skips the game.save() below, so the auto-move result never reaches the
+    # other player's message and the message id bookkeeping is lost. Guard against both.
+    if other_player is not None and other_player_message_id is not None:
+        try:
+            await full_media_send(
+                context,
+                caption=other_player_text,
+                keyboard=outbound_keyboard,
+                authorized_users=game.get_players(),
+                chat_id=other_player.tg_user_id,
+                edit_message_id=other_player_message_id,
+                ignore_bad_request_exception=True,
+                ignore_forbidden_exception=True,
+                edit_only_caption_and_keyboard=True,
+                should_log_ignored_exception=True,
+            )
+        except (RetryAfter, BadRequest) as e:
+            logging.warning(
+                f"Failed to edit other player's message for game {game.id} "
+                f"(message_id {other_player_message_id}): {e}"
+            )
+    elif other_player is not None:
+        logging.warning(
+            f"Cannot edit other player's message for game {game.id}: no message id stored yet"
         )
 
     game.save()
