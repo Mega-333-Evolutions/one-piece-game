@@ -6,7 +6,7 @@ from typing import Tuple, Callable
 
 from peewee import DoesNotExist
 from telegram import Update
-from telegram.error import RetryAfter
+from telegram.error import RetryAfter, BadRequest
 from telegram.ext import ContextTypes
 
 import constants as c
@@ -188,29 +188,42 @@ async def manage(
         )
         user.should_update_model = False
 
-        # Send result
-        message: Message = await full_media_send(
-            context,
-            caption=get_specific_text(game, board, user, other_board),
-            update=update,
-            keyboard=get_outbound_keyboard(context, game, board, update, user),
-            authorized_users=game.get_players(),
-            edit_only_caption_and_keyboard=True,
-            edit_message_id=edit_message_id,
-            ignore_bad_request_exception=True,
-        )
+        # Send result. Any failure here (rate limit, stale message, etc.) must not prevent the
+        # other player's message from being updated below, otherwise an auto-move loss would
+        # silently never reach either player's message.
+        sent_message_id = edit_message_id
+        try:
+            message: Message = await full_media_send(
+                context,
+                caption=get_specific_text(game, board, user, other_board),
+                update=update,
+                keyboard=get_outbound_keyboard(context, game, board, update, user),
+                authorized_users=game.get_players(),
+                edit_only_caption_and_keyboard=True,
+                edit_message_id=edit_message_id,
+                ignore_bad_request_exception=True,
+                should_log_ignored_exception=True,
+            )
+            if message:
+                sent_message_id = message.id
+        except (RetryAfter, BadRequest) as e:
+            logging.warning(
+                f"Failed to send auto-move result message for game {game.id}: {e}"
+            )
 
-        # Global game, modify opponent message
+        # Global game, modify opponent message. Always attempt this, even if the call above
+        # failed, so the other player still gets the result of the auto-move.
         if game.is_global():
+            other_player = game.get_other_player(user)
             context.application.create_task(
                 edit_other_player_message(
                     context,
                     game,
                     user,
-                    message.id if message else None,
+                    sent_message_id,
                     get_specific_text(game, challenger_board, game.challenger, opponent_board),
                     get_specific_text(game, opponent_board, game.opponent, challenger_board),
-                    get_outbound_keyboard(context, game, other_board, update, user),
+                    get_outbound_keyboard(context, game, other_board, update, other_player),
                 )
             )
 
