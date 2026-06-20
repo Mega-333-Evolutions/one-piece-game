@@ -1523,14 +1523,25 @@ def message_is_reply(update: Update) -> bool:
         return False
 
 
-def get_message_url(message_id: int, group_chat: GroupChat = None, chat_id: str = None) -> str:
+def get_message_url(
+    message_id: int,
+    group_chat: GroupChat = None,
+    chat_id: str = None,
+    chat_username: str = None,
+) -> str:
     """
     Gets the message url
     :param group_chat: The group chat
     :param message_id: The message id
     :param chat_id: The chat id
+    :param chat_username: The chat's public username (without @), if set, takes priority over
+    chat_id/group_chat and builds a public post link (e.g. https://t.me/username/123) instead of
+    the private https://t.me/c/.../123 link, which only works for members who already joined
     :return: The message url
     """
+
+    if chat_username:
+        return f"https://t.me/{chat_username}/{message_id}"
 
     if chat_id is None and group_chat is None:
         raise ValueError("chat_id or group_chat must be specified")
