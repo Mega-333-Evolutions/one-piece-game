@@ -151,6 +151,9 @@ ERROR_LOG_CHAT_ID = Environment("ERROR_LOG_CHAT_ID", can_be_empty=True)
 OPMA_BOT_ID = Environment("OPMA_BOT_ID", default_value="921260484")
 # Updates channel id
 UPDATES_CHAT_ID = Environment("UPDATES_CHAT_ID")
+# Updates channel public username (without @), used to build public post links (e.g. for the
+# Global Leaderboard link in local leaderboard messages) instead of the private /c/ link format
+UPDATES_CHAT_USERNAME = Environment("UPDATES_CHAT_USERNAME", default_value="Bounty_Bot_Updates")
 # Support group id
 SUPPORT_GROUP_LINK = Environment("SUPPORT_GROUP_LINK", default_value="https://t.me/One_Piece_chats")
 
