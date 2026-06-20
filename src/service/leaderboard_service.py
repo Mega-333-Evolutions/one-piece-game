@@ -99,7 +99,9 @@ def get_leaderboard_message(
     if global_leaderboard_message_id is not None:
         view_global_leaderboard_text = phrases.LEADERBOARD_VIEW_GLOBAL_LEADERBOARD.format(
             get_message_url(
-                message_id=global_leaderboard_message_id, chat_id=Env.UPDATES_CHAT_ID.get()
+                message_id=global_leaderboard_message_id,
+                chat_id=Env.UPDATES_CHAT_ID.get(),
+                chat_username=Env.UPDATES_CHAT_USERNAME.get_or_none(),
             )
         )
     else:
