@@ -9,7 +9,7 @@ class RedditGroupPost(BaseModel):
     """
 
     short_link = CharField(max_length=99, unique=True)
-    message_id = BigIntegerField()
+    message_id = BigIntegerField(null=True)
 
     class Meta:
         db_table = "reddit_group_post"
