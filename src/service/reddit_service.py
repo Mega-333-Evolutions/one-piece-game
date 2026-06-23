@@ -156,6 +156,21 @@ async def manage(context: ContextTypes.DEFAULT_TYPE, subreddit_name: str) -> Non
                     break
             except BadRequest as bad_request:  # Try again if BadRequest
                 logging.error("Error sending reddit post {}: {}".format(post.shortlink, bad_request))
+                # Without this, a post that fails for a non-transient reason (e.g. Telegram
+                # rejecting the media url/type) gets retried on every single cron run for as
+                # long as it stays in the subreddit's top 10 hot posts, spamming the logs with
+                # the same error indefinitely. Mark it as seen (no message_id) so it's skipped.
+                try:
+                    reddit_group_post: RedditGroupPost = RedditGroupPost()
+                    reddit_group_post.short_link = post.shortlink
+                    reddit_group_post.message_id = None
+                    reddit_group_post.save()
+                except Exception as save_exception:
+                    logging.error(
+                        "Error saving skipped reddit post {}: {}".format(
+                            post.shortlink, save_exception
+                        )
+                    )
                 continue
             except Exception as e:  # Stop if any other error
                 logging.error("Error sending reddit post {}: {}".format(post.shortlink, e))
