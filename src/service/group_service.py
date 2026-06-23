@@ -1,7 +1,9 @@
+import asyncio
+import logging
 from datetime import datetime, timedelta
 
 from telegram import Message
-from telegram.error import TelegramError
+from telegram.error import TelegramError, RetryAfter
 from telegram.ext import ContextTypes
 
 import resources.Environment as Env
@@ -230,26 +232,60 @@ async def broadcast_to_chats_with_feature_enabled(
                 external_item: Leaderboard = external_item
                 external_item.message_id = message.message_id
                 external_item.save()
-
-            if feature_is_pinnable:
-                should_pin = (
-                    GroupChatEnabledFeaturePin.get_or_none(
-                        (GroupChatEnabledFeaturePin.group_chat == group_chat)
-                        & (GroupChatEnabledFeaturePin.feature == feature)
-                    )
-                    is not None
-                )
-
-                if should_pin:
-                    await message.pin(disable_notification=True)
-                    pin_message: GroupChatFeaturePinMessage = GroupChatFeaturePinMessage()
-                    pin_message.group_chat = group_chat
-                    pin_message.feature = feature
-                    pin_message.message_id = message.message_id
-                    pin_message.save()
-
         except TelegramError as te:
+            logging.warning(
+                f"Failed to send {feature.get_description()} message to group chat "
+                f"{group_chat.id}: {te}"
+            )
             save_group_chat_error(group_chat, str(te))
+            continue
+
+        if not feature_is_pinnable:
+            continue
+
+        should_pin = (
+            GroupChatEnabledFeaturePin.get_or_none(
+                (GroupChatEnabledFeaturePin.group_chat == group_chat)
+                & (GroupChatEnabledFeaturePin.feature == feature)
+            )
+            is not None
+        )
+
+        if not should_pin:
+            continue
+
+        # The send above already counts against Telegram's flood limits, so pinning right after
+        # it is what most commonly trips RetryAfter when broadcasting to many groups in a row.
+        # Retry once after waiting it out instead of silently giving up on pinning this message.
+        for attempt in range(2):
+            try:
+                await message.pin(disable_notification=True)
+                pin_message: GroupChatFeaturePinMessage = GroupChatFeaturePinMessage()
+                pin_message.group_chat = group_chat
+                pin_message.feature = feature
+                pin_message.message_id = message.message_id
+                pin_message.save()
+                break
+            except RetryAfter as ra:
+                if attempt == 0:
+                    logging.warning(
+                        f"Rate limited while pinning {feature.get_description()} message in "
+                        f"group chat {group_chat.id}, retrying in {ra.retry_after}s"
+                    )
+                    await asyncio.sleep(ra.retry_after)
+                    continue
+                logging.warning(
+                    f"Failed to pin {feature.get_description()} message in group chat "
+                    f"{group_chat.id} after retrying: {ra}"
+                )
+                save_group_chat_error(group_chat, str(ra))
+            except TelegramError as te:
+                logging.warning(
+                    f"Failed to pin {feature.get_description()} message in group chat "
+                    f"{group_chat.id}: {te}"
+                )
+                save_group_chat_error(group_chat, str(te))
+                break
 
 
 async def unpin_feature_messages_dispatch(
