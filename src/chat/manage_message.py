@@ -6,7 +6,7 @@ from typing import Tuple, Callable
 
 from peewee import DoesNotExist
 from telegram import Update
-from telegram.error import RetryAfter
+from telegram.error import RetryAfter, Forbidden
 from telegram.ext import ContextTypes
 
 import constants as c
@@ -467,6 +467,12 @@ async def manage_after_db(
             from_exception=True,
             show_alert=True,
         )
+    except Forbidden as fe:
+        # Common, expected occurrence (bot kicked from a group, blocked by a user, etc.), not
+        # an actual bug. Log it concisely instead of dumping the full update object and a
+        # redundant stack trace (exc_info on the generic handler below already covers real bugs).
+        chat_id = update.effective_chat.id if update.effective_chat is not None else None
+        logging.warning(f"Forbidden in chat {chat_id}: {fe}")
     except Exception as e:
         logging.error(update)
         logging.error(e, exc_info=True)
