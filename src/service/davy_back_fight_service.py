@@ -220,17 +220,19 @@ async def end(context: CallbackContext, davy_back_fight: DavyBackFight):
             participant.win_amount = participant.get_win_amount()
             participant.save()
 
-        # Add amount
-        context.application.create_task(
-            add_or_remove_bounty(
-                participant.user,
-                amount=participant.win_amount,
-                context=context,
-                should_save=True,
-                tax_event_type=IncomeTaxEventType.DAVY_BACK_FIGHT,
-                event_id=davy_back_fight.id,
+            # Add amount. Only winning crew participants have a win_amount set - calling this
+            # for losers as well passes amount=None, which add_or_remove_bounty rejects with a
+            # ValueError that goes unhandled since this runs as a fire-and-forget task.
+            context.application.create_task(
+                add_or_remove_bounty(
+                    participant.user,
+                    amount=participant.win_amount,
+                    context=context,
+                    should_save=True,
+                    tax_event_type=IncomeTaxEventType.DAVY_BACK_FIGHT,
+                    event_id=davy_back_fight.id,
+                )
             )
-        )
 
         await send_notification(
             context,
