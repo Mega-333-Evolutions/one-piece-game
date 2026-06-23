@@ -491,11 +491,16 @@ async def delete_game(
             ignore_bad_request_exception=True,
         )
     elif should_delete_message:
-        # Try to delete message
-        if should_delete_message:
-            await delete_message(
-                context=context, group_chat=game.group_chat, message_id=game.message_id
-            )
+        # Try to delete message. For global/private challenges, game.group_chat is None, so
+        # fall back to the challenger's private chat instead of leaving chat_id unset, which
+        # made delete_message silently no-op with an "must be specified" log error and never
+        # actually delete the message.
+        await delete_message(
+            context=context,
+            group_chat=game.group_chat,
+            chat_id=(game.challenger.tg_user_id if game.group_chat is None else None),
+            message_id=game.message_id,
+        )
 
     # Delete game
     game.delete_instance()
