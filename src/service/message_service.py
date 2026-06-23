@@ -1390,11 +1390,11 @@ async def delete_message(
             await update.effective_message.delete()
         else:
             await context.bot.delete_message(chat_id, message_id)
-    except TelegramError:
+    except TelegramError as te:
         if is_auto_delete:  # No logging if auto deleted
             return
 
-        logging.error(f"Failed to delete message {message_id} in chat {chat_id}")
+        logging.error(f"Failed to delete message {message_id} in chat {chat_id}: {te}")
 
 
 def get_message_source(update: Update) -> MessageSource:
