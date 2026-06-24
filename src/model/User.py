@@ -904,3 +904,30 @@ try:
     )
 except Exception:
     pass  # Column already nullable or migration not needed
+
+# Auto-migrate: composite index on (crew_role, conscription_end_date). Queried every minute by
+# end_all_conscription (WHERE crew_role == CONSCRIPT AND conscription_end_date < NOW()) with no
+# index, forcing a full table scan on the user table on every single run, 24/7.
+try:
+    from playhouse.migrate import MySQLMigrator, migrate as pw_migrate
+    from src.model.BaseModel import db_obj
+
+    _migrator = MySQLMigrator(db_obj.get_db())
+    pw_migrate(
+        _migrator.add_index("user", ("crew_role", "conscription_end_date"), unique=False),
+    )
+except Exception:
+    pass  # Index already exists
+
+# Auto-migrate: index on bounty. Leaderboard generation filters and ORDER BY's on this column
+# with no index, forcing a full table scan + sort on every leaderboard run.
+try:
+    from playhouse.migrate import MySQLMigrator, migrate as pw_migrate
+    from src.model.BaseModel import db_obj
+
+    _migrator = MySQLMigrator(db_obj.get_db())
+    pw_migrate(
+        _migrator.add_index("user", ("bounty",), unique=False),
+    )
+except Exception:
+    pass  # Index already exists
