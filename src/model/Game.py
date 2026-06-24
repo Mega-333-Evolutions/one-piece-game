@@ -528,3 +528,17 @@ class Game(BaseModel):
 
 
 Game.create_table()
+
+# Auto-migrate: index status. Queried every minute (restart_hint_thread_if_down_all_games) and
+# every few minutes (end_inactive_games) with WHERE Game.status == ... and no index, forcing a
+# full table scan on the games table on every single run, 24/7.
+try:
+    from playhouse.migrate import MySQLMigrator, migrate as pw_migrate
+    from src.model.BaseModel import db_obj
+
+    _migrator = MySQLMigrator(db_obj.get_db())
+    pw_migrate(
+        _migrator.add_index("game", ("status",), unique=False),
+    )
+except Exception:
+    pass  # Index already exists
