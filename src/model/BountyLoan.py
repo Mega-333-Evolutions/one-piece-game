@@ -163,3 +163,17 @@ class BountyLoan(BaseModel):
 
 
 BountyLoan.create_table()
+
+# Auto-migrate: composite index on (status, deadline_date). Queried every minute by
+# set_expired_bounty_loans (WHERE status == ACTIVE AND deadline_date < NOW()) with no index,
+# forcing a full table scan on every single run, 24/7.
+try:
+    from playhouse.migrate import MySQLMigrator, migrate as pw_migrate
+    from src.model.BaseModel import db_obj
+
+    _migrator = MySQLMigrator(db_obj.get_db())
+    pw_migrate(
+        _migrator.add_index("bounty_loan", ("status", "deadline_date"), unique=False),
+    )
+except Exception:
+    pass  # Index already exists
