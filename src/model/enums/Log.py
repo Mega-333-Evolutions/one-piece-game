@@ -782,7 +782,11 @@ class LegendaryPirateLog(Log):
         self.user: User = self.object.user
 
     def get_items(self, page, limit=ListPage.DEFAULT_LIMIT) -> list[LegendaryPirate]:
-        return self.object.select().order_by(LegendaryPirate.date.desc()).paginate(page, limit)
+        return (
+            LegendaryPirate.get_active()
+            .order_by(LegendaryPirate.date.desc())
+            .paginate(page, limit)
+        )
 
     def get_item_text(self) -> str:
         return phrases.LEGENDARY_PIRATE_LOG_ITEM_TEXT.format(
@@ -981,6 +985,11 @@ class LeaderboardRankLog(Log):
                 Emoji.LEADERBOARD_WARLORD,
                 phrases.LEADERBOARD_RANK_WARLORD,
                 (LeaderboardUser.rank_index == LeaderboardRankIndex.WARLORD),
+            ),
+            EmojiLegend(
+                Emoji.LEADERBOARD_LEGENDARY_PIRATE,
+                phrases.LEADERBOARD_RANK_LEGENDARY_PIRATE,
+                (LeaderboardUser.rank_index == LeaderboardRankIndex.LEGENDARY_PIRATE),
             ),
         ]
 
