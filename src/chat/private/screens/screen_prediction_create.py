@@ -88,9 +88,17 @@ async def manage(
     )
     inline_keyboard: list[list[Keyboard]] = [[]]
 
+    # Editing an existing prediction (either just opened from its detail screen, or
+    # continuing an edit already in progress) should never be subject to the
+    # prediction *creation* cooldown, since no new prediction is being created
+    is_edit = (
+        inbound_keyboard is not None
+        and PredictionCreateReservedKeys.PREDICTION_ID in inbound_keyboard.info
+    ) or user.private_screen_in_edit_id is not None
+
     if not should_ignore_input:
         # Validate that the user can create a prediction
-        if not await validate(update, context, inbound_keyboard, user):
+        if not await validate(update, context, inbound_keyboard, user, is_edit):
             return
 
         if user.private_screen_step is None:
@@ -505,10 +513,12 @@ async def manage(
                     # Save options
                     await save_prediction_options(prediction)
 
-                    # Add prediction creation cooldown
-                    user.prediction_creation_cooldown_end_date = get_datetime_in_future_hours(
-                        Env.PREDICTION_CREATE_COOLDOWN_DURATION.get_int()
-                    )
+                    # Add prediction creation cooldown, only for actual new predictions,
+                    # not when editing an already existing one
+                    if not is_edit:
+                        user.prediction_creation_cooldown_end_date = get_datetime_in_future_hours(
+                            Env.PREDICTION_CREATE_COOLDOWN_DURATION.get_int()
+                        )
 
                     # Reset user private screen
                     user.reset_private_screen()
@@ -669,7 +679,11 @@ async def go_to_prediction_detail(
 
 
 async def validate(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard, user: User
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    inbound_keyboard: Keyboard,
+    user: User,
+    is_edit: bool = False,
 ) -> bool:
     """
     Validate the prediction create screen
@@ -677,11 +691,13 @@ async def validate(
     :param context: The context
     :param inbound_keyboard: The inbound keyboard
     :param user: The user
+    :param is_edit: If the user is editing an already created prediction, in which case the
+    prediction creation cooldown does not apply
     """
 
     try:
-        # Prediction creation cooldown active
-        if not datetime_is_before(user.prediction_creation_cooldown_end_date):
+        # Prediction creation cooldown active, only relevant when creating a new prediction
+        if not is_edit and not datetime_is_before(user.prediction_creation_cooldown_end_date):
             raise PredictionException(
                 phrases.PREDICTION_CREATE_COOLDOWN_ACTIVE.format(
                     get_remaining_duration(user.prediction_creation_cooldown_end_date)
