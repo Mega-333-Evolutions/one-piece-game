@@ -1,4 +1,7 @@
+import re
+
 from telegram import Update
+from unidecode import unidecode
 from wantedposter.wantedposter import (
     WantedPoster,
     VerticalAlignment,
@@ -16,6 +19,51 @@ from src.model.enums.LeaderboardRank import LeaderboardRank, get_rank_by_index
 from src.service.devil_fruit_service import user_has_eaten_devil_fruit
 from src.utils.download_utils import generate_temp_file_path
 
+# Fallback name used in the extremely rare case where, after sanitization, nothing
+# usable is left of a player's name (e.g. it was made up entirely of emoji/symbols)
+BOUNTY_POSTER_FALLBACK_NAME = "Unknown"
+
+
+def get_bounty_poster_name(name: str) -> str:
+    """
+    Sanitizes a name for use on a wanted poster.
+
+    The poster font only supports latin characters, so names are normally transliterated
+    with unidecode. The problem is that unidecode doesn't just transliterate, it also
+    *describes* characters it has no real letter equivalent for (e.g. the chess piece "♚"
+    becomes the phrase "black king", an emoji becomes a description, etc.). Those
+    descriptions would otherwise be added to the name, making it longer than it should be
+    and, in the worst case, pushing it past the point where it gets discarded entirely,
+    resulting in a blank name on the poster.
+
+    To support as many characters as possible while avoiding that, every character is
+    transliterated individually and only kept if the result is a clean word with no
+    spaces in it (e.g. "Ⓐ" -> "A", "Ω" -> "O", "你" -> "Ni", "Ⅷ" -> "VIII" are all kept).
+    Characters whose transliteration is a description made up of multiple words (e.g.
+    "♚" -> "black king") or that have no latin equivalent at all (most emoji) are
+    discarded instead of being spelled out
+    :param name: The raw name to sanitize, as it is on Telegram
+    :return: The sanitized name, safe to pass to the poster generator
+    """
+
+    if not name:
+        return ""
+
+    kept_chars: list[str] = []
+    for char in name:
+        if char.isspace():
+            kept_chars.append(" ")
+            continue
+
+        transliterated = unidecode(char).strip()
+        # Keep it only if it's a clean, single "word" (letters/numbers, no spaces),
+        # discard descriptive multi-word transliterations and unsupported characters
+        if transliterated and " " not in transliterated:
+            kept_chars.append(transliterated)
+
+    # Collapse any consecutive spaces left behind by discarded characters
+    return re.sub(r"\s+", " ", "".join(kept_chars)).strip()
+
 
 async def get_bounty_poster(
     update: Update, user: User, telegram_user=None
@@ -32,8 +80,13 @@ async def get_bounty_poster(
 
     # The underlying poster generator renders names as "LAST FIRST".
     # Swap inputs so the poster displays "FIRST LAST".
-    poster_first_name = (user.tg_first_name or "").strip()
-    poster_last_name = (user.tg_last_name or "").strip()
+    poster_first_name = get_bounty_poster_name((user.tg_first_name or "").strip())
+    poster_last_name = get_bounty_poster_name((user.tg_last_name or "").strip())
+
+    # If sanitization stripped everything (e.g. an emoji-only name), fall back to a
+    # placeholder rather than showing a blank name on the poster
+    if not poster_first_name and not poster_last_name:
+        poster_first_name = BOUNTY_POSTER_FALLBACK_NAME
 
     wanted_poster = WantedPoster(
         portrait=await get_user_profile_photo(update, telegram_user),
@@ -77,6 +130,11 @@ async def get_bounty_poster(
         capture_condition=capture_condition,
         effects=effects,
         stamp=stamp,
+        # Removed the default 16 character cap: beyond it, the library's old fallback logic
+        # could end up displaying a blank name (see get_bounty_poster_name above for why
+        # names could exceed it unnecessarily). The poster's name plate already auto-scales
+        # text that doesn't fit, so longer names just render smaller instead of disappearing
+        full_name_max_length=None,
     )
 
 
