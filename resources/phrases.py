@@ -1839,8 +1839,7 @@ WARLORD_APPOINTMENT_NOTIFICATION = (
     f" {Env.PIRATE_KING_TRANSACTION_TAX_DISCOUNT.get_int()}% off tax on gifts and"
     " loans\n• Immunity from Devil Fruit revocation for not appearing in the latest"
     f" {Env.DEVIL_FRUIT_MAINTAIN_MIN_LATEST_LEADERBOARD_APPEARANCE.get_int()} leaderboards\n•"
-    " View inferior ranks status \\(Emperor and below\\)\n• Custom Bounty Poster"
-    f" {Env.BOUNTY_POSTER_LIMIT_WARLORD.get_int()} times a day\n• View New World users"
+    " View inferior ranks status \\(Emperor and below\\)\n• Custom Warlord Bounty Poster" \n• View New World users"
     " in logs\n\n_You will appear in the weekly leaderboard exclusively with Warlord"
     " rank \\(only for the global leaderboard\\)_"
 )
