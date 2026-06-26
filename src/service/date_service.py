@@ -622,6 +622,9 @@ def datetime_is_after(
     return not datetime_is_before(dt, starting_date, tz)
 
 
+PDT_CONSTANTS = parsedatetime.Constants(localeID="en_AU")
+
+
 def get_datetime_from_natural_language(text: str, user: User) -> datetime.datetime:
     """
     Get the datetime from a natural language string
@@ -630,7 +633,7 @@ def get_datetime_from_natural_language(text: str, user: User) -> datetime.dateti
     :return: The datetime
     """
 
-    cal = parsedatetime.Calendar()
+    cal = parsedatetime.Calendar(PDT_CONSTANTS)
     user_tz = user.get_timezone()
 
     # Get now
