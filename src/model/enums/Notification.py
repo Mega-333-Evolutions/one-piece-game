@@ -1627,11 +1627,7 @@ class GameOutcomeNotification(Notification):
                 phrases.GAME_OUTCOME_NOTIFICATION.format(
                     emoji,
                     text_won_lost,
-                    (
-                        self.game.get_wager_formatted()
-                        if won
-                        else self.game.get_half_wager_formatted()
-                    ),
+                    self.game.get_half_wager_formatted(),
                     GameType(self.game.type).get_name(),
                     mention_markdown_user(self.game.get_other_player(self.user)),
                 )
