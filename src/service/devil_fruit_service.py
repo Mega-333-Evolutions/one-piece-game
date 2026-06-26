@@ -15,6 +15,7 @@ from src.model.GroupChat import GroupChat
 from src.model.Leaderboard import Leaderboard
 from src.model.LeaderboardUser import LeaderboardUser
 from src.model.LegendaryPirate import LegendaryPirate
+from src.model.Warlord import Warlord
 from src.model.User import User
 from src.model.enums.AssetPath import AssetPath
 from src.model.enums.Emoji import Emoji
@@ -529,7 +530,8 @@ def get_inactive_users_with_eaten_devil_fruits(
     # Have to first get inactive ones else, by using "not in", it will return records for previous
     # leaderboards too since the user might have been in a leaderboard before N, so it will not be
     # in the latest N leaderboards
-    # Exclude admins and reductions from global leaderboard requirement
+    # Exclude admins, legendary pirates and warlords (immune to this revocation) and reductions
+    # from global leaderboard requirement
     inactive_devil_fruits: list[DevilFruit] = (
         DevilFruit.select()
         .distinct()
@@ -539,6 +541,7 @@ def get_inactive_users_with_eaten_devil_fruits(
             & (User.is_admin == False)
             & (User.is_exempt_from_global_leaderboard_requirements == False)
             & (User.id.not_in(LegendaryPirate.get_active_user_ids()))
+            & (User.id.not_in(Warlord.get_active_user_ids()))
             & (DevilFruit.id.not_in([df.id for df in eaten_active_devil_fruits]))
         )
         .execute()
