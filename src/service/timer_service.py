@@ -22,6 +22,7 @@ from src.service.prediction_service import (
     send_prediction_status_change_message_or_refresh_dispatch,
 )
 from src.service.reddit_service import manage as send_reddit_post
+from src.service.user_service import sync_admin_users
 from src.utils.download_utils import cleanup_temp_dir
 
 
@@ -129,6 +130,8 @@ async def run(context: ContextTypes.DEFAULT_TYPE) -> None:
             DailyReward.reset()
         case Timer.FIGHT_PLUNDER_SCOUT_COUNT_DECREASE:
             decrease_scout_count()
+        case Timer.SYNC_ADMIN_USERS:
+            sync_admin_users()
         case _:
             raise ValueError(f"Unknown timer {timer.name}")
 
