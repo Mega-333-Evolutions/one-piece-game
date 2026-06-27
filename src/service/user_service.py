@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Sequence, Optional
 
@@ -8,6 +9,7 @@ from telegram.error import BadRequest, ChatMigrated
 from telegram.ext import ContextTypes
 
 import constants as c
+import resources.Environment as Env
 from src.model.Group import Group
 from src.model.GroupChat import GroupChat
 from src.model.UnmutedUser import UnmutedUser
@@ -274,3 +276,35 @@ async def get_effective_tg_user_id(
         raise AnonymousAdminException()
 
     return str(admins_with_same_title[0].user.id)
+
+
+def sync_admin_users() -> None:
+    """
+    Syncs each user's Admin (Veteran) status with the ADMIN_USER_IDS env var.
+    Telegram user ids listed there (space separated) are granted Admin status; any user
+    currently marked as Admin whose id is no longer listed has it revoked. To appoint someone,
+    add their Telegram user id to the env var. To revoke, remove it
+    :return: None
+    """
+
+    admin_user_ids: set[str] = set()
+    for raw_id in Env.ADMIN_USER_IDS.get().split():
+        try:
+            admin_user_ids.add(str(int(raw_id)))
+        except ValueError:
+            logging.warning(f"Invalid Telegram user id in ADMIN_USER_IDS env var: {raw_id}")
+
+    # Grant Admin status to newly listed users
+    if len(admin_user_ids) > 0:
+        User.update(is_admin=True).where(
+            (User.tg_user_id.in_(admin_user_ids)) & (User.is_admin == False)
+        ).execute()
+
+    # Revoke Admin status from users no longer listed
+    if len(admin_user_ids) > 0:
+        User.update(is_admin=False).where(
+            (User.is_admin == True) & (User.tg_user_id.not_in(admin_user_ids))
+        ).execute()
+    else:
+        # No ids listed, revoke Admin status from everyone
+        User.update(is_admin=False).where(User.is_admin == True).execute()
