@@ -530,9 +530,9 @@ DAILY_REWARD_STREAK_DAYS = Environment("DAILY_REWARD_STREAK_DAYS", default_value
 DAILY_REWARD_PRIZE_BELLY_PERCENTAGE = Environment(
     "DAILY_REWARD_PRIZE_BELLY_PERCENTAGE", default_value="90"
 )
-# Probability of obtaining SMILE as a daily reward prize. Default: 10%
+# Probability of obtaining SMILE as a daily reward prize. Default: 20%
 DAILY_REWARD_PRIZE_SMILE_PERCENTAGE = Environment(
-    "DAILY_REWARD_PRIZE_SMILE_PERCENTAGE", default_value="10"
+    "DAILY_REWARD_PRIZE_SMILE_PERCENTAGE", default_value="20"
 )
 
 # BOUNTY POSTER
