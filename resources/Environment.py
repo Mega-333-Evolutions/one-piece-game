@@ -477,6 +477,20 @@ SHOULD_RUN_ON_STARTUP_MINUTE_TASKS = Environment(
     "SHOULD_RUN_ON_STARTUP_MINUTE_TASKS", default_value="False"
 )
 
+# Space separated Telegram user ids to grant Admin (Veteran) status to. Add an id to appoint,
+# remove it to revoke. Only runs on startup (cron set to effectively never recur on its own)
+ADMIN_USER_IDS = Environment("ADMIN_USER_IDS", default_value="")
+CRON_SYNC_ADMIN_USERS = Environment("CRON_SYNC_ADMIN_USERS", default_value="0 0 1 1 *")
+ENABLE_TIMER_SYNC_ADMIN_USERS = Environment(
+    "ENABLE_TIMER_SYNC_ADMIN_USERS", default_value="True"
+)
+SHOULD_LOG_TIMER_SYNC_ADMIN_USERS = Environment(
+    "SHOULD_LOG_TIMER_SYNC_ADMIN_USERS", default_value="False"
+)
+SHOULD_RUN_ON_STARTUP_SYNC_ADMIN_USERS = Environment(
+    "SHOULD_RUN_ON_STARTUP_SYNC_ADMIN_USERS", default_value="True"
+)
+
 # How much time should temp files be kept before they are deleted. Default: 6 hours
 TEMP_DIR_CLEANUP_TIME_SECONDS = Environment("TEMP_DIR_CLEANUP_TIME_SECONDS", default_value="21600")
 
