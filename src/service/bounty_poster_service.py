@@ -1,6 +1,9 @@
+import os
 import re
+import unicodedata
 
 from confusable_homoglyphs import confusables
+from PIL import Image, ImageDraw, ImageFont
 from telegram import Update
 from unidecode import unidecode
 from wantedposter.wantedposter import (
@@ -9,6 +12,11 @@ from wantedposter.wantedposter import (
     CaptureCondition,
     Effect,
     Stamp,
+    BOUNTY_POSTER_NAME_TEXTURE_PATH,
+    BOUNTY_POSTER_NAME_FONT_SIZE,
+    BOUNTY_POSTER_NAME_MAX_W,
+    BOUNTY_POSTER_NAME_H,
+    BOUNTY_POSTER_NAME_START_Y,
 )
 
 import constants as c
@@ -23,6 +31,18 @@ from src.utils.download_utils import generate_temp_file_path
 # Fallback name used in the extremely rare case where, after sanitization, nothing
 # usable is left of a player's name (e.g. it was made up entirely of emoji/symbols)
 BOUNTY_POSTER_FALLBACK_NAME = "Unknown"
+
+# Scripts a player's name can be shown in as-is, instead of being transliterated to English.
+# Each entry maps the Unicode script name (the prefix of unicodedata.name() for a character in
+# that script, e.g. "ARABIC LETTER SEEN" -> "ARABIC") to a font file that supports it and its
+# writing direction. The poster's own font (Playfair Display) only covers Latin, so showing any
+# of these scripts as-is means bypassing the poster library's name rendering for a custom one
+# (see _build_native_script_name_component). Not exhaustive -- add an entry here (and the
+# matching font file under assets/fonts) to support more scripts
+NATIVE_SCRIPT_FONT_MAP = {
+    "ARABIC": (os.path.join(c.ASSETS_FONTS_DIR, "NotoSansArabic-Bold.ttf"), "rtl"),
+    "DEVANAGARI": (os.path.join(c.ASSETS_FONTS_DIR, "NotoSansDevanagari-Bold.ttf"), "ltr"),
+}
 
 
 # "Fancy font" generators (common for Discord/Telegram display names) often reuse characters
@@ -44,6 +64,84 @@ FANCY_FONT_LOOKALIKE_CHAR_MAP = {
     "Ꮿ": "W",  # Cherokee Letter Ya, used to look like "W"
     "Ꮇ": "M",  # Cherokee Letter Lu, used to look like "M"
 }
+
+
+def get_native_script(name: str) -> str | None:
+    """
+    Detects whether a name is written in a script we can show as-is on the poster (see
+    NATIVE_SCRIPT_FONT_MAP), by checking each character's Unicode name (e.g. a character named
+    "ARABIC LETTER SEEN" belongs to the "ARABIC" script)
+    :param name: The raw name, as it is on Telegram
+    :return: The script name (a key of NATIVE_SCRIPT_FONT_MAP) if found, otherwise None
+    """
+
+    for char in name:
+        if char.isspace() or not char.isalpha():
+            continue
+
+        try:
+            char_name = unicodedata.name(char)
+        except ValueError:
+            continue
+
+        for script in NATIVE_SCRIPT_FONT_MAP:
+            if char_name.startswith(script):
+                return script
+
+    return None
+
+
+def _build_native_script_name_component(text: str, script: str) -> Image.Image:
+    """
+    Builds the name texture component for a name in its original (non-Latin) script, with
+    proper text shaping (e.g. Arabic letter joining, Devanagari conjuncts) via Pillow's raqm
+    layout engine, and correct text direction.
+
+    The poster library can't be used directly for this: it always runs unidecode on the name
+    internally (which would transliterate it away), and it draws character-by-character for
+    kerning, which breaks shaped scripts since each character would be drawn in its isolated
+    form instead of in its correctly-joined form. This mirrors the library's own name component
+    logic (texture + alpha mask, auto-scaling if too wide) closely enough to paste directly over
+    the poster at the same position the library would have used
+    :param text: The name text, in its original script
+    :param script: The detected script, a key of NATIVE_SCRIPT_FONT_MAP
+    :return: The name component image, ready to paste over the poster at
+    (0, BOUNTY_POSTER_NAME_START_Y)
+    """
+
+    font_path, direction = NATIVE_SCRIPT_FONT_MAP[script]
+
+    texture_background = Image.open(BOUNTY_POSTER_NAME_TEXTURE_PATH)
+    texture_background_w, texture_background_h = texture_background.size
+    font = ImageFont.truetype(
+        font_path, BOUNTY_POSTER_NAME_FONT_SIZE, layout_engine=ImageFont.Layout.RAQM
+    )
+
+    alpha = Image.new("L", (texture_background_w, texture_background_h))
+    draw = ImageDraw.Draw(alpha)
+
+    text_w = draw.textlength(text, font=font, direction=direction)
+    should_scale = False
+    if text_w > BOUNTY_POSTER_NAME_MAX_W:
+        new_w = int((text_w * texture_background_w) / BOUNTY_POSTER_NAME_MAX_W)
+        alpha = Image.new("L", (new_w, texture_background_h))
+        draw = ImageDraw.Draw(alpha)
+        should_scale = True
+
+    draw.text(
+        (alpha.size[0] / 2, BOUNTY_POSTER_NAME_H),
+        text,
+        font=font,
+        fill="white",
+        anchor="ms",
+        direction=direction,
+    )
+
+    if should_scale:
+        alpha = alpha.resize((texture_background_w, texture_background_h))
+
+    texture_background.putalpha(alpha)
+    return texture_background
 
 
 def _get_homoglyph_latin_letter(char: str) -> str | None:
@@ -75,21 +173,30 @@ def _get_homoglyph_latin_letter(char: str) -> str | None:
 
 def get_bounty_poster_name(name: str) -> str:
     """
-    Sanitizes a name for use on a wanted poster.
+    Sanitizes a name for use on a wanted poster, for scripts that aren't shown as-is (see
+    NATIVE_SCRIPT_FONT_MAP / get_native_script).
 
-    Names are shown in their original script whenever possible (e.g. Arabic "سجاد" stays
-    as "سجاد"). Transliteration to Latin via unidecode is only a fallback for characters
-    that are not Unicode letters/digits and cannot otherwise be represented.
+    The poster font only supports latin characters, so names are normally transliterated
+    with unidecode. The problem is that unidecode doesn't just transliterate, it also
+    *describes* characters it has no real letter equivalent for (e.g. the chess piece "♚"
+    becomes the phrase "black king", an emoji becomes a description, etc.). Those
+    descriptions would otherwise be added to the name, making it longer than it should be
+    and, in the worst case, pushing it past the point where it gets discarded entirely,
+    resulting in a blank name on the poster.
 
-    unidecode doesn't just transliterate — it also *describes* characters it has no real
-    letter equivalent for (e.g. the chess piece "♚" becomes "black king", an emoji becomes
-    a description). Those multi-word descriptions are never appended; such characters are
-    discarded instead.
+    To support as many characters as possible while avoiding that, every character is
+    transliterated individually and only kept if the result is a clean word with no
+    spaces in it (e.g. "Ⓐ" -> "A", "Ω" -> "O", "你" -> "Ni", "Ⅷ" -> "VIII" are all kept).
+    Characters whose transliteration is a description made up of multiple words (e.g.
+    "♚" -> "black king") or that have no latin equivalent at all (most emoji) are
+    discarded instead of being spelled out.
 
-    Known "fancy font" look-alike characters (see FANCY_FONT_LOOKALIKE_CHAR_MAP) are still
-    mapped to their intended Latin letter directly. Any other non-alphanumeric non-ASCII
-    look-alike not in that map is checked against Unicode's confusables data
-    (see _get_homoglyph_latin_letter) before falling back to unidecode.
+    Known "fancy font" look-alike characters (see FANCY_FONT_LOOKALIKE_CHAR_MAP) are mapped
+    to their intended Latin letter directly, bypassing unidecode, since unidecode would
+    otherwise transliterate them based on their unrelated real meaning instead of their
+    intended visual appearance. Any other non-ASCII look-alike not in that map is checked
+    against Unicode's official confusables data (see _get_homoglyph_latin_letter) as a general
+    safety net, before finally falling back to unidecode
     :param name: The raw name to sanitize, as it is on Telegram
     :return: The sanitized name, safe to pass to the poster generator
     """
@@ -107,69 +214,39 @@ def get_bounty_poster_name(name: str) -> str:
             kept_chars.append(FANCY_FONT_LOOKALIKE_CHAR_MAP[char])
             continue
 
-        # Prefer the character as-is for any Unicode letter or digit (any script)
-        if char.isalnum():
-            kept_chars.append(char)
-            continue
-
         transliterated = unidecode(char).strip()
 
+        # If unidecode's transliteration is already a single clean letter/digit, trust it --
+        # this is the common, correct case (accented letters, fullwidth forms, fancy
+        # math/circled Latin letters, etc.). Checking confusables here too could backfire: e.g.
+        # it lists "l" as a look-alike of fullwidth "I", which would wrongly override an
+        # already-correct "I"
+        if len(transliterated) == 1 and transliterated.isalnum():
+            kept_chars.append(transliterated)
+            continue
+
+        # Otherwise the transliteration is either empty or multiple characters -- suspicious
+        # for what's supposed to be a single visual character, and the telltale sign of a
+        # "fancy font" character (e.g. Cherokee/Canadian Syllabics look-alikes) being read by
+        # its real, unrelated phonetic meaning instead of its intended visual appearance. Check
+        # Unicode's confusables data for a better single-letter look-alike before falling back
         if not char.isascii():
             homoglyph = _get_homoglyph_latin_letter(char)
             if homoglyph is not None:
                 kept_chars.append(homoglyph)
                 continue
 
-        # Fallback: keep a clean transliteration when the original cannot be shown as-is
+        # Keep it only if it's a clean, single "word" (letters/numbers, no spaces),
+        # discard descriptive multi-word transliterations and unsupported characters
         if transliterated and " " not in transliterated:
             kept_chars.append(transliterated)
 
     cleaned = re.sub(r"\s+", " ", "".join(kept_chars)).strip()
 
-    # Strip decorative punctuation (e.g. "{}", "|", "*"), keeping letters/digits from any
-    # script and common name punctuation (apostrophe, hyphen, period)
-    cleaned = re.sub(r"[^\w '\-.]", "", cleaned, flags=re.UNICODE)
+    # Strip leftover decorative punctuation often used to bracket/decorate fancy usernames
+    # (e.g. "{}", "|", "*"), keeping common name punctuation (apostrophe, hyphen, period)
+    cleaned = re.sub(r"[^A-Za-z0-9 '\-.]", "", cleaned)
     return re.sub(r"\s+", " ", cleaned).strip()
-
-
-def _wanted_poster_get_full_name(self, max_length: int | None) -> str:
-    """
-    Builds the full name for the poster without transliterating non-Latin scripts.
-
-    The upstream wantedposter library always runs unidecode here, which turns names like
-    "سجاد" into unrelated Latin text ("sjd"). This replacement keeps names as sanitized
-    by get_bounty_poster_name above.
-    """
-
-    first_name = (self.first_name or "").upper().strip()
-    last_name = (self.last_name or "").upper().strip()
-
-    full_name = f"{last_name} {first_name}".strip()
-
-    if max_length is None or len(full_name) <= max_length:
-        return full_name
-
-    full_name = first_name
-    if len(full_name) <= max_length:
-        return full_name
-
-    parts = full_name.split(" ")
-    result = ""
-    for part in parts:
-        if len(result + " " + part) > max_length:
-            return full_name
-        result += " " + part
-
-    full_name = parts[0] if len(result) == 0 else result
-    if len(full_name) <= max_length:
-        return full_name
-
-    return full_name[: (max_length - 2)] + "."
-
-
-# The library transliterates names again in __get_full_name; patch it out so non-Latin
-# names survive until they are drawn on the poster
-WantedPoster._WantedPoster__get_full_name = _wanted_poster_get_full_name
 
 
 async def get_bounty_poster(
@@ -185,15 +262,28 @@ async def get_bounty_poster(
 
     from src.service.user_service import get_user_profile_photo, get_boss_type
 
-    # The underlying poster generator renders names as "LAST FIRST".
-    # Swap inputs so the poster displays "FIRST LAST".
-    poster_first_name = get_bounty_poster_name((user.tg_first_name or "").strip())
-    poster_last_name = get_bounty_poster_name((user.tg_last_name or "").strip())
+    raw_first_name = (user.tg_first_name or "").strip()
+    raw_last_name = (user.tg_last_name or "").strip()
 
-    # If sanitization stripped everything (e.g. an emoji-only name), fall back to a
-    # placeholder rather than showing a blank name on the poster
-    if not poster_first_name and not poster_last_name:
-        poster_first_name = BOUNTY_POSTER_FALLBACK_NAME
+    # If the name is written in a script we can show as-is (see NATIVE_SCRIPT_FONT_MAP), skip
+    # the Latin sanitization/transliteration entirely. The poster is generated with a blank
+    # placeholder name below, then the real name is drawn natively over it afterward
+    native_script = get_native_script(raw_first_name) or get_native_script(raw_last_name)
+    native_script_text = f"{raw_first_name} {raw_last_name}".strip() if native_script else None
+
+    if native_script:
+        poster_first_name = " "
+        poster_last_name = " "
+    else:
+        # The underlying poster generator renders names as "LAST FIRST".
+        # Swap inputs so the poster displays "FIRST LAST".
+        poster_first_name = get_bounty_poster_name(raw_first_name)
+        poster_last_name = get_bounty_poster_name(raw_last_name)
+
+        # If sanitization stripped everything (e.g. an emoji-only name), fall back to a
+        # placeholder rather than showing a blank name on the poster
+        if not poster_first_name and not poster_last_name:
+            poster_first_name = BOUNTY_POSTER_FALLBACK_NAME
 
     wanted_poster = WantedPoster(
         portrait=await get_user_profile_photo(update, telegram_user),
@@ -231,7 +321,7 @@ async def get_bounty_poster(
             else:
                 stamp = Stamp.DO_NOT_ENGAGE
 
-    return wanted_poster.generate(
+    poster_path = wanted_poster.generate(
         output_poster_path=generate_temp_file_path(c.BOUNTY_POSTER_EXTENSION),
         portrait_vertical_align=VerticalAlignment.TOP,
         capture_condition=capture_condition,
@@ -243,6 +333,15 @@ async def get_bounty_poster(
         # text that doesn't fit, so longer names just render smaller instead of disappearing
         full_name_max_length=None,
     )
+
+    # Draw the real name in its original script over the placeholder used above
+    if native_script:
+        name_component = _build_native_script_name_component(native_script_text, native_script)
+        poster_image = Image.open(poster_path).convert("RGB")
+        poster_image.paste(name_component, (0, BOUNTY_POSTER_NAME_START_Y), name_component)
+        poster_image.save(poster_path)
+
+    return poster_path
 
 
 def get_bounty_poster_limit(leaderboard_user: LeaderboardUser) -> int:
