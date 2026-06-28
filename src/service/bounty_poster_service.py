@@ -1,9 +1,11 @@
+import logging
 import os
 import re
 import unicodedata
 
 from confusable_homoglyphs import confusables
 from PIL import Image, ImageDraw, ImageFont
+from PIL import features as pil_features
 from telegram import Update
 from unidecode import unidecode
 from wantedposter.wantedposter import (
@@ -27,6 +29,14 @@ from src.model.enums.BossType import BossType
 from src.model.enums.LeaderboardRank import LeaderboardRank, get_rank_by_index
 from src.service.devil_fruit_service import user_has_eaten_devil_fruit
 from src.utils.download_utils import generate_temp_file_path
+
+# Native-script rendering (see NATIVE_SCRIPT_FONT_MAP below) needs Pillow's raqm text layout
+# engine for correct shaping/direction (e.g. Arabic letter joining). Not every environment's
+# Pillow build/system libraries have it available -- when it's missing, Pillow doesn't fail
+# gracefully, it raises a hard error the moment a direction/shaping argument is used. Checked
+# once here so native-script rendering can be skipped safely (falling back to the existing
+# transliteration pipeline) on environments where it's not supported, instead of crashing
+RAQM_AVAILABLE = pil_features.check("raqm")
 
 # Fallback name used in the extremely rare case where, after sanitization, nothing
 # usable is left of a player's name (e.g. it was made up entirely of emoji/symbols)
@@ -267,8 +277,11 @@ async def get_bounty_poster(
 
     # If the name is written in a script we can show as-is (see NATIVE_SCRIPT_FONT_MAP), skip
     # the Latin sanitization/transliteration entirely. The poster is generated with a blank
-    # placeholder name below, then the real name is drawn natively over it afterward
-    native_script = get_native_script(raw_first_name) or get_native_script(raw_last_name)
+    # placeholder name below, then the real name is drawn natively over it afterward.
+    # Only attempted if this environment's Pillow build actually supports it (see RAQM_AVAILABLE)
+    native_script = None
+    if RAQM_AVAILABLE:
+        native_script = get_native_script(raw_first_name) or get_native_script(raw_last_name)
     native_script_text = f"{raw_first_name} {raw_last_name}".strip() if native_script else None
 
     if native_script:
@@ -336,10 +349,37 @@ async def get_bounty_poster(
 
     # Draw the real name in its original script over the placeholder used above
     if native_script:
-        name_component = _build_native_script_name_component(native_script_text, native_script)
-        poster_image = Image.open(poster_path).convert("RGB")
-        poster_image.paste(name_component, (0, BOUNTY_POSTER_NAME_START_Y), name_component)
-        poster_image.save(poster_path)
+        try:
+            name_component = _build_native_script_name_component(
+                native_script_text, native_script
+            )
+            poster_image = Image.open(poster_path).convert("RGB")
+            poster_image.paste(name_component, (0, BOUNTY_POSTER_NAME_START_Y), name_component)
+            poster_image.save(poster_path)
+        except Exception as e:
+            # Don't let a native-script rendering failure break the whole poster -- regenerate
+            # it using the normal Latin transliteration fallback instead
+            logging.error(f"Native script name rendering failed, falling back to Latin: {e}")
+
+            fallback_first_name = get_bounty_poster_name(raw_first_name)
+            fallback_last_name = get_bounty_poster_name(raw_last_name)
+            if not fallback_first_name and not fallback_last_name:
+                fallback_first_name = BOUNTY_POSTER_FALLBACK_NAME
+
+            fallback_poster = WantedPoster(
+                portrait=wanted_poster.portrait,
+                first_name=fallback_last_name,
+                last_name=fallback_first_name,
+                bounty=user.bounty,
+            )
+            poster_path = fallback_poster.generate(
+                output_poster_path=poster_path,
+                portrait_vertical_align=VerticalAlignment.TOP,
+                capture_condition=capture_condition,
+                effects=effects,
+                stamp=stamp,
+                full_name_max_length=None,
+            )
 
     return poster_path
 
