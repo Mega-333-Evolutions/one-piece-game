@@ -1,5 +1,6 @@
 import re
 
+from confusable_homoglyphs import confusables
 from telegram import Update
 from unidecode import unidecode
 from wantedposter.wantedposter import (
@@ -24,6 +25,54 @@ from src.utils.download_utils import generate_temp_file_path
 BOUNTY_POSTER_FALLBACK_NAME = "Unknown"
 
 
+# "Fancy font" generators (common for Discord/Telegram display names) often reuse characters
+# from completely unrelated scripts purely because they look like Latin letters (e.g. Canadian
+# Aboriginal Syllabics, Cherokee). unidecode has no way to know this -- it transliterates based
+# on the character's real phonetic meaning, not its visual shape, so these end up turning into
+# unrelated syllables (e.g. "ᖇ" looks like "R" but unidecode reads it as the Cree syllable
+# "tlhi", "Ꮿ" looks like "W" but unidecode reads it as the Cherokee syllable "ya"). This map
+# catches reported cases by mapping the visual look-alike directly to the Latin letter it's
+# actually being used to represent, bypassing unidecode for these characters. Not exhaustive --
+# there are many different "fancy font" styles in the wild -- but can be extended here whenever
+# a new one is reported
+FANCY_FONT_LOOKALIKE_CHAR_MAP = {
+    "ᖇ": "R",  # Canadian Syllabics Tlhi, used to look like "R"
+    "ᑢ": "C",  # Canadian Syllabics West-Cree Twa, used to look like "C"
+    "ᒪ": "L",  # Canadian Syllabics Ma, used to look like "L"
+    "ᘿ": "E",  # Canadian Syllabics Carrier Tla, used to look like "E"
+    "Ꮋ": "H",  # Cherokee Letter Mi, used to look like "H"
+    "Ꮿ": "W",  # Cherokee Letter Ya, used to look like "W"
+    "Ꮇ": "M",  # Cherokee Letter Lu, used to look like "M"
+}
+
+
+def _get_homoglyph_latin_letter(char: str) -> str | None:
+    """
+    General-purpose fallback for FANCY_FONT_LOOKALIKE_CHAR_MAP, for "fancy font" look-alike
+    characters that haven't been reported/added there yet. Looks up Unicode's own official
+    "confusables" data (the same dataset used for anti-phishing/anti-spoofing detection, listing
+    characters from any script that are visually confusable with one another) for a plain ASCII
+    letter/digit that this character could be mistaken for. Only called for non-ASCII characters,
+    since otherwise this would find characters that look like an existing ASCII letter and
+    "correct" the letter into a different one (e.g. it considers "l" a look-alike of "1", which
+    would wrongly replace a legitimate "1" with "l")
+    :param char: A single non-ASCII character
+    :return: A single ASCII letter/digit if a confident look-alike is found, otherwise None
+    """
+
+    matches = confusables.is_confusable(char, greedy=True)
+    if not matches:
+        return None
+
+    for match in matches:
+        for homoglyph in match.get("homoglyphs", []):
+            candidate = homoglyph.get("c", "")
+            if len(candidate) == 1 and candidate.isascii() and candidate.isalnum():
+                return candidate
+
+    return None
+
+
 def get_bounty_poster_name(name: str) -> str:
     """
     Sanitizes a name for use on a wanted poster.
@@ -41,7 +90,14 @@ def get_bounty_poster_name(name: str) -> str:
     spaces in it (e.g. "Ⓐ" -> "A", "Ω" -> "O", "你" -> "Ni", "Ⅷ" -> "VIII" are all kept).
     Characters whose transliteration is a description made up of multiple words (e.g.
     "♚" -> "black king") or that have no latin equivalent at all (most emoji) are
-    discarded instead of being spelled out
+    discarded instead of being spelled out.
+
+    Known "fancy font" look-alike characters (see FANCY_FONT_LOOKALIKE_CHAR_MAP) are mapped
+    to their intended Latin letter directly, bypassing unidecode, since unidecode would
+    otherwise transliterate them based on their unrelated real meaning instead of their
+    intended visual appearance. Any other non-ASCII look-alike not in that map is checked
+    against Unicode's official confusables data (see _get_homoglyph_latin_letter) as a general
+    safety net, before finally falling back to unidecode
     :param name: The raw name to sanitize, as it is on Telegram
     :return: The sanitized name, safe to pass to the poster generator
     """
@@ -55,14 +111,43 @@ def get_bounty_poster_name(name: str) -> str:
             kept_chars.append(" ")
             continue
 
+        if char in FANCY_FONT_LOOKALIKE_CHAR_MAP:
+            kept_chars.append(FANCY_FONT_LOOKALIKE_CHAR_MAP[char])
+            continue
+
         transliterated = unidecode(char).strip()
+
+        # If unidecode's transliteration is already a single clean letter/digit, trust it --
+        # this is the common, correct case (accented letters, fullwidth forms, fancy
+        # math/circled Latin letters, etc.). Checking confusables here too could backfire: e.g.
+        # it lists "l" as a look-alike of fullwidth "I", which would wrongly override an
+        # already-correct "I"
+        if len(transliterated) == 1 and transliterated.isalnum():
+            kept_chars.append(transliterated)
+            continue
+
+        # Otherwise the transliteration is either empty or multiple characters -- suspicious
+        # for what's supposed to be a single visual character, and the telltale sign of a
+        # "fancy font" character (e.g. Cherokee/Canadian Syllabics look-alikes) being read by
+        # its real, unrelated phonetic meaning instead of its intended visual appearance. Check
+        # Unicode's confusables data for a better single-letter look-alike before falling back
+        if not char.isascii():
+            homoglyph = _get_homoglyph_latin_letter(char)
+            if homoglyph is not None:
+                kept_chars.append(homoglyph)
+                continue
+
         # Keep it only if it's a clean, single "word" (letters/numbers, no spaces),
         # discard descriptive multi-word transliterations and unsupported characters
         if transliterated and " " not in transliterated:
             kept_chars.append(transliterated)
 
-    # Collapse any consecutive spaces left behind by discarded characters
-    return re.sub(r"\s+", " ", "".join(kept_chars)).strip()
+    cleaned = re.sub(r"\s+", " ", "".join(kept_chars)).strip()
+
+    # Strip leftover decorative punctuation often used to bracket/decorate fancy usernames
+    # (e.g. "{}", "|", "*"), keeping common name punctuation (apostrophe, hyphen, period)
+    cleaned = re.sub(r"[^A-Za-z0-9 '\-.]", "", cleaned)
+    return re.sub(r"\s+", " ", cleaned).strip()
 
 
 async def get_bounty_poster(
