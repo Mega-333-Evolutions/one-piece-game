@@ -77,27 +77,19 @@ def get_bounty_poster_name(name: str) -> str:
     """
     Sanitizes a name for use on a wanted poster.
 
-    The poster font only supports latin characters, so names are normally transliterated
-    with unidecode. The problem is that unidecode doesn't just transliterate, it also
-    *describes* characters it has no real letter equivalent for (e.g. the chess piece "♚"
-    becomes the phrase "black king", an emoji becomes a description, etc.). Those
-    descriptions would otherwise be added to the name, making it longer than it should be
-    and, in the worst case, pushing it past the point where it gets discarded entirely,
-    resulting in a blank name on the poster.
+    Names are shown in their original script whenever possible (e.g. Arabic "سجاد" stays
+    as "سجاد"). Transliteration to Latin via unidecode is only a fallback for characters
+    that are not Unicode letters/digits and cannot otherwise be represented.
 
-    To support as many characters as possible while avoiding that, every character is
-    transliterated individually and only kept if the result is a clean word with no
-    spaces in it (e.g. "Ⓐ" -> "A", "Ω" -> "O", "你" -> "Ni", "Ⅷ" -> "VIII" are all kept).
-    Characters whose transliteration is a description made up of multiple words (e.g.
-    "♚" -> "black king") or that have no latin equivalent at all (most emoji) are
-    discarded instead of being spelled out.
+    unidecode doesn't just transliterate — it also *describes* characters it has no real
+    letter equivalent for (e.g. the chess piece "♚" becomes "black king", an emoji becomes
+    a description). Those multi-word descriptions are never appended; such characters are
+    discarded instead.
 
-    Known "fancy font" look-alike characters (see FANCY_FONT_LOOKALIKE_CHAR_MAP) are mapped
-    to their intended Latin letter directly, bypassing unidecode, since unidecode would
-    otherwise transliterate them based on their unrelated real meaning instead of their
-    intended visual appearance. Any other non-ASCII look-alike not in that map is checked
-    against Unicode's official confusables data (see _get_homoglyph_latin_letter) as a general
-    safety net, before finally falling back to unidecode
+    Known "fancy font" look-alike characters (see FANCY_FONT_LOOKALIKE_CHAR_MAP) are still
+    mapped to their intended Latin letter directly. Any other non-alphanumeric non-ASCII
+    look-alike not in that map is checked against Unicode's confusables data
+    (see _get_homoglyph_latin_letter) before falling back to unidecode.
     :param name: The raw name to sanitize, as it is on Telegram
     :return: The sanitized name, safe to pass to the poster generator
     """
@@ -115,39 +107,69 @@ def get_bounty_poster_name(name: str) -> str:
             kept_chars.append(FANCY_FONT_LOOKALIKE_CHAR_MAP[char])
             continue
 
-        transliterated = unidecode(char).strip()
-
-        # If unidecode's transliteration is already a single clean letter/digit, trust it --
-        # this is the common, correct case (accented letters, fullwidth forms, fancy
-        # math/circled Latin letters, etc.). Checking confusables here too could backfire: e.g.
-        # it lists "l" as a look-alike of fullwidth "I", which would wrongly override an
-        # already-correct "I"
-        if len(transliterated) == 1 and transliterated.isalnum():
-            kept_chars.append(transliterated)
+        # Prefer the character as-is for any Unicode letter or digit (any script)
+        if char.isalnum():
+            kept_chars.append(char)
             continue
 
-        # Otherwise the transliteration is either empty or multiple characters -- suspicious
-        # for what's supposed to be a single visual character, and the telltale sign of a
-        # "fancy font" character (e.g. Cherokee/Canadian Syllabics look-alikes) being read by
-        # its real, unrelated phonetic meaning instead of its intended visual appearance. Check
-        # Unicode's confusables data for a better single-letter look-alike before falling back
+        transliterated = unidecode(char).strip()
+
         if not char.isascii():
             homoglyph = _get_homoglyph_latin_letter(char)
             if homoglyph is not None:
                 kept_chars.append(homoglyph)
                 continue
 
-        # Keep it only if it's a clean, single "word" (letters/numbers, no spaces),
-        # discard descriptive multi-word transliterations and unsupported characters
+        # Fallback: keep a clean transliteration when the original cannot be shown as-is
         if transliterated and " " not in transliterated:
             kept_chars.append(transliterated)
 
     cleaned = re.sub(r"\s+", " ", "".join(kept_chars)).strip()
 
-    # Strip leftover decorative punctuation often used to bracket/decorate fancy usernames
-    # (e.g. "{}", "|", "*"), keeping common name punctuation (apostrophe, hyphen, period)
-    cleaned = re.sub(r"[^A-Za-z0-9 '\-.]", "", cleaned)
+    # Strip decorative punctuation (e.g. "{}", "|", "*"), keeping letters/digits from any
+    # script and common name punctuation (apostrophe, hyphen, period)
+    cleaned = re.sub(r"[^\w '\-.]", "", cleaned, flags=re.UNICODE)
     return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def _wanted_poster_get_full_name(self, max_length: int | None) -> str:
+    """
+    Builds the full name for the poster without transliterating non-Latin scripts.
+
+    The upstream wantedposter library always runs unidecode here, which turns names like
+    "سجاد" into unrelated Latin text ("sjd"). This replacement keeps names as sanitized
+    by get_bounty_poster_name above.
+    """
+
+    first_name = (self.first_name or "").upper().strip()
+    last_name = (self.last_name or "").upper().strip()
+
+    full_name = f"{last_name} {first_name}".strip()
+
+    if max_length is None or len(full_name) <= max_length:
+        return full_name
+
+    full_name = first_name
+    if len(full_name) <= max_length:
+        return full_name
+
+    parts = full_name.split(" ")
+    result = ""
+    for part in parts:
+        if len(result + " " + part) > max_length:
+            return full_name
+        result += " " + part
+
+    full_name = parts[0] if len(result) == 0 else result
+    if len(full_name) <= max_length:
+        return full_name
+
+    return full_name[: (max_length - 2)] + "."
+
+
+# The library transliterates names again in __get_full_name; patch it out so non-Latin
+# names survive until they are drawn on the poster
+WantedPoster._WantedPoster__get_full_name = _wanted_poster_get_full_name
 
 
 async def get_bounty_poster(
