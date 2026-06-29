@@ -31,6 +31,10 @@ from src.model.tgrest.TgRestWarlordRevocation import TgRestWarlordRevocation
 from src.model.tgrest.TgRestLegendaryPirateAppointment import TgRestLegendaryPirateAppointment
 from src.model.tgrest.TgRestLegendaryPirateRevocation import TgRestLegendaryPirateRevocation
 from src.service.devil_fruit_service import give_devil_fruit_to_user, force_schedule_devil_fruit
+from src.service.leaderboard_service import (
+    reset_expired_special_rank_for_user,
+    schedule_special_rank_expiry_job,
+)
 from src.service.message_service import full_message_send, escape_valid_markdown_chars
 from src.service.notification_service import send_notification
 
@@ -132,12 +136,21 @@ async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 notification = WarlordAppointmentNotification(tg_rest_wa.warlord, tg_rest_wa.days)
                 await send_notification(context, tg_rest_wa.user, notification)
 
+                # Schedule rank reset for the exact moment this Warlord term ends, so the
+                # leaderboard rank doesn't stay stale until the next leaderboard
+                schedule_special_rank_expiry_job(
+                    context.job_queue, tg_rest_wa.user, tg_rest_wa.warlord.end_date
+                )
+
             case TgRestObjectType.WARLORD_REVOCATION:
                 tg_rest_wr = TgRestWarlordRevocation(**tg_rest_dict)
 
                 # Send notification
                 notification = WarlordRevocationNotification(tg_rest_wr.warlord)
                 await send_notification(context, tg_rest_wr.user, notification)
+
+                # Reset rank immediately rather than waiting for the next leaderboard
+                reset_expired_special_rank_for_user(tg_rest_wr.user)
 
             case TgRestObjectType.LEGENDARY_PIRATE_APPOINTMENT:
                 tg_rest_lpa = TgRestLegendaryPirateAppointment(**tg_rest_dict)
@@ -149,11 +162,23 @@ async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 )
                 await send_notification(context, tg_rest_lpa.user, notification)
 
+                # Only temporary appointments have an end date to schedule a reset for;
+                # permanent ones never expire on their own
+                if tg_rest_lpa.legendary_pirate.end_date is not None:
+                    schedule_special_rank_expiry_job(
+                        context.job_queue,
+                        tg_rest_lpa.user,
+                        tg_rest_lpa.legendary_pirate.end_date,
+                    )
+
             case TgRestObjectType.LEGENDARY_PIRATE_REVOCATION:
                 tg_rest_lpr = TgRestLegendaryPirateRevocation(**tg_rest_dict)
 
                 notification = LegendaryPirateRevocationNotification(tg_rest_lpr.legendary_pirate)
                 await send_notification(context, tg_rest_lpr.user, notification)
+
+                # Reset rank immediately rather than waiting for the next leaderboard
+                reset_expired_special_rank_for_user(tg_rest_lpr.user)
 
             case _:
                 raise TgRestException("Unknown object type")
