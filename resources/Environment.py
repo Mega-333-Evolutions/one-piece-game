@@ -526,9 +526,9 @@ DAILY_REWARD_BONUS_BASE_CREW_LEVEL = Environment(
 DAILY_REWARD_BONUS_CREW_MVP = Environment("DAILY_REWARD_BONUS_CREW_MVP", default_value="20")
 # Every how many streak days is a prize given. Default: 7
 DAILY_REWARD_STREAK_DAYS = Environment("DAILY_REWARD_STREAK_DAYS", default_value="7")
-# Probability of obtaining Belly as a daily reward prize. Default: 90%
+# Probability of obtaining Belly as a daily reward prize. Default: 80%
 DAILY_REWARD_PRIZE_BELLY_PERCENTAGE = Environment(
-    "DAILY_REWARD_PRIZE_BELLY_PERCENTAGE", default_value="90"
+    "DAILY_REWARD_PRIZE_BELLY_PERCENTAGE", default_value="80"
 )
 # Probability of obtaining SMILE as a daily reward prize. Default: 20%
 DAILY_REWARD_PRIZE_SMILE_PERCENTAGE = Environment(
