@@ -12,6 +12,7 @@ from src.model.enums.crew.CrewRole import CrewRole
 from src.model.error.CustomException import CrewValidationException
 from src.model.pojo.Keyboard import Keyboard
 from src.service.crew_service import get_crew
+from src.service.leaderboard_service import get_remaining_time_to_next_leaderboard
 from src.service.message_service import (
     full_message_send,
     get_yes_no_keyboard,
@@ -47,7 +48,9 @@ async def manage(
         # Crew cannot promote First Mate
         if not crew.can_promote_first_mate:
             raise CrewValidationException(
-                phrases.CREW_PROMOTE_TO_FIRST_MATE_CANNOT_PROMOTE_UNTIL_NEXT_LEADERBOARD
+                phrases.CREW_PROMOTE_TO_FIRST_MATE_CANNOT_PROMOTE_UNTIL_NEXT_LEADERBOARD.format(
+                    get_remaining_time_to_next_leaderboard()
+                )
             )
 
         # Crew in a Davy Back Fight or has a Penalty
