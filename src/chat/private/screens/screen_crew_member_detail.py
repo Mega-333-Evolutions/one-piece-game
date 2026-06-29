@@ -50,8 +50,9 @@ async def manage(
 
     # Captain buttons
     if user.is_crew_captain() and user != member:
-        # Promote to First Mate (only Crew does not have a First Mate and can promote one)
-        if not crew.has_first_mate() and crew.can_promote_first_mate:
+        # Promote to First Mate (only if Crew does not have a First Mate; if the crew can't
+        # promote one this cycle, clicking will show why instead of hiding the button)
+        if not crew.has_first_mate():
             inline_keyboard.append(
                 [
                     Keyboard(
