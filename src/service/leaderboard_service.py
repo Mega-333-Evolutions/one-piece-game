@@ -3,7 +3,7 @@ import logging
 
 from telegram import Message
 from telegram.error import TelegramError
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, JobQueue
 
 import src.model.enums.LeaderboardRank as LeaderboardRank
 from resources import phrases as phrases, Environment as Env
@@ -585,6 +585,90 @@ def get_current_leaderboard_rank(
 
     leaderboard_user: LeaderboardUser = get_current_leaderboard_user(user, group_chat=group_chat)
     return LeaderboardRank.get_rank_by_leaderboard_user(leaderboard_user)
+
+
+def reset_expired_special_rank_for_user(user: User) -> None:
+    """
+    A Warlord or Legendary Pirate who appears in the (global) leaderboard with their special
+    rank, and later loses that status (duration expiring or being manually revoked), would
+    otherwise keep showing that rank until the next leaderboard is generated and overwrites it.
+    This checks the user's current global leaderboard entry and, if it's stale, immediately
+    resets it to Rookie instead of waiting for the next leaderboard
+    :param user: The user to check
+    :return: None
+    """
+
+    leaderboard_user: LeaderboardUser = get_current_leaderboard_user(user)
+    if leaderboard_user is None:
+        return
+
+    lost_warlord_status = (
+        leaderboard_user.rank_index == LeaderboardRankIndex.WARLORD and not user.is_warlord()
+    )
+    lost_legendary_pirate_status = (
+        leaderboard_user.rank_index == LeaderboardRankIndex.LEGENDARY_PIRATE
+        and not user.is_legendary_pirate()
+    )
+
+    if lost_warlord_status or lost_legendary_pirate_status:
+        leaderboard_user.rank_index = LeaderboardRankIndex.ROOKIE
+        leaderboard_user.save()
+
+
+async def job_reset_expired_special_rank(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Job callback, scheduled to run at the exact moment a Warlord/Legendary Pirate's duration
+    ends, that resets their leaderboard rank if it's gone stale
+    :param context: Telegram context, contains the target user's id in job.data
+    :return: None
+    """
+
+    user: User = User.get_by_id(context.job.data)
+    reset_expired_special_rank_for_user(user)
+
+
+def schedule_special_rank_expiry_job(
+    job_queue: JobQueue, user: User, end_date: datetime.datetime
+) -> None:
+    """
+    Schedules a one-off job to reset the user's leaderboard rank at the exact moment their
+    Warlord/Legendary Pirate duration ends, rather than only catching it on the next leaderboard.
+    Computed as a delay relative to now (rather than as an absolute datetime) so it lines up
+    with however the bot's own clock already evaluates "is this user still a Warlord/Legendary
+    Pirate", regardless of timezone configuration
+    :param job_queue: The job queue to schedule the job on
+    :param user: The user whose rank should be reset once their special status expires
+    :param end_date: The datetime the user's special status ends
+    :return: None
+    """
+
+    delay_seconds = max((end_date - datetime.datetime.now()).total_seconds(), 0)
+    job_queue.run_once(
+        job_reset_expired_special_rank,
+        when=delay_seconds,
+        data=user.id,
+        name=f"reset_special_rank_{user.id}_{end_date.timestamp()}",
+    )
+
+
+async def schedule_pending_special_rank_expiry_jobs(application) -> None:
+    """
+    On startup, (re)schedules the expiry job for every currently active Warlord/Legendary Pirate
+    with a set end date. Needed because one-off jobs scheduled via schedule_special_rank_expiry_job
+    live only in memory and are lost on every restart, so this re-creates them for any
+    appointment that's still active and hasn't expired yet
+    :param application: The bot application, used to access the job queue
+    :return: None
+    """
+
+    for warlord in Warlord.get_active():
+        schedule_special_rank_expiry_job(application.job_queue, warlord.user, warlord.end_date)
+
+    for legendary_pirate in LegendaryPirate.get_active():
+        if legendary_pirate.end_date is not None:
+            schedule_special_rank_expiry_job(
+                application.job_queue, legendary_pirate.user, legendary_pirate.end_date
+            )
 
 
 def get_highest_active_rank(user: User, group_chat: GroupChat) -> LeaderboardRank:
