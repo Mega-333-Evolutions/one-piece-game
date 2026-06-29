@@ -24,6 +24,7 @@ from src.chat.manage_message import (
     manage_callback as manage_callback_message,
 )
 from src.service.message_service import full_message_send
+from src.service.leaderboard_service import schedule_pending_special_rank_expiry_jobs
 from src.service.timer_service import set_timers
 
 
@@ -56,6 +57,7 @@ async def post_init(application: Application) -> None:
     """
     await application.job_queue.start()
     await set_timers(application)
+    await schedule_pending_special_rank_expiry_jobs(application)
 
 
 def main() -> None:
