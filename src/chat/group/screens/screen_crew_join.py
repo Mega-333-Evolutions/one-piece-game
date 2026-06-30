@@ -77,12 +77,13 @@ async def send_request(
     try:
         validate(user, crew, specific_user_error=True)
     except CrewValidationException as e:
-        # Send error message with existing delete button system
+        # Send error message with existing delete button system, except for the
+        # "already a member of a Crew" message which should not have a delete button
         await full_message_send(
             context,
             e.message,
             update=update,
-            add_delete_button=True,
+            add_delete_button=(e.message != phrases.CREW_JOIN_USER_ALREADY_IN_CREW),
             authorized_users=[user],
         )
         return
