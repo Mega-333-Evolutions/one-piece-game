@@ -132,7 +132,7 @@ LEADERBOARD_RANK_EMPEROR = "Emperor"
 LEADERBOARD_RANK_FIRST_MATE = "First Mate"
 LEADERBOARD_RANK_SUPERNOVA = "Supernova"
 LEADERBOARD_RANK_ROOKIE = "Rookie"
-LEADERBOARD_RANK_ADMIN = "Admiral"
+LEADERBOARD_RANK_ADMIN = "Veteran"
 LEADERBOARD_RANK_LEGENDARY_PIRATE = "Legendary Pirate"
 LEADERBOARD_RANK_WARLORD = "Warlord"
 LEADERBOARD_VIEW_BOUNTIES_RESET = f"\n>{Emoji.INFO}*Bounties have been reset*\n"
@@ -215,6 +215,7 @@ TEXT_YOU = "You"
 TEXT_YOUR = "Your"
 TEXT_STOLE = "stole"
 TEXT_OWE = "[owe]({})"
+TEXT_OWE_NOTHING_IMMUNE = "owed nothing \\(immune\\)"
 TEXT_NEVER = "Never"
 TEXT_YOURSELF = "yourself"
 
@@ -965,7 +966,14 @@ CREW_MEMBER_ITEM_DETAIL_ARRESTED = f"\n\n{Emoji.LOG_NEGATIVE}Arrested \\({{}}\\)
 CREW_MEMBER_ITEM_DETAIL_CONSCRIPTION_END_DATE = "\n\n*Conscription end date*: {}"
 CREW_MEMBER_ITEM_TEXT_FILL_IN = "Crew Member"
 CREW_USER_ALREADY_IN_SAME_CREW = "You are already in this Crew"
+CREW_INVITE_TARGET_ALREADY_IN_SAME_CREW = (
+    "The user you're trying to invite is already a member of this Crew."
+)
 CREW_USER_ALREADY_IN_CREW = "You are already in a Crew"
+CREW_JOIN_USER_ALREADY_IN_CREW = (
+    "You are already a member of a Crew. Leave your current Crew before joining another one."
+)
+CREW_INVITE_TARGET_ALREADY_IN_CREW = "The user you're trying to invite is already a member of a Crew."
 CREW_CREATE_USER_NOT_ENOUGH_BOUNTY = (
     f"Insufficient bounty, forming a Crew costs ฿{Env.CREW_CREATE_PRICE.get_belly()}"
 )
@@ -1112,7 +1120,7 @@ CREW_REMOVE_MEMBER_CONSCRIPT = "You can leave the Crew after your conscription p
 # Crew - Promote to First Mate
 CREW_PROMOTE_TO_FIRST_MATE_CREW_ALREADY_HAS_FIRST_MATE = "The Crew already has a First Mate"
 CREW_PROMOTE_TO_FIRST_MATE_CANNOT_PROMOTE_UNTIL_NEXT_LEADERBOARD = (
-    "You demoted a member from First Mate recently. You can't promote another"
+    "You demoted a member from First Mate recently. You will not be able to promote another"
     " member to First Mate until the next weekly leaderboard in {}"
 )
 CREW_PROMOTE_CANNOT_PROMOTE_DAVY_BACK_FIGHT = (
@@ -1995,6 +2003,9 @@ PLUNDER_LOG_ITEM_DETAIL_TEXT_IN_RESPONSE = (
     "\n\n>This plunder was in revenge to a previous [attack]({})"
 )
 PLUNDER_LOG_ITEM_DETAIL_TEXT_WON_LOAN = "You gained ฿*{}* \\(it will be repaid by a [loan]({})\\)"
+PLUNDER_LOG_ITEM_DETAIL_TEXT_WON_IMMUNE = (
+    "You gained nothing \\(the opponent was immune to bounty loss\\)"
+)
 
 # Logs - DocQ
 DOC_Q_GAME_LOG_KEY = "Doc Q"
