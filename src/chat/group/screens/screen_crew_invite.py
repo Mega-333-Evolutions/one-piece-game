@@ -66,7 +66,7 @@ async def send_request(
     """
 
     try:
-        validate(target_user, crew, specific_user_error=True, specific_crew_error=True)
+        validate(target_user, crew, specific_user_error=True, specific_crew_error=True, for_invite=True)
     except CrewValidationException as e:
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -138,7 +138,7 @@ async def keyboard_interaction(
         return
 
     try:
-        validate(invited_user, crew, specific_user_error=True)
+        validate(invited_user, crew, specific_user_error=True, for_invite=True)
     except CrewValidationException as e:
         await full_media_send(
             context,
