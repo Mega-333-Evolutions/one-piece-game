@@ -243,12 +243,15 @@ async def broadcast_to_chats_with_feature_enabled(
         if not feature_is_pinnable:
             continue
 
-        should_pin = (
+        has_pin_record = (
             GroupChatEnabledFeaturePin.get_or_none(
                 (GroupChatEnabledFeaturePin.group_chat == group_chat)
                 & (GroupChatEnabledFeaturePin.feature == feature)
             )
             is not None
+        )
+        should_pin = (
+            not feature.is_pinned_by_default() if has_pin_record else feature.is_pinned_by_default()
         )
 
         if not should_pin:
