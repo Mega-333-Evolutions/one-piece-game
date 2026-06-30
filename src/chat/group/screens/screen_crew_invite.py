@@ -15,6 +15,7 @@ from src.service.message_service import (
     mention_markdown_user,
     get_yes_no_keyboard,
     full_media_send,
+    escape_invalid_markdown_chars,
 )
 from src.model.error.CustomException import CrewValidationException
 
@@ -70,7 +71,7 @@ async def send_request(
     except CrewValidationException as e:
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=str(e),
+            text=escape_invalid_markdown_chars(str(e)),
             reply_to_message_id=update.message.message_id
         )
         return
