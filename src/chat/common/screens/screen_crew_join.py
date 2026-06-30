@@ -10,7 +10,11 @@ from src.service.date_service import get_remaining_time_from_next_cron
 
 
 def validate(
-    user: User, crew: Crew, specific_user_error: bool = False, specific_crew_error: bool = False
+    user: User,
+    crew: Crew,
+    specific_user_error: bool = False,
+    specific_crew_error: bool = False,
+    for_invite: bool = False,
 ) -> None:
     """
     Validate the crew join request
@@ -18,6 +22,8 @@ def validate(
     :param crew: The crew object
     :param specific_user_error: If True, raise a specific error message for the user
     :param specific_crew_error: If True, raise a specific error message for the crew
+    :param for_invite: If True, use invite-specific wording for the "already in a crew" error,
+    since in that case the message is shown to the inviter/invitee and not to the joining user
     :return: Raise an exception if the request is not valid
     """
     try:
@@ -56,9 +62,14 @@ def validate(
 
         # User already in a Crew
         if user.is_crew_member():
-            raise CrewJoinValidationUserException(
-                phrases.CREW_USER_ALREADY_IN_CREW if specific_user_error else None
-            )
+            if not specific_user_error:
+                already_in_crew_message = None
+            elif for_invite:
+                already_in_crew_message = phrases.CREW_INVITE_TARGET_ALREADY_IN_CREW
+            else:
+                already_in_crew_message = phrases.CREW_JOIN_USER_ALREADY_IN_CREW
+
+            raise CrewJoinValidationUserException(already_in_crew_message)
 
     except CrewJoinValidationUserException as e:
         raise CrewValidationException(
