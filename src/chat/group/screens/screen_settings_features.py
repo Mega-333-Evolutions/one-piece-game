@@ -48,8 +48,17 @@ async def manage(
 
         # Pin toggle
         if FeaturesReservedKeys.PIN_TOGGLE in inbound_keyboard.info:
-            # Pin toggle
-            if inbound_keyboard.info[FeaturesReservedKeys.PIN_TOGGLE]:
+            pin_toggle_to_enabled = inbound_keyboard.info[FeaturesReservedKeys.PIN_TOGGLE]
+
+            # Record should be added to table if the feature is pinned by default and the toggle
+            # is false, or the feature is not pinned by default and the toggle is true
+            add_pin_record = (
+                feature.is_pinned_by_default() and not pin_toggle_to_enabled
+            ) or (
+                not feature.is_pinned_by_default() and pin_toggle_to_enabled
+            )
+
+            if add_pin_record:
                 # Pin feature
                 feature_pin = GroupChatEnabledFeaturePin()
                 feature_pin.group_chat = group_chat
@@ -161,9 +170,14 @@ def get_features_keyboard(group_chat: GroupChat) -> list[list[Keyboard]]:
         # If feature is pinnable, add button in a new row with the pin toggle button
         if feature.is_pinnable() and is_enabled_feature:
             # Backref
-            is_enabled_pin = feature in [
+            has_pin_record = feature in [
                 enabled_feature.feature for enabled_feature in group_chat.enabled_features_pin
             ]
+            is_enabled_pin = (
+                not feature.is_pinned_by_default()
+                if has_pin_record
+                else feature.is_pinned_by_default()
+            )
             is_enabled_emoji = Emoji.RADIO_BUTTON if is_enabled_pin else ""
             pin_button_info = {
                 FeaturesReservedKeys.FEATURE: feature.value,
