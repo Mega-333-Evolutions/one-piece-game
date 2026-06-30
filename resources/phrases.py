@@ -132,7 +132,7 @@ LEADERBOARD_RANK_EMPEROR = "Emperor"
 LEADERBOARD_RANK_FIRST_MATE = "First Mate"
 LEADERBOARD_RANK_SUPERNOVA = "Supernova"
 LEADERBOARD_RANK_ROOKIE = "Rookie"
-LEADERBOARD_RANK_ADMIN = "Veteran"
+LEADERBOARD_RANK_ADMIN = "Admiral"
 LEADERBOARD_RANK_LEGENDARY_PIRATE = "Legendary Pirate"
 LEADERBOARD_RANK_WARLORD = "Warlord"
 LEADERBOARD_VIEW_BOUNTIES_RESET = f"\n>{Emoji.INFO}*Bounties have been reset*\n"
@@ -1120,7 +1120,7 @@ CREW_REMOVE_MEMBER_CONSCRIPT = "You can leave the Crew after your conscription p
 # Crew - Promote to First Mate
 CREW_PROMOTE_TO_FIRST_MATE_CREW_ALREADY_HAS_FIRST_MATE = "The Crew already has a First Mate"
 CREW_PROMOTE_TO_FIRST_MATE_CANNOT_PROMOTE_UNTIL_NEXT_LEADERBOARD = (
-    "You demoted a member from First Mate recently. You will not be able to promote another"
+    "You demoted a member from First Mate recently. You can't promote another"
     " member to First Mate until the next weekly leaderboard in {}"
 )
 CREW_PROMOTE_CANNOT_PROMOTE_DAVY_BACK_FIGHT = (
