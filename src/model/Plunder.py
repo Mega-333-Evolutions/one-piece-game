@@ -203,13 +203,14 @@ class Plunder(BaseModel):
 
         return GameStatus(self.status)
 
-    def get_loan(self) -> BountyLoan:
+    def get_loan(self) -> BountyLoan | None:
         """
         Get the loan
-        :return: The loan
+        :return: The loan, or None if no loan was created for this plunder (e.g. the loser
+        had combat-loss immunity, so nothing was owed)
         """
 
-        return BountyLoan.get(
+        return BountyLoan.get_or_none(
             BountyLoan.source == BountyLoanSource.PLUNDER, BountyLoan.external_id == self.id
         )
 
