@@ -1184,7 +1184,10 @@ class PlunderLog(Log):
         self.effective_status = self.legend.get_game_status()
 
         if self.object.get_status() is GameStatus.LOST:
-            self.effective_belly = self.object.get_loan().repay_amount
+            loan: BountyLoan | None = self.object.get_loan()
+            # No loan exists if the loser had combat-loss immunity (e.g. a Legendary Pirate),
+            # in which case the plunder is still marked LOST but nothing was actually owed
+            self.effective_belly = loan.repay_amount if loan is not None else self.object.belly
         else:
             self.effective_belly = self.object.belly
 
@@ -1216,16 +1219,27 @@ class PlunderLog(Log):
         if self.effective_status in [GameStatus.WON, GameStatus.LOST]:
             if not self.user_is_challenger and self.effective_status is GameStatus.WON:
                 loan = self.object.get_loan()
-                outcome_text = phrases.PLUNDER_LOG_ITEM_DETAIL_TEXT_WON_LOAN.format(
-                    get_belly_formatted(self.effective_belly), loan.get_deeplink()
-                )
+                if loan is not None:
+                    outcome_text = phrases.PLUNDER_LOG_ITEM_DETAIL_TEXT_WON_LOAN.format(
+                        get_belly_formatted(self.effective_belly), loan.get_deeplink()
+                    )
+                else:
+                    # No loan exists if the opponent had combat-loss immunity (e.g. a
+                    # Legendary Pirate), in which case nothing was actually gained
+                    outcome_text = phrases.PLUNDER_LOG_ITEM_DETAIL_TEXT_WON_IMMUNE
             else:
                 if self.user_is_challenger:
-                    inner_text = (
-                        phrases.TEXT_STOLE
-                        if self.effective_status is GameStatus.WON
-                        else phrases.TEXT_OWE.format(self.object.get_loan().get_deeplink())
-                    )
+                    if self.effective_status is GameStatus.WON:
+                        inner_text = phrases.TEXT_STOLE
+                    else:
+                        loan = self.object.get_loan()
+                        # No loan exists if the user themselves had combat-loss immunity,
+                        # in which case nothing is actually owed
+                        inner_text = (
+                            phrases.TEXT_OWE.format(loan.get_deeplink())
+                            if loan is not None
+                            else phrases.TEXT_OWE_NOTHING_IMMUNE
+                        )
                 else:
                     inner_text = phrases.TEXT_LOST
 
