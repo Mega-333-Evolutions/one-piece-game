@@ -637,8 +637,8 @@ class PredictionBetInvalidNotification(Notification):
 
         return self.text.format(
             bet_has,
-            it_was,
             escape_valid_markdown_chars(self.prediction.question),
+            it_was,
             default_datetime_format(self.prediction.cut_off_date),
             invalid_prediction_options_list,
             get_belly_formatted(self.total_refund),
