@@ -109,7 +109,7 @@ class Feature(IntEnum):
         :return: All the features that are disabled by default
         """
 
-        return [Feature.SILENCE]
+        return [Feature.MESSAGE_FILTER]
 
     def is_enabled_by_default(self) -> bool:
         """
@@ -119,6 +119,25 @@ class Feature(IntEnum):
         """
 
         return self not in Feature.get_disabled_by_default()
+
+    @staticmethod
+    def get_pinned_by_default() -> list["Feature"]:
+        """
+        Get all the pinnable features that are pinned by default
+
+        :return: All the pinnable features that are pinned by default
+        """
+
+        return [Feature.LEADERBOARD]
+
+    def is_pinned_by_default(self) -> bool:
+        """
+        Checks if the feature is pinned by default
+
+        :return: True if the feature is pinned by default, False otherwise
+        """
+
+        return self in Feature.get_pinned_by_default()
 
 
 FEATURE_DESCRIPTION_MAP = {
