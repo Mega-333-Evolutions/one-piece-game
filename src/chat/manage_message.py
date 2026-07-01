@@ -293,6 +293,8 @@ async def manage_after_db(
             phrases.COMMAND_START_IN_GROUP_ERROR,
             update=update,
             keyboard=inline_keyboard,
+            force_auto_delete=True,
+            group_chat=group_chat,
         )
         return
     
