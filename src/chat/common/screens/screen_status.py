@@ -341,7 +341,12 @@ async def send_bounty_poster(
     replied_telegram_user = None
     try:
         if update.effective_message.reply_to_message is not None:
-            replied_telegram_user = update.effective_message.reply_to_message.from_user
+            replied_user = update.effective_message.reply_to_message.from_user
+            # In private chat, ignore replies to bot messages — use the target user's own PFP
+            if replied_user is not None and not (
+                update.effective_chat.type == update.effective_chat.PRIVATE and replied_user.is_bot
+            ):
+                replied_telegram_user = replied_user
     except AttributeError:
         replied_telegram_user = None
 
