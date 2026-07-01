@@ -102,6 +102,9 @@ async def validate(
     try:
         # If prisoner is different from user, they must be in same Crew
         if prisoner != user:
+            # User must be in a crew to post bail for someone else
+            if not user.is_crew_member():
+                raise UnauthorizedToViewItemException
             try:
                 get_crew(user=prisoner, validate_against_crew=user.crew)
             except ChatWarning:
