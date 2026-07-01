@@ -19,7 +19,7 @@ from telegram import (
     InlineQueryResultArticle,
     InputTextMessageContent,
 )
-from telegram.error import BadRequest, TelegramError, Forbidden
+from telegram.error import BadRequest, TelegramError, Forbidden, TimedOut
 from telegram.ext import ContextTypes
 from telegram.helpers import mention_markdown
 
@@ -673,6 +673,7 @@ async def full_media_send(
 
     if ignore_bad_request_exception:
         exceptions_to_ignore.append(BadRequest)
+        exceptions_to_ignore.append(TimedOut)
 
     if caption is not None and parse_mode == c.TG_PARSE_MODE_MARKDOWN and not answer_callback:
         caption = escape_invalid_markdown_chars(caption)
