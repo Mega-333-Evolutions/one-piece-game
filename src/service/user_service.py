@@ -5,7 +5,7 @@ from typing import Sequence, Optional
 from telegram import Update, PhotoSize, UserProfilePhotos, File, ChatMember, Message
 from telegram import User as TelegramUser, ChatMemberAdministrator
 from telegram.constants import ChatMemberStatus
-from telegram.error import BadRequest, ChatMigrated
+from telegram.error import BadRequest, ChatMigrated, TimedOut
 from telegram.ext import ContextTypes
 
 import constants as c
@@ -179,6 +179,8 @@ async def get_chat_member(
             return await update.get_bot().get_chat_member(e.new_chat_id, str(user.tg_user_id))
         return None
     except (Forbidden, BadRequest):  # Bot kicked from the group chat or user not found
+        return None
+    except TimedOut:  # Telegram API timeout - treat as non-admin, don't crash handler
         return None
 
 
