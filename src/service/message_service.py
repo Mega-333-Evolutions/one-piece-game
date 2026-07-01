@@ -355,6 +355,7 @@ async def full_message_send(
     add_back_button: bool = True,
     should_auto_delete: bool = True,
     ignore_bad_request_exception: bool = False,
+    force_auto_delete: bool = False,
 ) -> Message | bool:
     """
     Send a message
@@ -400,6 +401,7 @@ async def full_message_send(
     :param add_back_button: True if the back button should be added to the keyboard when possible
     :param should_auto_delete: True if the message should be auto deleted
     :param ignore_bad_request_exception: True to ignore specific bad request exceptions like "message is not modified"
+    :param force_auto_delete: True if the message should be auto deleted even without a delete button
     :return: Message
     """
 
@@ -435,7 +437,7 @@ async def full_message_send(
 
     should_auto_delete = (
         should_auto_delete
-        and add_delete_button
+        and (add_delete_button or force_auto_delete)
         and message_source is message_source.GROUP
         and group_chat
     )
