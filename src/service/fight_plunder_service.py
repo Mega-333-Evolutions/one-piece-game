@@ -693,8 +693,9 @@ async def fight_send_request(
     """
     if group_chat is not None:
         # Remove scouting fee, if not from private
-        await add_or_remove_bounty(user, get_scout_fee(user, True, ScoutType.FIGHT), add=False)
+        await add_or_remove_bounty(user, get_scout_fee(user, True, ScoutType.FIGHT), add=False, should_save=True)
         user.fight_scout_count += 1
+        user.save()
 
     # Delete all previous pending fights
     previous_fights: list[Fight] = Fight.select().where(
@@ -1150,8 +1151,9 @@ async def plunder_send_request(
     """
     if group_chat is not None:
         # Remove scouting fee, if not from private
-        await add_or_remove_bounty(user, get_scout_fee(user, True, ScoutType.PLUNDER), add=False)
+        await add_or_remove_bounty(user, get_scout_fee(user, True, ScoutType.PLUNDER), add=False, should_save=True)
         user.plunder_scout_count += 1
+        user.save()
 
     # Delete all previous pending plunders
     previous_plunders: list[Plunder] = Plunder.select().where(
