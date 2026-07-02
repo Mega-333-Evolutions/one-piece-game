@@ -6,7 +6,11 @@ import src.model.enums.Command as Command
 from src.model.User import User
 from src.model.enums.CommandName import CommandName
 from src.model.enums.MessageSource import MessageSource
-from src.service.bounty_service import get_amount_from_string, validate_amount
+from src.service.bounty_service import (
+    add_or_remove_bounty,
+    get_amount_from_string,
+    validate_amount,
+)
 from src.service.message_service import (
     full_message_or_media_send_or_edit,
     get_message_source,
@@ -97,8 +101,13 @@ async def manage(
     target_user = User.get_by_id(target_user.id)
 
     if command.name is CommandName.ADD_BOUNTY:
-        target_user.bounty += amount
-        target_user.save()
+        await add_or_remove_bounty(
+            target_user,
+            amount,
+            context=context,
+            update=update,
+            should_save=True,
+        )
         text = "Added ฿{} Berries to {}.".format(
             get_belly_formatted(amount), mention_markdown_user(target_user)
         )

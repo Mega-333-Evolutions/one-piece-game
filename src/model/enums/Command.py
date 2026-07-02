@@ -186,6 +186,7 @@ COMMANDS.append(PVT_DAILY_REWARD)
 PVT_ADD_BOUNTY = Command(
     CommandName.ADD_BOUNTY,
     Screen.PVT_OWNER_BOUNTY,
+    allow_self_reply=True,
     allow_while_arrested=True,
     allow_reply_to_arrested=True,
 )
@@ -194,6 +195,7 @@ COMMANDS.append(PVT_ADD_BOUNTY)
 PVT_TAKE_BOUNTY = Command(
     CommandName.TAKE_BOUNTY,
     Screen.PVT_OWNER_BOUNTY,
+    allow_self_reply=True,
     allow_while_arrested=True,
     allow_reply_to_arrested=True,
 )
@@ -439,6 +441,7 @@ COMMANDS.append(GRP_DAILY_REWARD)
 GRP_ADD_BOUNTY = Command(
     CommandName.ADD_BOUNTY,
     Screen.GRP_OWNER_BOUNTY,
+    allow_self_reply=True,
     allow_while_arrested=True,
     allow_reply_to_arrested=True,
 )
@@ -447,6 +450,7 @@ COMMANDS.append(GRP_ADD_BOUNTY)
 GRP_TAKE_BOUNTY = Command(
     CommandName.TAKE_BOUNTY,
     Screen.GRP_OWNER_BOUNTY,
+    allow_self_reply=True,
     allow_while_arrested=True,
     allow_reply_to_arrested=True,
 )
