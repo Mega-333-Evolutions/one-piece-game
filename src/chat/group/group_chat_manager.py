@@ -17,6 +17,7 @@ from src.chat.common.screens.screen_game import manage as manage_screen_game
 from src.chat.common.screens.screen_game_rps import manage as manage_screen_game_rps
 from src.chat.common.screens.screen_game_rr import manage as manage_screen_game_rr
 from src.chat.common.screens.screen_game_selection import manage as manage_screen_game_selection
+from src.chat.common.screens.screen_owner_bounty import manage as manage_screen_owner_bounty
 from src.chat.common.screens.screen_status import manage as manage_screen_show_status
 from src.chat.group.screens.screen_bounty_gift import manage as manage_screen_bounty_gift
 from src.chat.group.screens.screen_bounty_loan import manage as manage_screen_bounty_loan
@@ -239,6 +240,9 @@ async def dispatch_screens(
 
         case Screen.GRP_DAILY_REWARD_PRIZE:  # Daily reward prize
             await manage_screen_daily_reward_prize(update, context, inbound_keyboard)
+
+        case Screen.GRP_OWNER_BOUNTY:  # Owner bounty management
+            await manage_screen_owner_bounty(update, context, command, user, target_user)
 
         case Screen.GRP_SETTINGS:  # Settings
             await manage_screen_settings(update, context)

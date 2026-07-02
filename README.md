@@ -90,6 +90,8 @@ pip install -r requirements.txt
 
 - `UPDATES_CHAT_ID` - Telegram Chat ID for Updates, used for global leaderboard
 
+Set `OWNER_ID` to the Telegram User ID allowed to use owner-only maintenance commands.
+
 For a full list of environment variables and their descriptions, refer to
 the `resources/Environment.py` file.
 

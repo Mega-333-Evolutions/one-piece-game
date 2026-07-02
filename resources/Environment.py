@@ -139,6 +139,8 @@ AUTHORIZED_USERS = Environment("AUTHORIZED_USERS", default_value="")
 LIMIT_TO_AUTHORIZED_GROUPS = Environment("LIMIT_TO_AUTHORIZED_GROUPS", default_value="False")
 # List of authorized groups
 AUTHORIZED_GROUPS = Environment("AUTHORIZED_GROUPS", default_value="")
+# Telegram user id allowed to use owner-only maintenance commands.
+OWNER_ID = Environment("OWNER_ID", can_be_empty=True)
 # Group chat id
 MAIN_GROUP_ID = Environment("MAIN_GROUP_ID", can_be_empty=True)
 # Bounty awarded for each eligible text message sent in the main group.

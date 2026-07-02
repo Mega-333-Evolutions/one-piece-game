@@ -24,6 +24,8 @@ class CommandName(StrEnum):
     PLUNDER = "steal"
     SETTINGS = "settings"
     DAILY_REWARD = "reward"
+    ADD_BOUNTY = "add"
+    TAKE_BOUNTY = "take"
 
     def get_formatted(self):
         """

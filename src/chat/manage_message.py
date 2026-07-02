@@ -77,6 +77,7 @@ from src.chat.private.private_chat_manager import manage as manage_private_chat
 from src.chat.tgrest.tgrest_chat_manager import manage as manage_tgrest_chat
 from src.model.Group import Group
 from src.model.GroupUser import GroupUser
+from src.model.enums.CommandName import CommandName
 from src.model.enums.ContextDataKey import ContextDataType
 from src.model.enums.Feature import Feature
 from src.model.enums.MessageSource import MessageSource
@@ -217,7 +218,7 @@ async def manage_after_db(
         except AnonymousAdminException:
             # Safely abort if the message is from an anonymous admin or linked channel
             return
-            
+
         user: User = await get_user(tg_user_id, update.effective_user, should_save=False)
 
         # Check if the user is authorized
@@ -269,7 +270,7 @@ async def manage_after_db(
 
     command: Command.Command = Command.ND
     keyboard = None
-    
+
     # Check for /start command in groups before command parsing
     if (
         update.message is not None
@@ -297,7 +298,7 @@ async def manage_after_db(
             group_chat=group_chat,
         )
         return
-    
+
     try:
         try:
             if is_command(update.message.text):
@@ -365,6 +366,10 @@ async def manage_after_db(
         if command is Command.PVT_START:
             user.private_screen_list = None
             user.reset_private_screen()
+
+        # Owner-only maintenance commands should be completely silent for everyone else.
+        if is_owner_bounty_command(command) and not user_is_owner(user):
+            return
 
         # Check for spam only if a valid command or private chat
         if command != Command.ND or message_source is MessageSource.PRIVATE:
@@ -715,6 +720,30 @@ async def validate(
         return False
 
     return True
+
+
+def is_owner_bounty_command(command: Command.Command) -> bool:
+    """
+    Check if the command is an owner-only bounty management command.
+    :param command: The command
+    :return: True if owner bounty command
+    """
+
+    return command is not None and command.name in (
+        CommandName.ADD_BOUNTY,
+        CommandName.TAKE_BOUNTY,
+    )
+
+
+def user_is_owner(user: User) -> bool:
+    """
+    Check if the user matches OWNER_ID.
+    :param user: The user
+    :return: True if owner
+    """
+
+    owner_id = Env.OWNER_ID.get_or_none()
+    return owner_id is not None and str(user.tg_user_id) == str(owner_id)
 
 
 async def get_user(
