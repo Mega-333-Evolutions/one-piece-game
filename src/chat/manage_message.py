@@ -732,6 +732,8 @@ def is_owner_bounty_command(command: Command.Command) -> bool:
     return command is not None and command.name in (
         CommandName.ADD_BOUNTY,
         CommandName.TAKE_BOUNTY,
+        CommandName.REVERT_PENDING_BOUNTY,
+        CommandName.REVERT_PENDING_BOUNTY_ALL,
     )
 
 

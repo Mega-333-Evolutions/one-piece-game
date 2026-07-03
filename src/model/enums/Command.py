@@ -201,6 +201,24 @@ PVT_TAKE_BOUNTY = Command(
 )
 COMMANDS.append(PVT_TAKE_BOUNTY)
 
+PVT_REVERT_PENDING_BOUNTY = Command(
+    CommandName.REVERT_PENDING_BOUNTY,
+    Screen.PVT_OWNER_BOUNTY,
+    allow_self_reply=True,
+    allow_while_arrested=True,
+    allow_reply_to_arrested=True,
+)
+COMMANDS.append(PVT_REVERT_PENDING_BOUNTY)
+
+PVT_REVERT_PENDING_BOUNTY_ALL = Command(
+    CommandName.REVERT_PENDING_BOUNTY_ALL,
+    Screen.PVT_OWNER_BOUNTY,
+    allow_self_reply=True,
+    allow_while_arrested=True,
+    allow_reply_to_arrested=True,
+)
+COMMANDS.append(PVT_REVERT_PENDING_BOUNTY_ALL)
+
 PVT_GAME = Command(
     CommandName.GAME,
     Screen.PVT_GAME,
@@ -455,6 +473,24 @@ GRP_TAKE_BOUNTY = Command(
     allow_reply_to_arrested=True,
 )
 COMMANDS.append(GRP_TAKE_BOUNTY)
+
+GRP_REVERT_PENDING_BOUNTY = Command(
+    CommandName.REVERT_PENDING_BOUNTY,
+    Screen.GRP_OWNER_BOUNTY,
+    allow_self_reply=True,
+    allow_while_arrested=True,
+    allow_reply_to_arrested=True,
+)
+COMMANDS.append(GRP_REVERT_PENDING_BOUNTY)
+
+GRP_REVERT_PENDING_BOUNTY_ALL = Command(
+    CommandName.REVERT_PENDING_BOUNTY_ALL,
+    Screen.GRP_OWNER_BOUNTY,
+    allow_self_reply=True,
+    allow_while_arrested=True,
+    allow_reply_to_arrested=True,
+)
+COMMANDS.append(GRP_REVERT_PENDING_BOUNTY_ALL)
 
 
 def get_by_name(name: str, message_source: MessageSource = MessageSource.ND):

@@ -26,6 +26,8 @@ class CommandName(StrEnum):
     DAILY_REWARD = "reward"
     ADD_BOUNTY = "add"
     TAKE_BOUNTY = "take"
+    REVERT_PENDING_BOUNTY = "rpending"
+    REVERT_PENDING_BOUNTY_ALL = "rpendingall"
 
     def get_formatted(self):
         """

@@ -242,7 +242,9 @@ async def dispatch_screens(
             await manage_screen_daily_reward_prize(update, context, inbound_keyboard)
 
         case Screen.GRP_OWNER_BOUNTY:  # Owner bounty management
-            await manage_screen_owner_bounty(update, context, command, user, target_user)
+            await manage_screen_owner_bounty(
+                update, context, command, user, inbound_keyboard, target_user
+            )
 
         case Screen.GRP_SETTINGS:  # Settings
             await manage_screen_settings(update, context)

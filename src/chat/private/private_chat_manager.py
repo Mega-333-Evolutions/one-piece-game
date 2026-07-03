@@ -594,7 +594,7 @@ async def dispatch_screens(
                 await manage_screen_daily_reward_prize(update, context, inbound_keyboard)
 
             case Screen.PVT_OWNER_BOUNTY:
-                await manage_screen_owner_bounty(update, context, command, user)
+                await manage_screen_owner_bounty(update, context, command, user, inbound_keyboard)
 
             case Screen.PVT_GAME_GLOBAL_LIST:
                 await manage_screen_game_global_list(update, context, inbound_keyboard, user)

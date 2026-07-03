@@ -1,3 +1,5 @@
+from enum import StrEnum
+
 from peewee import fn
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -6,6 +8,9 @@ import src.model.enums.Command as Command
 from src.model.User import User
 from src.model.enums.CommandName import CommandName
 from src.model.enums.MessageSource import MessageSource
+from src.model.enums.ReservedKeyboardKeys import ReservedKeyboardKeys
+from src.model.enums.Screen import Screen
+from src.model.pojo.Keyboard import Keyboard
 from src.service.bounty_service import (
     add_or_remove_bounty,
     get_amount_from_string,
@@ -14,9 +19,26 @@ from src.service.bounty_service import (
 from src.service.message_service import (
     full_message_or_media_send_or_edit,
     get_message_source,
+    get_yes_no_keyboard,
     mention_markdown_user,
 )
 from src.utils.string_utils import get_belly_formatted
+
+
+class OwnerBountyReservedKeys(StrEnum):
+    """
+    Reserved keys for owner bounty management.
+    """
+
+    ACTION = "a"
+
+
+class OwnerBountyAction(StrEnum):
+    """
+    Owner bounty actions.
+    """
+
+    REVERT_PENDING_ALL = "rpall"
 
 
 async def manage(
@@ -24,6 +46,7 @@ async def manage(
     context: ContextTypes.DEFAULT_TYPE,
     command: Command.Command,
     user: User,
+    inbound_keyboard: Keyboard = None,
     target_user: User = None,
 ) -> None:
     """
@@ -32,11 +55,50 @@ async def manage(
     :param context: The context
     :param command: The command
     :param user: The owner user
+    :param inbound_keyboard: Inbound keyboard for confirmation callbacks
     :param target_user: Target user from replied message in groups
     :return: None
     """
 
+    if inbound_keyboard is not None:
+        await manage_keyboard(update, context, inbound_keyboard)
+        return
+
     is_group = get_message_source(update) is MessageSource.GROUP
+
+    if command.name is CommandName.REVERT_PENDING_BOUNTY_ALL:
+        if is_group:
+            return
+
+        await send_revert_pending_all_confirmation(update, context, user)
+        return
+
+    if command.name is CommandName.REVERT_PENDING_BOUNTY:
+        await manage_revert_pending(update, context, command, target_user, is_group)
+        return
+
+    await manage_add_or_take(update, context, command, user, target_user, is_group)
+
+
+async def manage_add_or_take(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    command: Command.Command,
+    user: User,
+    target_user: User = None,
+    is_group: bool = False,
+) -> None:
+    """
+    Manage owner-only add/take bounty commands.
+    :param update: The update
+    :param context: The context
+    :param command: The command
+    :param user: The owner user
+    :param target_user: Target user from replied message in groups
+    :param is_group: Whether this is a group message
+    :return: None
+    """
+
     add_delete_button = is_group
 
     if is_group:
@@ -133,6 +195,186 @@ async def manage(
         update=update,
         add_delete_button=add_delete_button,
     )
+
+
+async def manage_revert_pending(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    command: Command.Command,
+    target_user: User = None,
+    is_group: bool = False,
+) -> None:
+    """
+    Manage single-user pending bounty revert.
+    :param update: The update
+    :param context: The context
+    :param command: The command
+    :param target_user: Target user from replied message in groups
+    :param is_group: Whether this is a group message
+    :return: None
+    """
+
+    if is_group:
+        if target_user is None:
+            await full_message_or_media_send_or_edit(
+                context,
+                "Please reply to the player whose pending bounty you want to revert.",
+                update=update,
+                add_delete_button=True,
+            )
+            return
+    else:
+        if len(command.parameters) == 0:
+            await full_message_or_media_send_or_edit(
+                context,
+                "Please specify a username or Telegram user ID.",
+                update=update,
+            )
+            return
+
+        target_user = get_target_user(command.parameters[0])
+        if target_user is None:
+            await full_message_or_media_send_or_edit(
+                context,
+                "Please specify a username or Telegram user ID.",
+                update=update,
+            )
+            return
+
+    text = revert_pending_bounty(target_user)
+    await full_message_or_media_send_or_edit(
+        context,
+        text,
+        update=update,
+        add_delete_button=is_group,
+    )
+
+
+async def send_revert_pending_all_confirmation(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, user: User
+) -> None:
+    """
+    Send pending bounty revert all confirmation.
+    :param update: The update
+    :param context: The context
+    :param user: The owner
+    :return: None
+    """
+
+    keyboard = [
+        get_yes_no_keyboard(
+            user,
+            screen=Screen.PVT_OWNER_BOUNTY,
+            extra_keys={
+                OwnerBountyReservedKeys.ACTION: OwnerBountyAction.REVERT_PENDING_ALL,
+            },
+        )
+    ]
+    await full_message_or_media_send_or_edit(
+        context,
+        "Are you sure you want to revert the pending bounty for every player?",
+        update=update,
+        keyboard=keyboard,
+    )
+
+
+async def manage_keyboard(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, inbound_keyboard: Keyboard
+) -> None:
+    """
+    Manage owner bounty keyboard actions.
+    :param update: The update
+    :param context: The context
+    :param inbound_keyboard: Inbound keyboard
+    :return: None
+    """
+
+    if (
+        inbound_keyboard.get(OwnerBountyReservedKeys.ACTION)
+        != OwnerBountyAction.REVERT_PENDING_ALL
+    ):
+        return
+
+    if not inbound_keyboard.get_bool(ReservedKeyboardKeys.CONFIRM):
+        await full_message_or_media_send_or_edit(
+            context,
+            "Pending bounty revert cancelled.",
+            update=update,
+        )
+        return
+
+    await full_message_or_media_send_or_edit(
+        context,
+        "Reverting pending bounty for all eligible players...",
+        update=update,
+    )
+    processed, skipped = revert_pending_bounty_all()
+    await full_message_or_media_send_or_edit(
+        context,
+        "Pending bounty revert completed successfully.\n\n"
+        "*Statistics*\n"
+        "• Players processed: *{}*\n"
+        "• Players skipped \\(no pending bounty\\): *{}*".format(processed, skipped),
+        update=update,
+    )
+
+
+def revert_pending_bounty(user: User) -> str:
+    """
+    Revert pending bounty for one user without applying income tax.
+    :param user: The user
+    :return: Result message
+    """
+
+    user = User.get_by_id(user.id)
+    pending_bounty = user.pending_bounty or 0
+    if pending_bounty == 0:
+        return "{} doesn't have any pending bounty to revert.".format(mention_markdown_user(user))
+
+    with User._meta.database.atomic():
+        User.update(
+            bounty=User.bounty + pending_bounty,
+            pending_bounty=0,
+        ).where(User.id == user.id).execute()
+
+    return "Successfully reverted {}'s pending bounty of *{}* back to their main bounty.".format(
+        mention_markdown_user(user), get_signed_belly_formatted(pending_bounty)
+    )
+
+
+def revert_pending_bounty_all() -> tuple[int, int]:
+    """
+    Revert pending bounty for every user without applying income tax.
+    :return: Processed and skipped counts
+    """
+
+    processed = 0
+    users_with_pending = User.select().where(
+        (User.pending_bounty.is_null(False)) & (User.pending_bounty != 0)
+    )
+
+    for user in users_with_pending.iterator():
+        pending_bounty = user.pending_bounty or 0
+        with User._meta.database.atomic():
+            User.update(
+                bounty=User.bounty + pending_bounty,
+                pending_bounty=0,
+            ).where(User.id == user.id).execute()
+        processed += 1
+
+    skipped = User.select().count() - processed
+    return processed, skipped
+
+
+def get_signed_belly_formatted(amount: int) -> str:
+    """
+    Format a signed bounty amount.
+    :param amount: The amount
+    :return: Formatted amount
+    """
+
+    sign = "-" if amount < 0 else ""
+    return "{}฿{}".format(sign, get_belly_formatted(abs(amount)))
 
 
 def get_missing_group_amount_text(command: Command.Command) -> str:
