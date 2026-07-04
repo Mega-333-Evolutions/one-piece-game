@@ -550,6 +550,9 @@ async def validate(
     inline_keyboard: list[list[Keyboard]] = []
     try:
         # Is active
+        if command is None:
+            return True
+
         if not command.active:
             if command.replaced_by is not None:
                 raise CommandValidationException(
