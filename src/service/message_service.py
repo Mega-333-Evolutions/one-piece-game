@@ -42,6 +42,25 @@ from src.model.pojo.Keyboard import Keyboard
 from src.utils.context_utils import set_bot_context_data, get_bot_context_data
 
 
+def build_inline_keyboard_button(button: Keyboard, context: ContextTypes.DEFAULT_TYPE = None):
+    """
+    Create an InlineKeyboardButton, preserving project-specific styles when present.
+    """
+
+    inline_kwargs = {}
+    if button.url is not None:
+        inline_kwargs["url"] = button.url
+    elif button.switch_inline_query is not None:
+        inline_kwargs["switch_inline_query"] = button.switch_inline_query
+    else:
+        inline_kwargs["callback_data"] = button.set_and_get_callback_data_in_context(context)
+
+    if getattr(button, "style", None) is not None:
+        inline_kwargs["api_kwargs"] = {"style": str(button.style)}
+
+    return InlineKeyboardButton(button.text, **inline_kwargs)
+
+
 def escape_invalid_markdown_chars(text: str) -> str:
     """
     Escape invalid markdown chars
@@ -163,13 +182,9 @@ async def get_keyboard(
                 keyboard_row: list[InlineKeyboardButton] = []
                 for button in row:
                     if button.url is not None:
-                        keyboard_row.append(InlineKeyboardButton(button.text, url=button.url))
+                        keyboard_row.append(build_inline_keyboard_button(button))
                     elif button.switch_inline_query is not None:
-                        keyboard_row.append(
-                            InlineKeyboardButton(
-                                button.text, switch_inline_query=button.switch_inline_query
-                            )
-                        )
+                        keyboard_row.append(build_inline_keyboard_button(button))
                     else:
                         # Already has some callback_data. If it has no data, nothing should be
                         # added
@@ -228,17 +243,7 @@ async def get_keyboard(
                             button.refresh_callback_data()
 
                         try:
-                            inline_kwargs = {
-                                "callback_data": button.set_and_get_callback_data_in_context(context)
-                            }
-                            if getattr(button, "style", None) is not None:
-                                inline_kwargs["style"] = button.style
-                            keyboard_row.append(
-                                InlineKeyboardButton(
-                                    button.text,
-                                    **inline_kwargs
-                                )
-                            )
+                            keyboard_row.append(build_inline_keyboard_button(button, context))
                         except AttributeError:
                             logging.error(f"Button {button} does not have a callback_data")
                             pass
@@ -252,10 +257,7 @@ async def get_keyboard(
             delete_button = get_delete_button(authorized_users, button_text=delete_button_text)
             keyboard_list.append(
                 [
-                    InlineKeyboardButton(
-                        delete_button.text,
-                        callback_data=delete_button.set_and_get_callback_data_in_context(context),
-                    )
+                    build_inline_keyboard_button(delete_button, context)
                 ]
             )
 
@@ -269,10 +271,7 @@ async def get_keyboard(
             back_button.refresh_callback_data()
             keyboard_list.append(
                 [
-                    InlineKeyboardButton(
-                        back_button.text,
-                        callback_data=back_button.set_and_get_callback_data_in_context(context),
-                    )
+                    build_inline_keyboard_button(back_button, context)
                 ]
             )
 

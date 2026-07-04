@@ -11,6 +11,7 @@ from src.model.enums.ContextDataKey import ContextDataKey
 from src.model.enums.MessageSource import MessageSource
 from src.model.enums.ReservedKeyboardKeys import ReservedKeyboardKeys
 from src.model.enums.Screen import Screen
+from src.utils.button_style_utils import get_semantic_button_style
 
 
 class Keyboard:
@@ -53,7 +54,7 @@ class Keyboard:
         :param style: The style of the button (e.g. success, danger, primary)
         """
         self.text = text
-        self.style = style
+        self.style = style or get_semantic_button_style(text)
         self.info: dict = info if info is not None else {}
         self.screen: Screen = screen
         self.previous_screen_list: list[Screen] = (

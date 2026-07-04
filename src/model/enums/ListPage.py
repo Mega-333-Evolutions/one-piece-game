@@ -179,6 +179,13 @@ class ListPage(ABC):
         """
         pass
 
+    def get_item_button_style(self) -> str | None:
+        """
+        Get the style for the current object's numbered list button.
+        """
+
+        return None
+
     @abstractmethod
     def get_item_detail_text(self) -> str:
         """

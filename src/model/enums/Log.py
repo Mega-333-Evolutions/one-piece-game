@@ -18,6 +18,7 @@ from src.model.User import User
 from src.model.Warlord import Warlord
 from src.model.enums.BountyGiftRole import BountyGiftRole
 from src.model.enums.BountyGiftStatus import BountyGiftStatus
+from src.model.enums.ButtonStyle import ButtonStyle
 from src.model.enums.Emoji import Emoji
 from src.model.enums.GameStatus import GameStatus, GAME_STATUS_DESCRIPTIONS
 from src.model.enums.LeaderboardRank import (
@@ -146,6 +147,24 @@ class Log(ListPage):
         :return: The stats
         """
         pass
+
+    def get_item_button_style(self) -> ButtonStyle | None:
+        """
+        Get the semantic button style for the current log item.
+        """
+
+        if self.legend is None or self.legend.status is None:
+            return None
+
+        match GameStatus(self.legend.status):
+            case GameStatus.WON:
+                return ButtonStyle.SUCCESS
+            case GameStatus.LOST:
+                return ButtonStyle.DANGER
+            case GameStatus.DRAW | GameStatus.FORCED_END | GameStatus.IN_PROGRESS:
+                return ButtonStyle.PRIMARY
+
+        return None
 
     @staticmethod
     def get_deeplink_by_type(log_type: LogType, item_id: int) -> str:
@@ -445,6 +464,15 @@ class DocQGameLog(Log):
             self.get_deeplink(max_lost_game.id),
         )
 
+    def get_item_button_style(self) -> ButtonStyle | None:
+        match GameStatus(self.legend.status):
+            case GameStatus.WON:
+                return ButtonStyle.PRIMARY
+            case GameStatus.LOST:
+                return ButtonStyle.DANGER
+
+        return None
+
     def get_emoji_legend_list(self) -> list[EmojiLegend]:
         """
         Get the emoji legend list
@@ -457,11 +485,13 @@ class DocQGameLog(Log):
                 Emoji.LOG_POSITIVE,
                 phrases.GAME_STATUS_WON,
                 DocQGame.status == GameStatus.WON,
+                status=GameStatus.WON,
             ),
             EmojiLegend(
                 Emoji.LOG_NEGATIVE,
                 phrases.GAME_STATUS_LOST,
                 DocQGame.status == GameStatus.LOST,
+                status=GameStatus.LOST,
             ),
         ]
 
@@ -741,6 +771,12 @@ class BountyGiftLog(Log):
             most_received_user.get_markdown_mention(),
             get_belly_formatted(most_received_amount),
         )
+
+    def get_item_button_style(self) -> ButtonStyle | None:
+        if self.user_is_sender:
+            return ButtonStyle.DANGER
+
+        return ButtonStyle.SUCCESS
 
     def get_emoji_legend_list(self) -> list[EmojiLegend]:
         """

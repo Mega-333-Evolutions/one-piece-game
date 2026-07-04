@@ -207,6 +207,7 @@ def get_items_text_keyboard(
                 screen=item_detail_screen,
                 info=button_info,
                 inbound_info=inbound_keyboard.info if inbound_keyboard else None,
+                style=list_page.get_item_button_style(),
             )
             keyboard_line.append(button)
 
