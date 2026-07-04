@@ -467,7 +467,7 @@ class DocQGameLog(Log):
     def get_item_button_style(self) -> ButtonStyle | None:
         match GameStatus(self.legend.status):
             case GameStatus.WON:
-                return ButtonStyle.PRIMARY
+                return ButtonStyle.SUCCESS
             case GameStatus.LOST:
                 return ButtonStyle.DANGER
 
