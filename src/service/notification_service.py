@@ -2,7 +2,7 @@ import logging
 import traceback
 
 from telegram import Update, Message
-from telegram.error import Forbidden, BadRequest
+from telegram.error import Forbidden, BadRequest, TimedOut
 from telegram.ext import ContextTypes
 
 import resources.Environment as Env
@@ -147,6 +147,8 @@ async def send_notification_execute(
         )
     except Forbidden:  # User has blocked the bot or hasn't started it
         pass
+    except TimedOut:  # Transient network timeout - notification will be missed but bot stays alive
+        logging.warning(f"Timed out sending notification to user {user.id}")
     except BadRequest as e: # Trying to send a DM to another bot
         if "bot_to_bot" in str(e).lower():
             pass
