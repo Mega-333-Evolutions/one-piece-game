@@ -6,7 +6,7 @@ from typing import Tuple, Callable
 
 from peewee import DoesNotExist
 from telegram import Update
-from telegram.error import RetryAfter, BadRequest
+from telegram.error import RetryAfter, BadRequest, TimedOut, TelegramError
 from telegram.ext import ContextTypes
 
 import constants as c
@@ -1428,7 +1428,7 @@ async def edit_other_player_message(
                 edit_only_caption_and_keyboard=True,
                 should_log_ignored_exception=True,
             )
-        except (RetryAfter, BadRequest) as e:
+        except TelegramError as e:
             logging.warning(
                 f"Failed to edit other player's message for game {game.id} "
                 f"(message_id {other_player_message_id}): {e}"
