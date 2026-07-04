@@ -844,9 +844,15 @@ async def delete_prediction_option_user(
     :param prediction_option_user: The prediction option user
     :return: None
     """
-    # Return wager
+    prediction: Prediction = prediction_option_user.prediction_option.prediction
+
+    # Return wager - only affect pending bounty if result hasn't been set yet.
+    # If result is already set, set_results already cleared the pending bounty for this bet,
+    # so we must not deduct it again (would go negative and get clamped to 0).
     await add_or_remove_bounty(
-        user, prediction_option_user.wager, should_affect_pending_bounty=True
+        user,
+        prediction_option_user.wager,
+        should_affect_pending_bounty=not prediction.is_result_set(),
     )
 
     # Delete prediction option user
