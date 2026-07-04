@@ -121,7 +121,6 @@ async def manage(
                 phrases.KEYBOARD_OPTION_CANCEL,
                 info=button_delete_info,
                 screen=Screen.GRP_GAME_OPPONENT_CONFIRMATION,
-                style="primary",
             )
         ]
     )

@@ -29,6 +29,8 @@ def get_semantic_button_style(text: str) -> ButtonStyle | None:
         "confirm",
         "send request",
         "play",
+        "only won",
+        "open",
     }:
         return ButtonStyle.SUCCESS
 
@@ -39,6 +41,8 @@ def get_semantic_button_style(text: str) -> ButtonStyle | None:
         "delete",
         "remove",
         "disband",
+        "only lost",
+        "close",
     }:
         return ButtonStyle.DANGER
 

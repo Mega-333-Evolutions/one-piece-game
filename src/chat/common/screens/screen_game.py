@@ -11,6 +11,7 @@ from src.model.Game import Game
 from src.model.GroupChat import GroupChat
 from src.model.User import User
 from src.model.enums.Command import Command
+from src.model.enums.ButtonStyle import ButtonStyle
 from src.model.enums.GameStatus import GameStatus
 from src.model.enums.MessageSource import MessageSource
 from src.model.enums.SavedMediaName import SavedMediaName
@@ -207,7 +208,10 @@ async def display_games(game: Game, update: Update, context: ContextTypes.DEFAUL
         GameReservedKeys.GAME_TYPE: GameType.GUESS_OR_LIFE,
     }
     btn_gol: Keyboard = Keyboard(
-        GameType.GUESS_OR_LIFE.get_name(), info=button_info, screen=get_next_screen(update)
+        GameType.GUESS_OR_LIFE.get_name(),
+        info=button_info,
+        screen=get_next_screen(update),
+        style=ButtonStyle.DANGER,
     )
     inline_keyboard.append([btn_gol])
 
@@ -217,7 +221,10 @@ async def display_games(game: Game, update: Update, context: ContextTypes.DEFAUL
         GameReservedKeys.GAME_TYPE: GameType.ROCK_PAPER_SCISSORS,
     }
     btn_rps: Keyboard = Keyboard(
-        GameType.ROCK_PAPER_SCISSORS.get_name(), info=button_info, screen=get_next_screen(update)
+        GameType.ROCK_PAPER_SCISSORS.get_name(),
+        info=button_info,
+        screen=get_next_screen(update),
+        style=ButtonStyle.PRIMARY,
     )
     inline_keyboard.append([btn_rps])
 
@@ -227,7 +234,10 @@ async def display_games(game: Game, update: Update, context: ContextTypes.DEFAUL
         GameReservedKeys.GAME_TYPE: GameType.PUNK_RECORDS,
     }
     btn_pr: Keyboard = Keyboard(
-        GameType.PUNK_RECORDS.get_name(), info=button_info, screen=get_next_screen(update)
+        GameType.PUNK_RECORDS.get_name(),
+        info=button_info,
+        screen=get_next_screen(update),
+        style=ButtonStyle.SUCCESS,
     )
     inline_keyboard.append([btn_pr])
 
@@ -237,7 +247,10 @@ async def display_games(game: Game, update: Update, context: ContextTypes.DEFAUL
         GameReservedKeys.GAME_TYPE: GameType.RUSSIAN_ROULETTE,
     }
     btn_rr: Keyboard = Keyboard(
-        GameType.RUSSIAN_ROULETTE.get_name(), info=button_info, screen=get_next_screen(update)
+        GameType.RUSSIAN_ROULETTE.get_name(),
+        info=button_info,
+        screen=get_next_screen(update),
+        style=ButtonStyle.DANGER,
     )
     inline_keyboard.append([btn_rr])
 
@@ -247,7 +260,10 @@ async def display_games(game: Game, update: Update, context: ContextTypes.DEFAUL
         GameReservedKeys.GAME_TYPE: GameType.SHAMBLES,
     }
     btn_shambles: Keyboard = Keyboard(
-        GameType.SHAMBLES.get_name(), info=button_info, screen=get_next_screen(update)
+        GameType.SHAMBLES.get_name(),
+        info=button_info,
+        screen=get_next_screen(update),
+        style=ButtonStyle.PRIMARY,
     )
     inline_keyboard.append([btn_shambles])
 
@@ -257,7 +273,10 @@ async def display_games(game: Game, update: Update, context: ContextTypes.DEFAUL
         GameReservedKeys.GAME_TYPE: GameType.WHOS_WHO,
     }
     btn_ww: Keyboard = Keyboard(
-        GameType.WHOS_WHO.get_name(), info=button_info, screen=get_next_screen(update)
+        GameType.WHOS_WHO.get_name(),
+        info=button_info,
+        screen=get_next_screen(update),
+        style=ButtonStyle.SUCCESS,
     )
     inline_keyboard.append([btn_ww])
 
