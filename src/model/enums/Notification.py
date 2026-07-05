@@ -174,17 +174,57 @@ class Notification:
 
         self.category = category
         self.type = notification_type
-        self.text = text
-        self.description = description
-        self.button_text = button_text
+        self._text_key = text
+        self._description_key = description
+        self._button_text_key = button_text
         self.disable_web_page_preview = disable_web_page_preview
         self.disable_notification = disable_notification
         self.item_screen = item_screen
         self.item_info = item_info
-        self.go_to_item_button_text = go_to_item_button_text
+        self._go_to_item_button_text_key = go_to_item_button_text
         self.item_previous_screens = item_previous_screens if item_previous_screens else []
         self.item_button_is_deeplink = item_button_is_deeplink
         self.keyboard = keyboard if keyboard else []
+
+    @staticmethod
+    def _resolve(value: str) -> str:
+        """
+        Resolves a phrases.py constant name to its value in the currently active language.
+        If the value isn't a known constant name (e.g. it's already resolved text, or an
+        empty string), it's returned unchanged.
+        """
+
+        if isinstance(value, str) and hasattr(phrases, value):
+            return getattr(phrases, value)
+
+        return value
+
+    @property
+    def text(self) -> str:
+        """Base text that will be sent, resolved in the currently active language"""
+        return self._resolve(self._text_key)
+
+    @text.setter
+    def text(self, value: str) -> None:
+        self._text_key = value
+
+    @property
+    def description(self) -> str:
+        """Description of the notification, resolved in the currently active language"""
+        return self._resolve(self._description_key)
+
+    @property
+    def button_text(self) -> str:
+        """Text for the button to change the notification settings"""
+        return self._resolve(self._button_text_key)
+
+    @property
+    def go_to_item_button_text(self) -> str | None:
+        """Text for the button to go to the item, resolved in the currently active language"""
+        if self._go_to_item_button_text_key is None:
+            return None
+
+        return self._resolve(self._go_to_item_button_text_key)
 
     def build(self):
         """Builds the notification."""
@@ -225,9 +265,9 @@ class CrewLeaveNotification(Notification):
         super().__init__(
             NotificationCategory.CREW,
             NotificationType.CREW_LEAVE,
-            phrases.CREW_LEAVE_NOTIFICATION,
-            phrases.CREW_LEAVE_NOTIFICATION_DESCRIPTION,
-            phrases.CREW_LEAVE_NOTIFICATION_KEY,
+            "CREW_LEAVE_NOTIFICATION",
+            "CREW_LEAVE_NOTIFICATION_DESCRIPTION",
+            "CREW_LEAVE_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -250,9 +290,9 @@ class LocationUpdateNotification(Notification):
         super().__init__(
             NotificationCategory.LOCATION,
             NotificationType.LOCATION_UPDATE,
-            phrases.LOCATION_UPDATE_NOTIFICATION,
-            phrases.LOCATION_UPDATE_NOTIFICATION_DESCRIPTION,
-            phrases.LOCATION_UPDATE_NOTIFICATION_KEY,
+            "LOCATION_UPDATE_NOTIFICATION",
+            "LOCATION_UPDATE_NOTIFICATION_DESCRIPTION",
+            "LOCATION_UPDATE_NOTIFICATION_KEY",
             disable_web_page_preview=False,
         )
 
@@ -297,9 +337,9 @@ class CrewDisbandNotification(Notification):
         super().__init__(
             NotificationCategory.CREW,
             NotificationType.CREW_DISBAND,
-            phrases.CREW_DISBAND_NOTIFICATION,
-            phrases.CREW_DISBAND_NOTIFICATION_DESCRIPTION,
-            phrases.CREW_DISBAND_NOTIFICATION_KEY,
+            "CREW_DISBAND_NOTIFICATION",
+            "CREW_DISBAND_NOTIFICATION_DESCRIPTION",
+            "CREW_DISBAND_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -317,9 +357,9 @@ class CrewDisbandWarningNotification(Notification):
         super().__init__(
             NotificationCategory.CREW,
             NotificationType.CREW_DISBAND_WARNING,
-            phrases.CREW_DISBAND_WARNING_NOTIFICATION,
-            phrases.CREW_DISBAND_WARNING_NOTIFICATION_DESCRIPTION,
-            phrases.CREW_DISBAND_WARNING_NOTIFICATION_KEY,
+            "CREW_DISBAND_WARNING_NOTIFICATION",
+            "CREW_DISBAND_WARNING_NOTIFICATION_DESCRIPTION",
+            "CREW_DISBAND_WARNING_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -344,9 +384,9 @@ class GameTurnNotification(Notification):
         super().__init__(
             NotificationCategory.GAME,
             NotificationType.GAME_TURN,
-            phrases.GAME_TURN_NOTIFICATION,
-            phrases.GAME_TURN_NOTIFICATION_DESCRIPTION,
-            phrases.GAME_TURN_NOTIFICATION_KEY,
+            "GAME_TURN_NOTIFICATION",
+            "GAME_TURN_NOTIFICATION_DESCRIPTION",
+            "GAME_TURN_NOTIFICATION_KEY",
             disable_notification=False,
         )
 
@@ -375,9 +415,9 @@ class CrewMemberRemoveNotification(Notification):
         super().__init__(
             NotificationCategory.CREW,
             NotificationType.CREW_MEMBER_REMOVE,
-            phrases.CREW_MEMBER_REMOVE_NOTIFICATION,
-            phrases.CREW_MEMBER_REMOVE_NOTIFICATION_DESCRIPTION,
-            phrases.CREW_MEMBER_REMOVE_NOTIFICATION_KEY,
+            "CREW_MEMBER_REMOVE_NOTIFICATION",
+            "CREW_MEMBER_REMOVE_NOTIFICATION_DESCRIPTION",
+            "CREW_MEMBER_REMOVE_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -421,9 +461,9 @@ class ImpelDownNotificationRestrictionPlaced(Notification):
         super().__init__(
             NotificationCategory.IMPEL_DOWN,
             NotificationType.IMPEL_DOWN_RESTRICTION_PLACED,
-            phrases.IMPEL_DOWN_RESTRICTION_PLACED_NOTIFICATION,
-            phrases.IMPEL_DOWN_RESTRICTION_PLACED_NOTIFICATION_DESCRIPTION,
-            phrases.IMPEL_DOWN_RESTRICTION_PLACED_NOTIFICATION_KEY,
+            "IMPEL_DOWN_RESTRICTION_PLACED_NOTIFICATION",
+            "IMPEL_DOWN_RESTRICTION_PLACED_NOTIFICATION_DESCRIPTION",
+            "IMPEL_DOWN_RESTRICTION_PLACED_NOTIFICATION_KEY",
             keyboard=keyboard,
         )
 
@@ -467,9 +507,9 @@ class ImpelDownNotificationRestrictionRemoved(Notification):
         super().__init__(
             NotificationCategory.IMPEL_DOWN,
             NotificationType.IMPEL_DOWN_RESTRICTION_REMOVED,
-            phrases.IMPEL_DOWN_RESTRICTION_REMOVED_NOTIFICATION,
-            phrases.IMPEL_DOWN_RESTRICTION_REMOVED_NOTIFICATION_DESCRIPTION,
-            phrases.IMPEL_DOWN_RESTRICTION_REMOVED_NOTIFICATION_KEY,
+            "IMPEL_DOWN_RESTRICTION_REMOVED_NOTIFICATION",
+            "IMPEL_DOWN_RESTRICTION_REMOVED_NOTIFICATION_DESCRIPTION",
+            "IMPEL_DOWN_RESTRICTION_REMOVED_NOTIFICATION_KEY",
         )
 
 
@@ -503,9 +543,9 @@ class PredictionResultNotification(Notification):
         super().__init__(
             NotificationCategory.PREDICTION,
             NotificationType.PREDICTION_RESULT,
-            phrases.PREDICTION_RESULT_NOTIFICATION,
-            phrases.PREDICTION_RESULT_NOTIFICATION_DESCRIPTION,
-            phrases.PREDICTION_RESULT_NOTIFICATION_KEY,
+            "PREDICTION_RESULT_NOTIFICATION",
+            "PREDICTION_RESULT_NOTIFICATION_DESCRIPTION",
+            "PREDICTION_RESULT_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -613,9 +653,9 @@ class PredictionBetInvalidNotification(Notification):
         super().__init__(
             NotificationCategory.PREDICTION,
             NotificationType.PREDICTION_BET_INVALID,
-            phrases.PREDICTION_BET_INVALID_NOTIFICATION,
-            phrases.PREDICTION_BET_INVALID_NOTIFICATION_DESCRIPTION,
-            phrases.PREDICTION_BET_INVALID_NOTIFICATION_KEY,
+            "PREDICTION_BET_INVALID_NOTIFICATION",
+            "PREDICTION_BET_INVALID_NOTIFICATION_DESCRIPTION",
+            "PREDICTION_BET_INVALID_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -657,9 +697,9 @@ class DeletedMessageArrestNotification(Notification):
         super().__init__(
             NotificationCategory.DELETED_MESSAGE,
             NotificationType.DELETED_MESSAGE_ARREST,
-            phrases.DELETED_MESSAGE_ARREST_NOTIFICATION,
-            phrases.DELETED_MESSAGE_ARREST_NOTIFICATION_DESCRIPTION,
-            phrases.DELETED_MESSAGE_ARREST_NOTIFICATION_KEY,
+            "DELETED_MESSAGE_ARREST_NOTIFICATION",
+            "DELETED_MESSAGE_ARREST_NOTIFICATION_DESCRIPTION",
+            "DELETED_MESSAGE_ARREST_NOTIFICATION_KEY",
             disable_notification=False,
         )
 
@@ -673,9 +713,9 @@ class DeletedMessageMuteNotification(Notification):
         super().__init__(
             NotificationCategory.DELETED_MESSAGE,
             NotificationType.DELETED_MESSAGE_MUTE,
-            phrases.DELETED_MESSAGE_MUTE_NOTIFICATION,
-            phrases.DELETED_MESSAGE_MUTE_NOTIFICATION_DESCRIPTION,
-            phrases.DELETED_MESSAGE_MUTE_NOTIFICATION_KEY,
+            "DELETED_MESSAGE_MUTE_NOTIFICATION",
+            "DELETED_MESSAGE_MUTE_NOTIFICATION_DESCRIPTION",
+            "DELETED_MESSAGE_MUTE_NOTIFICATION_KEY",
             disable_notification=False,
         )
 
@@ -699,9 +739,9 @@ class DeletedMessageLocationNotification(Notification):
         super().__init__(
             NotificationCategory.DELETED_MESSAGE,
             NotificationType.DELETED_MESSAGE_LOCATION,
-            phrases.DELETED_MESSAGE_LOCATION_NOTIFICATION,
-            phrases.DELETED_MESSAGE_LOCATION_NOTIFICATION_DESCRIPTION,
-            phrases.DELETED_MESSAGE_LOCATION_NOTIFICATION_KEY,
+            "DELETED_MESSAGE_LOCATION_NOTIFICATION",
+            "DELETED_MESSAGE_LOCATION_NOTIFICATION_DESCRIPTION",
+            "DELETED_MESSAGE_LOCATION_NOTIFICATION_KEY",
             disable_notification=False,
         )
 
@@ -731,9 +771,9 @@ class BountyGiftReceivedNotification(Notification):
         super().__init__(
             NotificationCategory.BOUNTY_GIFT,
             NotificationType.BOUNTY_GIFT_RECEIVED,
-            phrases.BOUNTY_GIFT_RECEIVED_NOTIFICATION,
-            phrases.BOUNTY_GIFT_RECEIVED_NOTIFICATION_DESCRIPTION,
-            phrases.BOUNTY_GIFT_RECEIVED_NOTIFICATION_KEY,
+            "BOUNTY_GIFT_RECEIVED_NOTIFICATION",
+            "BOUNTY_GIFT_RECEIVED_NOTIFICATION_DESCRIPTION",
+            "BOUNTY_GIFT_RECEIVED_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -762,12 +802,12 @@ class DevilFruitAwardedNotification(Notification):
         super().__init__(
             NotificationCategory.DEVIL_FRUIT,
             NotificationType.DEVIL_FRUIT_AWARDED,
-            phrases.DEVIL_FRUIT_AWARDED_NOTIFICATION,
-            phrases.DEVIL_FRUIT_AWARDED_NOTIFICATION_DESCRIPTION,
-            phrases.DEVIL_FRUIT_AWARDED_NOTIFICATION_KEY,
+            "DEVIL_FRUIT_AWARDED_NOTIFICATION",
+            "DEVIL_FRUIT_AWARDED_NOTIFICATION_DESCRIPTION",
+            "DEVIL_FRUIT_AWARDED_NOTIFICATION_KEY",
             item_screen=Screen.PVT_DEVIL_FRUIT_DETAIL,
             item_info={ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY: item_id},
-            go_to_item_button_text=phrases.KEY_MANAGE_DEVIL_FRUIT,
+            go_to_item_button_text="KEY_MANAGE_DEVIL_FRUIT",
         )
 
     def build(self) -> str:
@@ -792,9 +832,9 @@ class DevilFruitExpiredNotification(Notification):
         super().__init__(
             NotificationCategory.DEVIL_FRUIT,
             NotificationType.DEVIL_FRUIT_EXPIRED,
-            phrases.DEVIL_FRUIT_EXPIRED_NOTIFICATION,
-            phrases.DEVIL_FRUIT_EXPIRED_NOTIFICATION_DESCRIPTION,
-            phrases.DEVIL_FRUIT_EXPIRED_NOTIFICATION_KEY,
+            "DEVIL_FRUIT_EXPIRED_NOTIFICATION",
+            "DEVIL_FRUIT_EXPIRED_NOTIFICATION_DESCRIPTION",
+            "DEVIL_FRUIT_EXPIRED_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -816,9 +856,9 @@ class DevilFruitRevokeNotification(Notification):
         super().__init__(
             NotificationCategory.DEVIL_FRUIT,
             NotificationType.DEVIL_FRUIT_REVOKE,
-            phrases.DEVIL_FRUIT_REVOKE_NOTIFICATION,
-            phrases.DEVIL_FRUIT_REVOKE_NOTIFICATION_DESCRIPTION,
-            phrases.DEVIL_FRUIT_REVOKE_NOTIFICATION_KEY,
+            "DEVIL_FRUIT_REVOKE_NOTIFICATION",
+            "DEVIL_FRUIT_REVOKE_NOTIFICATION_DESCRIPTION",
+            "DEVIL_FRUIT_REVOKE_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -842,9 +882,9 @@ class DevilFruitRevokeWarningNotification(Notification):
         super().__init__(
             NotificationCategory.DEVIL_FRUIT,
             NotificationType.DEVIL_FRUIT_REVOKE_WARNING,
-            phrases.DEVIL_FRUIT_REVOKE_WARNING_NOTIFICATION,
-            phrases.DEVIL_FRUIT_REVOKE_WARNING_NOTIFICATION_DESCRIPTION,
-            phrases.DEVIL_FRUIT_REVOKE_WARNING_NOTIFICATION_KEY,
+            "DEVIL_FRUIT_REVOKE_WARNING_NOTIFICATION",
+            "DEVIL_FRUIT_REVOKE_WARNING_NOTIFICATION_DESCRIPTION",
+            "DEVIL_FRUIT_REVOKE_WARNING_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -871,13 +911,13 @@ class BountyLoanPaymentNotification(Notification):
         super().__init__(
             NotificationCategory.BOUNTY_LOAN,
             NotificationType.BOUNTY_LOAN_PAYMENT,
-            phrases.BOUNTY_LOAN_PAYMENT_NOTIFICATION,
-            phrases.BOUNTY_LOAN_PAYMENT_NOTIFICATION_DESCRIPTION,
-            phrases.BOUNTY_LOAN_PAYMENT_NOTIFICATION_KEY,
+            "BOUNTY_LOAN_PAYMENT_NOTIFICATION",
+            "BOUNTY_LOAN_PAYMENT_NOTIFICATION_DESCRIPTION",
+            "BOUNTY_LOAN_PAYMENT_NOTIFICATION_KEY",
             item_screen=Screen.PVT_BOUNTY_LOAN_DETAIL,
             item_info={ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY: item_id},
             go_to_item_button_text=(
-                phrases.BOUNTY_LOAN_NOTIFICATION_GO_TO_ITEM_BUTTON_TEXT.format()
+                "BOUNTY_LOAN_NOTIFICATION_GO_TO_ITEM_BUTTON_TEXT"
             ),
         )
 
@@ -904,13 +944,13 @@ class BountyLoanForgivenNotification(Notification):
         super().__init__(
             NotificationCategory.BOUNTY_LOAN,
             NotificationType.BOUNTY_LOAN_FORGIVEN,
-            phrases.BOUNTY_LOAN_FORGIVEN_NOTIFICATION,
-            phrases.BOUNTY_LOAN_FORGIVEN_NOTIFICATION_DESCRIPTION,
-            phrases.BOUNTY_LOAN_FORGIVEN_NOTIFICATION_KEY,
+            "BOUNTY_LOAN_FORGIVEN_NOTIFICATION",
+            "BOUNTY_LOAN_FORGIVEN_NOTIFICATION_DESCRIPTION",
+            "BOUNTY_LOAN_FORGIVEN_NOTIFICATION_KEY",
             item_screen=Screen.PVT_BOUNTY_LOAN_DETAIL,
             item_info={ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY: item_id},
             go_to_item_button_text=(
-                phrases.BOUNTY_LOAN_NOTIFICATION_GO_TO_ITEM_BUTTON_TEXT.format()
+                "BOUNTY_LOAN_NOTIFICATION_GO_TO_ITEM_BUTTON_TEXT"
             ),
         )
 
@@ -939,13 +979,13 @@ class BountyLoanExpiredNotification(Notification):
         super().__init__(
             NotificationCategory.BOUNTY_LOAN,
             NotificationType.BOUNTY_LOAN_EXPIRED,
-            phrases.BOUNTY_LOAN_EXPIRED_NOTIFICATION,
-            phrases.BOUNTY_LOAN_EXPIRED_NOTIFICATION_DESCRIPTION,
-            phrases.BOUNTY_LOAN_EXPIRED_NOTIFICATION_KEY,
+            "BOUNTY_LOAN_EXPIRED_NOTIFICATION",
+            "BOUNTY_LOAN_EXPIRED_NOTIFICATION_DESCRIPTION",
+            "BOUNTY_LOAN_EXPIRED_NOTIFICATION_KEY",
             item_screen=Screen.PVT_BOUNTY_LOAN_DETAIL,
             item_info={ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY: item_id},
             go_to_item_button_text=(
-                phrases.BOUNTY_LOAN_NOTIFICATION_GO_TO_ITEM_BUTTON_TEXT.format()
+                "BOUNTY_LOAN_NOTIFICATION_GO_TO_ITEM_BUTTON_TEXT"
             ),
         )
 
@@ -977,9 +1017,9 @@ class WarlordAppointmentNotification(Notification):
         super().__init__(
             NotificationCategory.WARLORD,
             NotificationType.WARLORD_APPOINTMENT,
-            phrases.WARLORD_APPOINTMENT_NOTIFICATION,
-            phrases.WARLORD_APPOINTMENT_NOTIFICATION_DESCRIPTION,
-            phrases.WARLORD_APPOINTMENT_NOTIFICATION_KEY,
+            "WARLORD_APPOINTMENT_NOTIFICATION",
+            "WARLORD_APPOINTMENT_NOTIFICATION_DESCRIPTION",
+            "WARLORD_APPOINTMENT_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -1005,9 +1045,9 @@ class WarlordRevocationNotification(Notification):
         super().__init__(
             NotificationCategory.WARLORD,
             NotificationType.WARLORD_REVOCATION,
-            phrases.WARLORD_REVOCATION_NOTIFICATION,
-            phrases.WARLORD_REVOCATION_NOTIFICATION_DESCRIPTION,
-            phrases.WARLORD_REVOCATION_NOTIFICATION_KEY,
+            "WARLORD_REVOCATION_NOTIFICATION",
+            "WARLORD_REVOCATION_NOTIFICATION_DESCRIPTION",
+            "WARLORD_REVOCATION_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -1040,9 +1080,9 @@ class LegendaryPirateAppointmentNotification(Notification):
         super().__init__(
             NotificationCategory.LEGENDARY_PIRATE,
             NotificationType.LEGENDARY_PIRATE_APPOINTMENT,
-            phrases.LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION,
-            phrases.LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_DESCRIPTION,
-            phrases.LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_KEY,
+            "LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION",
+            "LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_DESCRIPTION",
+            "LEGENDARY_PIRATE_APPOINTMENT_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -1083,9 +1123,9 @@ class LegendaryPirateRevocationNotification(Notification):
         super().__init__(
             NotificationCategory.LEGENDARY_PIRATE,
             NotificationType.LEGENDARY_PIRATE_REVOCATION,
-            phrases.LEGENDARY_PIRATE_REVOCATION_NOTIFICATION,
-            phrases.LEGENDARY_PIRATE_REVOCATION_NOTIFICATION_DESCRIPTION,
-            phrases.LEGENDARY_PIRATE_REVOCATION_NOTIFICATION_KEY,
+            "LEGENDARY_PIRATE_REVOCATION_NOTIFICATION",
+            "LEGENDARY_PIRATE_REVOCATION_NOTIFICATION_DESCRIPTION",
+            "LEGENDARY_PIRATE_REVOCATION_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -1107,9 +1147,9 @@ class CrewAbilityActivatedNotification(Notification):
         super().__init__(
             NotificationCategory.CREW,
             NotificationType.CREW_ABILITY_ACTIVATED,
-            phrases.CREW_ABILITY_ACTIVATED_NOTIFICATION,
-            phrases.CREW_ABILITY_ACTIVATED_NOTIFICATION_DESCRIPTION,
-            phrases.CREW_ABILITY_ACTIVATED_NOTIFICATION_KEY,
+            "CREW_ABILITY_ACTIVATED_NOTIFICATION",
+            "CREW_ABILITY_ACTIVATED_NOTIFICATION_DESCRIPTION",
+            "CREW_ABILITY_ACTIVATED_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -1131,9 +1171,9 @@ class CrewFirstMatePromotionNotification(Notification):
         super().__init__(
             NotificationCategory.CREW,
             NotificationType.CREW_FIRST_MATE_PROMOTION,
-            phrases.CREW_FIRST_MATE_PROMOTION_NOTIFICATION,
-            phrases.CREW_FIRST_MATE_PROMOTION_NOTIFICATION_DESCRIPTION,
-            phrases.CREW_FIRST_MATE_PROMOTION_NOTIFICATION_KEY,
+            "CREW_FIRST_MATE_PROMOTION_NOTIFICATION",
+            "CREW_FIRST_MATE_PROMOTION_NOTIFICATION_DESCRIPTION",
+            "CREW_FIRST_MATE_PROMOTION_NOTIFICATION_KEY",
         )
 
 
@@ -1148,9 +1188,9 @@ class CrewFirstMateDemotionNotification(Notification):
         super().__init__(
             NotificationCategory.CREW,
             NotificationType.CREW_FIRST_MATE_DEMOTION,
-            phrases.CREW_FIRST_MATE_DEMOTION_NOTIFICATION,
-            phrases.CREW_FIRST_MATE_DEMOTION_NOTIFICATION_DESCRIPTION,
-            phrases.CREW_FIRST_MATE_DEMOTION_NOTIFICATION_KEY,
+            "CREW_FIRST_MATE_DEMOTION_NOTIFICATION",
+            "CREW_FIRST_MATE_DEMOTION_NOTIFICATION_DESCRIPTION",
+            "CREW_FIRST_MATE_DEMOTION_NOTIFICATION_KEY",
         )
 
 
@@ -1166,11 +1206,11 @@ class CrewJoinRequestAcceptedNotification(Notification):
         super().__init__(
             NotificationCategory.CREW,
             NotificationType.CREW_JOIN_REQUEST_ACCEPTED,
-            phrases.CREW_JOIN_REQUEST_ACCEPTED_NOTIFICATION,
-            phrases.CREW_JOIN_REQUEST_ACCEPTED_NOTIFICATION_DESCRIPTION,
-            phrases.CREW_JOIN_REQUEST_ACCEPTED_NOTIFICATION_KEY,
+            "CREW_JOIN_REQUEST_ACCEPTED_NOTIFICATION",
+            "CREW_JOIN_REQUEST_ACCEPTED_NOTIFICATION_DESCRIPTION",
+            "CREW_JOIN_REQUEST_ACCEPTED_NOTIFICATION_KEY",
             item_screen=Screen.PVT_CREW,
-            go_to_item_button_text=phrases.KEY_VIEW,
+            go_to_item_button_text="KEY_VIEW",
         )
 
     def build(self) -> str:
@@ -1189,9 +1229,9 @@ class CrewJoinRequestRejectedNotification(Notification):
         super().__init__(
             NotificationCategory.CREW,
             NotificationType.CREW_JOIN_REQUEST_REJECTED,
-            phrases.CREW_JOIN_REQUEST_REJECTED_NOTIFICATION,
-            phrases.CREW_JOIN_REQUEST_REJECTED_NOTIFICATION_DESCRIPTION,
-            phrases.CREW_JOIN_REQUEST_REJECTED_NOTIFICATION_KEY,
+            "CREW_JOIN_REQUEST_REJECTED_NOTIFICATION",
+            "CREW_JOIN_REQUEST_REJECTED_NOTIFICATION_DESCRIPTION",
+            "CREW_JOIN_REQUEST_REJECTED_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -1210,11 +1250,11 @@ class CrewConscriptionStartNotification(Notification):
         super().__init__(
             NotificationCategory.CREW,
             NotificationType.CREW_CONSCRIPTION_START,
-            phrases.CREW_CONSCRIPTION_START_NOTIFICATION,
-            phrases.CREW_CONSCRIPTION_START_NOTIFICATION_DESCRIPTION,
-            phrases.CREW_CONSCRIPTION_START_NOTIFICATION_KEY,
+            "CREW_CONSCRIPTION_START_NOTIFICATION",
+            "CREW_CONSCRIPTION_START_NOTIFICATION_DESCRIPTION",
+            "CREW_CONSCRIPTION_START_NOTIFICATION_KEY",
             item_screen=Screen.PVT_CREW,
-            go_to_item_button_text=phrases.KEY_VIEW,
+            go_to_item_button_text="KEY_VIEW",
         )
 
     def build(self) -> str:
@@ -1235,9 +1275,9 @@ class CrewConscriptionStartCaptainNotification(Notification):
         super().__init__(
             NotificationCategory.CREW,
             NotificationType.CREW_CONSCRIPTION_START_CAPTAIN,
-            phrases.CREW_CONSCRIPTION_START_CAPTAIN_NOTIFICATION,
-            phrases.CREW_CONSCRIPTION_START_CAPTAIN_NOTIFICATION_DESCRIPTION,
-            phrases.CREW_CONSCRIPTION_START_CAPTAIN_NOTIFICATION_KEY,
+            "CREW_CONSCRIPTION_START_CAPTAIN_NOTIFICATION",
+            "CREW_CONSCRIPTION_START_CAPTAIN_NOTIFICATION_DESCRIPTION",
+            "CREW_CONSCRIPTION_START_CAPTAIN_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -1260,11 +1300,11 @@ class CrewConscriptionEndNotification(Notification):
         super().__init__(
             NotificationCategory.CREW,
             NotificationType.CREW_CONSCRIPTION_END,
-            phrases.CREW_CONSCRIPTION_END_NOTIFICATION,
-            phrases.CREW_CONSCRIPTION_END_NOTIFICATION_DESCRIPTION,
-            phrases.CREW_CONSCRIPTION_END_NOTIFICATION_KEY,
+            "CREW_CONSCRIPTION_END_NOTIFICATION",
+            "CREW_CONSCRIPTION_END_NOTIFICATION_DESCRIPTION",
+            "CREW_CONSCRIPTION_END_NOTIFICATION_KEY",
             item_screen=Screen.PVT_CREW,
-            go_to_item_button_text=phrases.KEY_VIEW,
+            go_to_item_button_text="KEY_VIEW",
         )
 
     def build(self) -> str:
@@ -1285,15 +1325,15 @@ class DavyBackFightRequestAcceptedNotification(Notification):
         super().__init__(
             NotificationCategory.DAVY_BACK_FIGHT,
             NotificationType.DAVY_BACK_FIGHT_REQUEST_ACCEPTED,
-            phrases.DAVY_BACK_FIGHT_REQUEST_ACCEPTED_NOTIFICATION,
-            phrases.DAVY_BACK_FIGHT_REQUEST_ACCEPTED_NOTIFICATION_DESCRIPTION,
-            phrases.DAVY_BACK_FIGHT_REQUEST_ACCEPTED_NOTIFICATION_KEY,
+            "DAVY_BACK_FIGHT_REQUEST_ACCEPTED_NOTIFICATION",
+            "DAVY_BACK_FIGHT_REQUEST_ACCEPTED_NOTIFICATION_DESCRIPTION",
+            "DAVY_BACK_FIGHT_REQUEST_ACCEPTED_NOTIFICATION_KEY",
             item_screen=Screen.PVT_CREW_DAVY_BACK_FIGHT_DETAIL,
             item_info={
                 ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY: item_id,
                 ReservedKeyboardKeys.DIRECT_ITEM: False,
             },
-            go_to_item_button_text=phrases.KEY_MANAGE,
+            go_to_item_button_text="KEY_MANAGE",
             item_previous_screens=[Screen.PVT_CREW],
         )
 
@@ -1313,9 +1353,9 @@ class DavyBackFightRequestRejectedNotification(Notification):
         super().__init__(
             NotificationCategory.DAVY_BACK_FIGHT,
             NotificationType.DAVY_BACK_FIGHT_REQUEST_REJECTED,
-            phrases.CREW_DAVY_BACK_FIGHT_REQUEST_REJECTED_NOTIFICATION,
-            phrases.DAVY_BACK_FIGHT_REQUEST_REJECTED_NOTIFICATION_DESCRIPTION,
-            phrases.DAVY_BACK_FIGHT_REQUEST_REJECTED_NOTIFICATION_KEY,
+            "CREW_DAVY_BACK_FIGHT_REQUEST_REJECTED_NOTIFICATION",
+            "DAVY_BACK_FIGHT_REQUEST_REJECTED_NOTIFICATION_DESCRIPTION",
+            "DAVY_BACK_FIGHT_REQUEST_REJECTED_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -1337,15 +1377,15 @@ class DavyBackFightStartNotification(Notification):
         super().__init__(
             NotificationCategory.DAVY_BACK_FIGHT,
             NotificationType.DAVY_BACK_FIGHT_START,
-            phrases.DAVY_BACK_FIGHT_START_NOTIFICATION,
-            phrases.DAVY_BACK_FIGHT_START_NOTIFICATION_DESCRIPTION,
-            phrases.DAVY_BACK_FIGHT_START_NOTIFICATION_KEY,
+            "DAVY_BACK_FIGHT_START_NOTIFICATION",
+            "DAVY_BACK_FIGHT_START_NOTIFICATION_DESCRIPTION",
+            "DAVY_BACK_FIGHT_START_NOTIFICATION_KEY",
             item_screen=Screen.PVT_CREW_DAVY_BACK_FIGHT_DETAIL,
             item_info={
                 ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY: item_id,
                 ReservedKeyboardKeys.DIRECT_ITEM: False,
             },
-            go_to_item_button_text=phrases.KEY_VIEW,
+            go_to_item_button_text="KEY_VIEW",
             item_previous_screens=[Screen.PVT_CREW],
         )
 
@@ -1372,15 +1412,15 @@ class DavyBackFightEndNotification(Notification):
         super().__init__(
             NotificationCategory.DAVY_BACK_FIGHT,
             NotificationType.DAVY_BACK_FIGHT_END,
-            phrases.DAVY_BACK_FIGHT_END_NOTIFICATION,
-            phrases.DAVY_BACK_FIGHT_END_NOTIFICATION_DESCRIPTION,
-            phrases.DAVY_BACK_FIGHT_END_NOTIFICATION_KEY,
+            "DAVY_BACK_FIGHT_END_NOTIFICATION",
+            "DAVY_BACK_FIGHT_END_NOTIFICATION_DESCRIPTION",
+            "DAVY_BACK_FIGHT_END_NOTIFICATION_KEY",
             item_screen=Screen.PVT_CREW_DAVY_BACK_FIGHT_DETAIL,
             item_info={
                 ReservedKeyboardKeys.DEFAULT_PRIMARY_KEY: item_id,
                 ReservedKeyboardKeys.DIRECT_ITEM: False,
             },
-            go_to_item_button_text=phrases.KEY_VIEW,
+            go_to_item_button_text="KEY_VIEW",
             item_previous_screens=[Screen.PVT_CREW],
         )
 
@@ -1414,9 +1454,9 @@ class ImpelDownBailPostedNotification(Notification):
         super().__init__(
             NotificationCategory.IMPEL_DOWN,
             NotificationType.IMPEL_DOWN_BAIL_POSTED,
-            phrases.IMPEL_DOWN_BAIL_POSTED_NOTIFICATION,
-            phrases.IMPEL_DOWN_BAIL_POSTED_NOTIFICATION_DESCRIPTION,
-            phrases.IMPEL_DOWN_BAIL_POSTED_NOTIFICATION_KEY,
+            "IMPEL_DOWN_BAIL_POSTED_NOTIFICATION",
+            "IMPEL_DOWN_BAIL_POSTED_NOTIFICATION_DESCRIPTION",
+            "IMPEL_DOWN_BAIL_POSTED_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -1444,9 +1484,9 @@ class DevilFruitSoldNotification(Notification):
         super().__init__(
             NotificationCategory.DEVIL_FRUIT,
             NotificationType.DEVIL_FRUIT_SOLD,
-            phrases.DEVIL_FRUIT_SOLD_NOTIFICATION,
-            phrases.DEVIL_FRUIT_SOLD_NOTIFICATION_DESCRIPTION,
-            phrases.DEVIL_FRUIT_SOLD_NOTIFICATION_KEY,
+            "DEVIL_FRUIT_SOLD_NOTIFICATION",
+            "DEVIL_FRUIT_SOLD_NOTIFICATION_DESCRIPTION",
+            "DEVIL_FRUIT_SOLD_NOTIFICATION_KEY",
         )
 
     def build(self) -> str:
@@ -1468,9 +1508,9 @@ class CrewCaptainPromotionNotification(Notification):
         super().__init__(
             NotificationCategory.CREW,
             NotificationType.CREW_CAPTAIN_PROMOTION,
-            phrases.CREW_CAPTAIN_PROMOTION_NOTIFICATION,
-            phrases.CREW_CAPTAIN_PROMOTION_NOTIFICATION_DESCRIPTION,
-            phrases.CREW_CAPTAIN_PROMOTION_NOTIFICATION_KEY,
+            "CREW_CAPTAIN_PROMOTION_NOTIFICATION",
+            "CREW_CAPTAIN_PROMOTION_NOTIFICATION_DESCRIPTION",
+            "CREW_CAPTAIN_PROMOTION_NOTIFICATION_KEY",
         )
 
 
@@ -1489,15 +1529,15 @@ class FightAttackNotification(Notification):
         super().__init__(
             NotificationCategory.FIGHT,
             NotificationType.FIGHT_ATTACK,
-            phrases.FIGHT_ATTACK_NOTIFICATION,
-            phrases.FIGHT_ATTACK_NOTIFICATION_DESCRIPTION,
-            phrases.FIGHT_ATTACK_NOTIFICATION_KEY,
+            "FIGHT_ATTACK_NOTIFICATION",
+            "FIGHT_ATTACK_NOTIFICATION_DESCRIPTION",
+            "FIGHT_ATTACK_NOTIFICATION_KEY",
             item_screen=Screen.PVT_LOGS_TYPE_DETAIL,
             item_info={
                 LogTypeReservedKeys.TYPE: LogType.FIGHT,
                 LogTypeReservedKeys.ITEM_ID: fight.id if fight is not None else None,
             },
-            go_to_item_button_text=phrases.KEY_VIEW_LOG,
+            go_to_item_button_text="KEY_VIEW_LOG",
         )
 
     def build(self) -> str:
@@ -1544,15 +1584,15 @@ class PlunderAttackNotification(Notification):
         super().__init__(
             NotificationCategory.PLUNDER,
             NotificationType.PLUNDER_ATTACK,
-            phrases.PLUNDER_ATTACK_NOTIFICATION,
-            phrases.PLUNDER_ATTACK_NOTIFICATION_DESCRIPTION,
-            phrases.PLUNDER_ATTACK_NOTIFICATION_KEY,
+            "PLUNDER_ATTACK_NOTIFICATION",
+            "PLUNDER_ATTACK_NOTIFICATION_DESCRIPTION",
+            "PLUNDER_ATTACK_NOTIFICATION_KEY",
             item_screen=Screen.PVT_LOGS_TYPE_DETAIL,
             item_info={
                 LogTypeReservedKeys.TYPE: LogType.PLUNDER,
                 LogTypeReservedKeys.ITEM_ID: plunder.id if plunder is not None else None,
             },
-            go_to_item_button_text=phrases.KEY_VIEW_LOG,
+            go_to_item_button_text="KEY_VIEW_LOG",
         )
 
     def build(self) -> str:
@@ -1597,15 +1637,15 @@ class GameOutcomeNotification(Notification):
             NotificationCategory.GAME,
             NotificationType.GAME_OUTCOME,
             "",
-            phrases.GAME_OUTCOME_NOTIFICATION_DESCRIPTION,
-            phrases.GAME_OUTCOME_NOTIFICATION_KEY,
+            "GAME_OUTCOME_NOTIFICATION_DESCRIPTION",
+            "GAME_OUTCOME_NOTIFICATION_KEY",
             disable_notification=False,
             item_screen=Screen.PVT_LOGS_TYPE_DETAIL,
             item_info={
                 LogTypeReservedKeys.TYPE: LogType.GAME,
                 LogTypeReservedKeys.ITEM_ID: game.id if game is not None else None,
             },
-            go_to_item_button_text=phrases.KEY_VIEW_LOG,
+            go_to_item_button_text="KEY_VIEW_LOG",
         )
 
     def build(self) -> str:
