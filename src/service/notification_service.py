@@ -13,6 +13,7 @@ from src.model.enums.Notification import Notification
 from src.model.enums.Screen import Screen
 from src.model.pojo.Keyboard import Keyboard
 from src.service.message_service import full_message_send
+from src.service.language_service import set_current_language
 
 
 async def send_notification(
@@ -69,6 +70,8 @@ async def send_notification_execute(
     from src.chat.private.screens.screen_settings_notifications_type import (
         NotificationTypeReservedKeys,
     )
+
+    set_current_language(user.get_language())
 
     if should_forward_message and update is None:
         raise ValueError("If should_forward_message is not None, update must be not None")

@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from resources import phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
 
 
 class DevilFruitStatus(IntEnum):
@@ -37,12 +37,14 @@ class DevilFruitStatus(IntEnum):
         return DEVIL_FRUIT_STATUS_DESCRIPTION[self]
 
 
-DEVIL_FRUIT_STATUS_DESCRIPTION = {
-    DevilFruitStatus.NEW: phrases.DEVIL_FRUIT_STATUS_DESCRIPTION_NEW,
-    DevilFruitStatus.COMPLETED: phrases.DEVIL_FRUIT_STATUS_DESCRIPTION_COMPLETED,
-    DevilFruitStatus.ENABLED: phrases.DEVIL_FRUIT_STATUS_DESCRIPTION_ENABLED,
-    DevilFruitStatus.SCHEDULED: phrases.DEVIL_FRUIT_STATUS_DESCRIPTION_SCHEDULED,
-    DevilFruitStatus.RELEASED: phrases.DEVIL_FRUIT_STATUS_DESCRIPTION_RELEASED,
-    DevilFruitStatus.COLLECTED: phrases.DEVIL_FRUIT_STATUS_DESCRIPTION_COLLECTED,
-    DevilFruitStatus.EATEN: phrases.DEVIL_FRUIT_STATUS_DESCRIPTION_EATEN,
-}
+DEVIL_FRUIT_STATUS_DESCRIPTION = LazyPhraseDict(
+    {
+        DevilFruitStatus.NEW: "DEVIL_FRUIT_STATUS_DESCRIPTION_NEW",
+        DevilFruitStatus.COMPLETED: "DEVIL_FRUIT_STATUS_DESCRIPTION_COMPLETED",
+        DevilFruitStatus.ENABLED: "DEVIL_FRUIT_STATUS_DESCRIPTION_ENABLED",
+        DevilFruitStatus.SCHEDULED: "DEVIL_FRUIT_STATUS_DESCRIPTION_SCHEDULED",
+        DevilFruitStatus.RELEASED: "DEVIL_FRUIT_STATUS_DESCRIPTION_RELEASED",
+        DevilFruitStatus.COLLECTED: "DEVIL_FRUIT_STATUS_DESCRIPTION_COLLECTED",
+        DevilFruitStatus.EATEN: "DEVIL_FRUIT_STATUS_DESCRIPTION_EATEN",
+    }
+)

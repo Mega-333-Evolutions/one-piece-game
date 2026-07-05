@@ -2,7 +2,8 @@ from abc import abstractmethod
 from datetime import datetime
 from typing import Any
 
-import resources.phrases as phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
+from resources import phrases
 from src.model.BaseModel import BaseModel
 from src.model.BountyGift import BountyGift
 from src.model.Crew import Crew
@@ -55,31 +56,35 @@ from src.utils.math_utils import get_value_from_percentage, get_percentage_from_
 from src.utils.phrase_utils import get_outcome_text
 from src.utils.string_utils import get_belly_formatted
 
-LOG_TYPE_BUTTON_TEXTS = {
-    LogType.FIGHT: phrases.FIGHT_LOG_KEY,
-    LogType.DOC_Q_GAME: phrases.DOC_Q_GAME_LOG_KEY,
-    LogType.GAME: phrases.GAME_LOG_KEY,
-    LogType.BOUNTY_GIFT: phrases.BOUNTY_GIFT_LOG_KEY,
-    LogType.LEGENDARY_PIRATE: phrases.LEGENDARY_PIRATE_LOG_KEY,
-    LogType.NEW_WORLD_PIRATE: phrases.NEW_WORLD_PIRATE_LOG_KEY,
-    LogType.WARLORD: phrases.WARLORD_LOG_KEY,
-    LogType.LEADERBOARD_RANK: phrases.LEADERBOARD_RANK_LOG_KEY,
-    LogType.INCOME_TAX_EVENT: phrases.INCOME_TAX_EVENT_LOG_KEY,
-    LogType.PLUNDER: phrases.PLUNDER_LOG_KEY,
-}
+LOG_TYPE_BUTTON_TEXTS = LazyPhraseDict(
+    {
+        LogType.FIGHT: "FIGHT_LOG_KEY",
+        LogType.DOC_Q_GAME: "DOC_Q_GAME_LOG_KEY",
+        LogType.GAME: "GAME_LOG_KEY",
+        LogType.BOUNTY_GIFT: "BOUNTY_GIFT_LOG_KEY",
+        LogType.LEGENDARY_PIRATE: "LEGENDARY_PIRATE_LOG_KEY",
+        LogType.NEW_WORLD_PIRATE: "NEW_WORLD_PIRATE_LOG_KEY",
+        LogType.WARLORD: "WARLORD_LOG_KEY",
+        LogType.LEADERBOARD_RANK: "LEADERBOARD_RANK_LOG_KEY",
+        LogType.INCOME_TAX_EVENT: "INCOME_TAX_EVENT_LOG_KEY",
+        LogType.PLUNDER: "PLUNDER_LOG_KEY",
+    }
+)
 
-LOG_TYPE_DETAIL_TEXT_FILL_IN = {
-    LogType.FIGHT: phrases.FIGHT_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-    LogType.DOC_Q_GAME: phrases.DOC_Q_GAME_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-    LogType.GAME: phrases.GAME_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-    LogType.BOUNTY_GIFT: phrases.BOUNTY_GIFT_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-    LogType.LEGENDARY_PIRATE: phrases.LEGENDARY_PIRATE_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-    LogType.NEW_WORLD_PIRATE: phrases.NEW_WORLD_PIRATE_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-    LogType.LEADERBOARD_RANK: phrases.LEADERBOARD_RANK_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-    LogType.INCOME_TAX_EVENT: phrases.INCOME_TAX_EVENT_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-    LogType.WARLORD: phrases.WARLORD_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-    LogType.PLUNDER: phrases.PLUNDER_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-}
+LOG_TYPE_DETAIL_TEXT_FILL_IN = LazyPhraseDict(
+    {
+        LogType.FIGHT: "FIGHT_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+        LogType.DOC_Q_GAME: "DOC_Q_GAME_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+        LogType.GAME: "GAME_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+        LogType.BOUNTY_GIFT: "BOUNTY_GIFT_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+        LogType.LEGENDARY_PIRATE: "LEGENDARY_PIRATE_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+        LogType.NEW_WORLD_PIRATE: "NEW_WORLD_PIRATE_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+        LogType.LEADERBOARD_RANK: "LEADERBOARD_RANK_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+        LogType.INCOME_TAX_EVENT: "INCOME_TAX_EVENT_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+        LogType.WARLORD: "WARLORD_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+        LogType.PLUNDER: "PLUNDER_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+    }
+)
 
 
 class Log(ListPage):

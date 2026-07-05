@@ -1,7 +1,7 @@
 import json
 from enum import StrEnum
 
-from resources import phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
 
 
 class IncomeTaxContributionType(StrEnum):
@@ -34,6 +34,8 @@ class IncomeTaxContribution:
         return INCOME_TAX_CONTRIBUTION_TYPE_DESCRIPTIONS[self.contribution_type]
 
 
-INCOME_TAX_CONTRIBUTION_TYPE_DESCRIPTIONS = {
-    IncomeTaxContributionType.CREW_CHEST: phrases.INCOME_TAX_CONTRIBUTION_TYPE_CREW_CHEST
-}
+INCOME_TAX_CONTRIBUTION_TYPE_DESCRIPTIONS = LazyPhraseDict(
+    {
+        IncomeTaxContributionType.CREW_CHEST: "INCOME_TAX_CONTRIBUTION_TYPE_CREW_CHEST"
+    }
+)

@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from resources import phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
 from src.model.enums.Emoji import Emoji
 
 
@@ -90,16 +90,18 @@ class GameStatus(IntEnum):
         return self in (GameStatus.AWAITING_SELECTION, GameStatus.AWAITING_OPPONENT_CONFIRMATION)
 
 
-GAME_STATUS_DESCRIPTIONS = {
-    GameStatus.ND: phrases.GAME_STATUS_ND,
-    GameStatus.IN_PROGRESS: phrases.GAME_STATUS_IN_PROGRESS,
-    GameStatus.WON: phrases.GAME_STATUS_WON,
-    GameStatus.LOST: phrases.GAME_STATUS_LOST,
-    GameStatus.DRAW: phrases.GAME_STATUS_DRAW,
-    GameStatus.AWAITING_SELECTION: phrases.GAME_STATUS_AWAITING_SELECTION,
-    GameStatus.AWAITING_OPPONENT_CONFIRMATION: phrases.GAME_STATUS_AWAITING_OPPONENT_CONFIRMATION,
-    GameStatus.FORCED_END: phrases.GAME_STATUS_FORCED_END,
-    GameStatus.COUNTDOWN_TO_START: phrases.GAME_STATUS_COUNTDOWN_TO_START,
-    GameStatus.WINNING: phrases.GAME_STATUS_WINNING,
-    GameStatus.LOSING: phrases.GAME_STATUS_LOSING,
-}
+GAME_STATUS_DESCRIPTIONS = LazyPhraseDict(
+        {
+        GameStatus.ND: "GAME_STATUS_ND",
+        GameStatus.IN_PROGRESS: "GAME_STATUS_IN_PROGRESS",
+        GameStatus.WON: "GAME_STATUS_WON",
+        GameStatus.LOST: "GAME_STATUS_LOST",
+        GameStatus.DRAW: "GAME_STATUS_DRAW",
+        GameStatus.AWAITING_SELECTION: "GAME_STATUS_AWAITING_SELECTION",
+        GameStatus.AWAITING_OPPONENT_CONFIRMATION: "GAME_STATUS_AWAITING_OPPONENT_CONFIRMATION",
+        GameStatus.FORCED_END: "GAME_STATUS_FORCED_END",
+        GameStatus.COUNTDOWN_TO_START: "GAME_STATUS_COUNTDOWN_TO_START",
+        GameStatus.WINNING: "GAME_STATUS_WINNING",
+        GameStatus.LOSING: "GAME_STATUS_LOSING",
+    }
+)

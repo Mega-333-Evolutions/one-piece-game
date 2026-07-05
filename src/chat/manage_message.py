@@ -11,6 +11,7 @@ from telegram.ext import ContextTypes
 
 import constants as c
 from resources import phrases as phrases, Environment as Env
+from src.service.language_service import set_current_language
 from src.model.Game import Game
 from src.model.GroupChat import GroupChat
 from src.model.User import User
@@ -220,6 +221,7 @@ async def manage_after_db(
             return
 
         user: User = await get_user(tg_user_id, update.effective_user, should_save=False)
+        set_current_language(user.get_language())
 
         # Check if the user is authorized
         if (
@@ -265,6 +267,7 @@ async def manage_after_db(
         group: Group = await add_or_update_group(
             update, (user if update.effective_user is not None else None)
         )
+        set_current_language(group.get_language())
         group_chat: GroupChat = add_or_update_group_chat(update, group)
         await add_text_message_bounty(update, context, user, group_chat, is_callback)
 

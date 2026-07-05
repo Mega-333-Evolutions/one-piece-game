@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-import resources.phrases as phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
 
 
 class CrewRole(IntEnum):
@@ -21,8 +21,10 @@ class CrewRole(IntEnum):
         return CREW_ROLE_NAME_MAP[self]
 
 
-CREW_ROLE_NAME_MAP = {
-    CrewRole.CAPTAIN: phrases.CREW_ROLE_CAPTAIN,
-    CrewRole.FIRST_MATE: phrases.CREW_ROLE_FIRST_MATE,
-    CrewRole.CONSCRIPT: phrases.CREW_ROLE_CONSCRIPT,
-}
+CREW_ROLE_NAME_MAP = LazyPhraseDict(
+    {
+        CrewRole.CAPTAIN: "CREW_ROLE_CAPTAIN",
+        CrewRole.FIRST_MATE: "CREW_ROLE_FIRST_MATE",
+        CrewRole.CONSCRIPT: "CREW_ROLE_CONSCRIPT",
+    }
+)

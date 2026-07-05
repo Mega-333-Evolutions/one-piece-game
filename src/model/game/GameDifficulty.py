@@ -1,7 +1,7 @@
 from enum import IntEnum
 
 import resources.Environment as Env
-import resources.phrases as phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
 
 
 class GameDifficulty(IntEnum):
@@ -33,8 +33,10 @@ class GameDifficulty(IntEnum):
         return GAME_DIFFICULTY_NAME_DICT[self]
 
 
-GAME_DIFFICULTY_NAME_DICT = {
-    GameDifficulty.EASY: phrases.GAME_DIFFICULTY_EASY,
-    GameDifficulty.MEDIUM: phrases.GAME_DIFFICULTY_MEDIUM,
-    GameDifficulty.HARD: phrases.GAME_DIFFICULTY_HARD,
-}
+GAME_DIFFICULTY_NAME_DICT = LazyPhraseDict(
+    {
+        GameDifficulty.EASY: "GAME_DIFFICULTY_EASY",
+        GameDifficulty.MEDIUM: "GAME_DIFFICULTY_MEDIUM",
+        GameDifficulty.HARD: "GAME_DIFFICULTY_HARD",
+    }
+)

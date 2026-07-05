@@ -2,7 +2,8 @@ from datetime import datetime
 from enum import IntEnum
 
 import resources.Environment as Env
-import resources.phrases as phrases
+from resources import phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
 import src.model.enums.Location as Location
 from src.model.BountyLoan import BountyLoan
 from src.model.Crew import Crew
@@ -66,22 +67,24 @@ class NotificationCategory(IntEnum):
     LEGENDARY_PIRATE = 14
 
 
-NOTIFICATION_CATEGORY_DESCRIPTIONS = {
-    NotificationCategory.CREW: phrases.NOTIFICATION_CATEGORY_CREW,
-    NotificationCategory.LOCATION: phrases.NOTIFICATION_CATEGORY_LOCATION,
-    NotificationCategory.GAME: phrases.NOTIFICATION_CATEGORY_GAME,
-    NotificationCategory.IMPEL_DOWN: phrases.NOTIFICATION_CATEGORY_IMPEL_DOWN,
-    NotificationCategory.PREDICTION: phrases.NOTIFICATION_CATEGORY_PREDICTION,
-    NotificationCategory.DELETED_MESSAGE: phrases.NOTIFICATION_CATEGORY_DELETED_MESSAGE,
-    NotificationCategory.BOUNTY_GIFT: phrases.NOTIFICATION_CATEGORY_BOUNTY_GIFT,
-    NotificationCategory.DEVIL_FRUIT: phrases.NOTIFICATION_CATEGORY_DEVIL_FRUIT,
-    NotificationCategory.BOUNTY_LOAN: phrases.NOTIFICATION_CATEGORY_BOUNTY_LOAN,
-    NotificationCategory.WARLORD: phrases.NOTIFICATION_CATEGORY_WARLORD,
-    NotificationCategory.DAVY_BACK_FIGHT: phrases.NOTIFICATION_CATEGORY_DAVY_BACK_FIGHT,
-    NotificationCategory.FIGHT: phrases.NOTIFICATION_CATEGORY_FIGHT,
-    NotificationCategory.PLUNDER: phrases.NOTIFICATION_CATEGORY_PLUNDER,
-    NotificationCategory.LEGENDARY_PIRATE: phrases.NOTIFICATION_CATEGORY_LEGENDARY_PIRATE,
-}
+NOTIFICATION_CATEGORY_DESCRIPTIONS = LazyPhraseDict(
+    {
+        NotificationCategory.CREW: "NOTIFICATION_CATEGORY_CREW",
+        NotificationCategory.LOCATION: "NOTIFICATION_CATEGORY_LOCATION",
+        NotificationCategory.GAME: "NOTIFICATION_CATEGORY_GAME",
+        NotificationCategory.IMPEL_DOWN: "NOTIFICATION_CATEGORY_IMPEL_DOWN",
+        NotificationCategory.PREDICTION: "NOTIFICATION_CATEGORY_PREDICTION",
+        NotificationCategory.DELETED_MESSAGE: "NOTIFICATION_CATEGORY_DELETED_MESSAGE",
+        NotificationCategory.BOUNTY_GIFT: "NOTIFICATION_CATEGORY_BOUNTY_GIFT",
+        NotificationCategory.DEVIL_FRUIT: "NOTIFICATION_CATEGORY_DEVIL_FRUIT",
+        NotificationCategory.BOUNTY_LOAN: "NOTIFICATION_CATEGORY_BOUNTY_LOAN",
+        NotificationCategory.WARLORD: "NOTIFICATION_CATEGORY_WARLORD",
+        NotificationCategory.DAVY_BACK_FIGHT: "NOTIFICATION_CATEGORY_DAVY_BACK_FIGHT",
+        NotificationCategory.FIGHT: "NOTIFICATION_CATEGORY_FIGHT",
+        NotificationCategory.PLUNDER: "NOTIFICATION_CATEGORY_PLUNDER",
+        NotificationCategory.LEGENDARY_PIRATE: "NOTIFICATION_CATEGORY_LEGENDARY_PIRATE",
+    }
+)
 
 
 class NotificationType(IntEnum):

@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from resources import phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
 from src.model.enums.LogType import LogType
 from src.model.enums.ReservedKeyboardKeys import ReservedKeyboardKeys
 from src.model.enums.Screen import Screen
@@ -25,10 +25,12 @@ class BountyLoanSource(StrEnum):
         )
 
 
-DESCRIPTIONS = {
-    BountyLoanSource.USER: phrases.BOUNTY_LOAN_SOURCE_USER,
-    BountyLoanSource.PLUNDER: phrases.BOUNTY_LOAN_SOURCE_PLUNDER,
-}
+DESCRIPTIONS = LazyPhraseDict(
+    {
+        BountyLoanSource.USER: "BOUNTY_LOAN_SOURCE_USER",
+        BountyLoanSource.PLUNDER: "BOUNTY_LOAN_SOURCE_PLUNDER",
+    }
+)
 
 DEEPLINK_SCREENS = {
     BountyLoanSource.USER: Screen.PVT_BOUNTY_LOAN_DETAIL,  # Should never happen

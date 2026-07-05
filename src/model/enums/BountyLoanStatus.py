@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from resources import phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
 
 
 class BountyLoanStatus(IntEnum):
@@ -55,15 +55,17 @@ class BountyLoanStatus(IntEnum):
         return self in self.get_ended_statuses()
 
 
-BOUNTY_LOAN_STATUS_DESCRIPTIONS = {
-    BountyLoanStatus.AWAITING_LOANER_CONFIRMATION: (
-        phrases.BOUNTY_LOAN_STATUS_AWAITING_LOANER_CONFIRMATION
-    ),
-    BountyLoanStatus.AWAITING_BORROWER_CONFIRMATION: (
-        phrases.BOUNTY_LOAN_STATUS_AWAITING_BORROWER_CONFIRMATION
-    ),
-    BountyLoanStatus.ACTIVE: phrases.BOUNTY_LOAN_STATUS_ACTIVE,
-    BountyLoanStatus.EXPIRED: phrases.BOUNTY_LOAN_STATUS_EXPIRED,
-    BountyLoanStatus.REPAID: phrases.BOUNTY_LOAN_STATUS_REPAID,
-    BountyLoanStatus.FORGIVEN: phrases.BOUNTY_LOAN_STATUS_FORGIVEN,
-}
+BOUNTY_LOAN_STATUS_DESCRIPTIONS = LazyPhraseDict(
+    {
+        BountyLoanStatus.AWAITING_LOANER_CONFIRMATION: (
+            "BOUNTY_LOAN_STATUS_AWAITING_LOANER_CONFIRMATION"
+        ),
+        BountyLoanStatus.AWAITING_BORROWER_CONFIRMATION: (
+            "BOUNTY_LOAN_STATUS_AWAITING_BORROWER_CONFIRMATION"
+        ),
+        BountyLoanStatus.ACTIVE: "BOUNTY_LOAN_STATUS_ACTIVE",
+        BountyLoanStatus.EXPIRED: "BOUNTY_LOAN_STATUS_EXPIRED",
+        BountyLoanStatus.REPAID: "BOUNTY_LOAN_STATUS_REPAID",
+        BountyLoanStatus.FORGIVEN: "BOUNTY_LOAN_STATUS_FORGIVEN",
+    }
+)

@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from resources import phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
 
 
 class DevilFruitCategory(IntEnum):
@@ -22,9 +22,11 @@ class DevilFruitCategory(IntEnum):
         return DEVIL_FRUIT_CATEGORY_DESCRIPTION_MAP[self]
 
 
-DEVIL_FRUIT_CATEGORY_DESCRIPTION_MAP = {
-    DevilFruitCategory.ZOAN: phrases.DEVIL_FRUIT_CATEGORY_DESCRIPTION_ZOAN,
-    DevilFruitCategory.ANCIENT_ZOAN: phrases.DEVIL_FRUIT_CATEGORY_DESCRIPTION_ANCIENT_ZOAN,
-    DevilFruitCategory.MYTHICAL_ZOAN: phrases.DEVIL_FRUIT_CATEGORY_DESCRIPTION_MYTHICAL_ZOAN,
-    DevilFruitCategory.SMILE: phrases.DEVIL_FRUIT_CATEGORY_DESCRIPTION_SMILE,
-}
+DEVIL_FRUIT_CATEGORY_DESCRIPTION_MAP = LazyPhraseDict(
+    {
+        DevilFruitCategory.ZOAN: "DEVIL_FRUIT_CATEGORY_DESCRIPTION_ZOAN",
+        DevilFruitCategory.ANCIENT_ZOAN: "DEVIL_FRUIT_CATEGORY_DESCRIPTION_ANCIENT_ZOAN",
+        DevilFruitCategory.MYTHICAL_ZOAN: "DEVIL_FRUIT_CATEGORY_DESCRIPTION_MYTHICAL_ZOAN",
+        DevilFruitCategory.SMILE: "DEVIL_FRUIT_CATEGORY_DESCRIPTION_SMILE",
+    }
+)

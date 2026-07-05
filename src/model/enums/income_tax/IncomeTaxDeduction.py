@@ -1,7 +1,7 @@
 import json
 from enum import StrEnum
 
-from resources import phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
 
 
 class IncomeTaxDeductionType(StrEnum):
@@ -51,9 +51,11 @@ class IncomeTaxDeduction:
         return INCOME_TAX_DEDUCTION_TYPE_DESCRIPTIONS[self.deduction_type]
 
 
-INCOME_TAX_DEDUCTION_TYPE_DESCRIPTIONS = {
-    IncomeTaxDeductionType.ADMIN: phrases.INCOME_TAX_DEDUCTION_TYPE_ADMIN,
-    IncomeTaxDeductionType.CREW_ability: phrases.INCOME_TAX_DEDUCTION_TYPE_CREW_ABILITY,
-    IncomeTaxDeductionType.DEVIL_FRUIT: phrases.INCOME_TAX_DEDUCTION_TYPE_DEVIL_FRUIT,
-    IncomeTaxDeductionType.LEGENDARY_PIRATE: phrases.INCOME_TAX_DEDUCTION_TYPE_LEGENDARY_PIRATE,
-}
+INCOME_TAX_DEDUCTION_TYPE_DESCRIPTIONS = LazyPhraseDict(
+    {
+        IncomeTaxDeductionType.ADMIN: "INCOME_TAX_DEDUCTION_TYPE_ADMIN",
+        IncomeTaxDeductionType.CREW_ability: "INCOME_TAX_DEDUCTION_TYPE_CREW_ABILITY",
+        IncomeTaxDeductionType.DEVIL_FRUIT: "INCOME_TAX_DEDUCTION_TYPE_DEVIL_FRUIT",
+        IncomeTaxDeductionType.LEGENDARY_PIRATE: "INCOME_TAX_DEDUCTION_TYPE_LEGENDARY_PIRATE",
+    }
+)

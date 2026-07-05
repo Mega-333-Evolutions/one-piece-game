@@ -26,6 +26,7 @@ async def manage(
             )
         ],
         [Keyboard(phrases.PVT_KEY_SETTINGS_TIMEZONE, screen=Screen.PVT_SETTINGS_TIMEZONE)],
+        [Keyboard(phrases.PVT_KEY_SETTINGS_LANGUAGE, screen=Screen.PVT_SETTINGS_LANGUAGE)],
     ]
 
     await full_message_send(

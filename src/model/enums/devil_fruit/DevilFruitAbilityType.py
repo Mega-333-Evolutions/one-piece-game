@@ -1,7 +1,7 @@
 from enum import IntEnum, StrEnum
 from random import choice
 
-from resources import phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
 
 
 class Sign(StrEnum):
@@ -81,30 +81,32 @@ class DevilFruitAbilityType(IntEnum):
         return choice(list(DevilFruitAbilityType.get_allowed_ability_types_from_random()))
 
 
-DEVIL_FRUIT_ABILITY_TYPE_DESCRIPTION_MAP = {
-    DevilFruitAbilityType.DOC_Q_COOLDOWN_DURATION: phrases.ABILITY_TYPE_DOC_Q_COOLDOWN_DURATION,
-    DevilFruitAbilityType.GAME_COOLDOWN_DURATION: phrases.ABILITY_TYPE_GAME_COOLDOWN_DURATION,
-    DevilFruitAbilityType.FIGHT_COOLDOWN_DURATION: phrases.ABILITY_TYPE_FIGHT_COOLDOWN_DURATION,
-    DevilFruitAbilityType.FIGHT_IMMUNITY_DURATION: phrases.ABILITY_TYPE_FIGHT_IMMUNITY_DURATION,
-    DevilFruitAbilityType.FIGHT_DEFENSE_BOOST: phrases.ABILITY_TYPE_FIGHT_DEFENSE_BOOST,
-    DevilFruitAbilityType.PREDICTION_WAGER_REFUND: phrases.ABILITY_TYPE_PREDICTION_WAGER_REFUND,
-    DevilFruitAbilityType.GIFT_LOAN_TAX: phrases.ABILITY_TYPE_GIFT_LOAN_TAX,
-    DevilFruitAbilityType.INCOME_TAX: phrases.ABILITY_TYPE_INCOME_TAX,
-    DevilFruitAbilityType.PLUNDER_COOLDOWN_DURATION: (
-        phrases.ABILITY_TYPE_PLUNDER_COOLDOWN_DURATION
-    ),
-    DevilFruitAbilityType.PLUNDER_IMMUNITY_DURATION: (
-        phrases.ABILITY_TYPE_PLUNDER_IMMUNITY_DURATION
-    ),
-    DevilFruitAbilityType.PLUNDER_SENTENCE_DURATION: (
-        phrases.ABILITY_TYPE_PLUNDER_SENTENCE_DURATION
-    ),
-    DevilFruitAbilityType.FIGHT_SCOUT_FEE: phrases.ABILITY_TYPE_FIGHT_SCOUT_FEE,
-    DevilFruitAbilityType.PLUNDER_SCOUT_FEE: phrases.ABILITY_TYPE_PLUNDER_SCOUT_FEE,
-    DevilFruitAbilityType.GAME_GLOBAL_ACCEPT_COOLDOWN_DURATION: (
-        phrases.ABILITY_TYPE_GAME_GLOBAL_ACCEPT_COOLDOWN_DURATION
-    ),
-}
+DEVIL_FRUIT_ABILITY_TYPE_DESCRIPTION_MAP = LazyPhraseDict(
+    {
+        DevilFruitAbilityType.DOC_Q_COOLDOWN_DURATION: "ABILITY_TYPE_DOC_Q_COOLDOWN_DURATION",
+        DevilFruitAbilityType.GAME_COOLDOWN_DURATION: "ABILITY_TYPE_GAME_COOLDOWN_DURATION",
+        DevilFruitAbilityType.FIGHT_COOLDOWN_DURATION: "ABILITY_TYPE_FIGHT_COOLDOWN_DURATION",
+        DevilFruitAbilityType.FIGHT_IMMUNITY_DURATION: "ABILITY_TYPE_FIGHT_IMMUNITY_DURATION",
+        DevilFruitAbilityType.FIGHT_DEFENSE_BOOST: "ABILITY_TYPE_FIGHT_DEFENSE_BOOST",
+        DevilFruitAbilityType.PREDICTION_WAGER_REFUND: "ABILITY_TYPE_PREDICTION_WAGER_REFUND",
+        DevilFruitAbilityType.GIFT_LOAN_TAX: "ABILITY_TYPE_GIFT_LOAN_TAX",
+        DevilFruitAbilityType.INCOME_TAX: "ABILITY_TYPE_INCOME_TAX",
+        DevilFruitAbilityType.PLUNDER_COOLDOWN_DURATION: (
+            "ABILITY_TYPE_PLUNDER_COOLDOWN_DURATION"
+        ),
+        DevilFruitAbilityType.PLUNDER_IMMUNITY_DURATION: (
+            "ABILITY_TYPE_PLUNDER_IMMUNITY_DURATION"
+        ),
+        DevilFruitAbilityType.PLUNDER_SENTENCE_DURATION: (
+            "ABILITY_TYPE_PLUNDER_SENTENCE_DURATION"
+        ),
+        DevilFruitAbilityType.FIGHT_SCOUT_FEE: "ABILITY_TYPE_FIGHT_SCOUT_FEE",
+        DevilFruitAbilityType.PLUNDER_SCOUT_FEE: "ABILITY_TYPE_PLUNDER_SCOUT_FEE",
+        DevilFruitAbilityType.GAME_GLOBAL_ACCEPT_COOLDOWN_DURATION: (
+            "ABILITY_TYPE_GAME_GLOBAL_ACCEPT_COOLDOWN_DURATION"
+        ),
+    }
+)
 
 DEVIL_FRUIT_ABILITY_TYPE_SIGN_MAP = {
     DevilFruitAbilityType.DOC_Q_COOLDOWN_DURATION: Sign.NEGATIVE,

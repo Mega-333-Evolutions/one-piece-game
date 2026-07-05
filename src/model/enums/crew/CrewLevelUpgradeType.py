@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-import resources.phrases as phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
 
 
 class CrewLevelUpgradeType(StrEnum):
@@ -26,7 +26,9 @@ class CrewLevelUpgradeType(StrEnum):
         return CREW_LEVEL_UPGRADE_TYPE_DESCRIPTIONS[self]
 
 
-CREW_LEVEL_UPGRADE_TYPE_DESCRIPTIONS = {
-    CrewLevelUpgradeType.MEMBER: phrases.CREW_LEVEL_UPGRADE_TYPE_MEMBER,
-    CrewLevelUpgradeType.ABILITY: phrases.CREW_LEVEL_UPGRADE_TYPE_ABILITY,
-}
+CREW_LEVEL_UPGRADE_TYPE_DESCRIPTIONS = LazyPhraseDict(
+    {
+        CrewLevelUpgradeType.MEMBER: "CREW_LEVEL_UPGRADE_TYPE_MEMBER",
+        CrewLevelUpgradeType.ABILITY: "CREW_LEVEL_UPGRADE_TYPE_ABILITY",
+    }
+)

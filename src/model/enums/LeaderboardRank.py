@@ -70,13 +70,22 @@ class LeaderboardRank:
         :param min_win_probability: Min win probability in percentage
         """
         self.index: int = index
-        self.title: str = title
+        self._title_phrase_name: str = title
         self.emoji: str = emoji
         self.leaderboard_start: int = leaderboard_start
         self.leaderboard_end: int = leaderboard_end
         self.bounty_poster_limit: int = bounty_poster_limit
         self.max_win_probability: float = max_win_probability
         self.min_win_probability: float = min_win_probability
+
+    @property
+    def title(self) -> str:
+        """
+        Title of the leaderboard rank, resolved in the currently active language
+        :return: The title
+        """
+
+        return getattr(phrases, self._title_phrase_name)
 
     def get_emoji_and_rank_message(self) -> str:
         """
@@ -99,7 +108,7 @@ class LeaderboardRank:
 
 PIRATE_KING = LeaderboardRank(
     LeaderboardRankIndex.PIRATE_KING,
-    phrases.LEADERBOARD_RANK_PIRATE_KING,
+    "LEADERBOARD_RANK_PIRATE_KING",
     Emoji.LEADERBOARD_PIRATE_KING,
     1,
     1,
@@ -110,7 +119,7 @@ PIRATE_KING = LeaderboardRank(
 
 EMPEROR = LeaderboardRank(
     LeaderboardRankIndex.EMPEROR,
-    phrases.LEADERBOARD_RANK_EMPEROR,
+    "LEADERBOARD_RANK_EMPEROR",
     Emoji.LEADERBOARD_EMPEROR,
     2,
     5,
@@ -121,7 +130,7 @@ EMPEROR = LeaderboardRank(
 
 FIRST_MATE = LeaderboardRank(
     LeaderboardRankIndex.FIRST_MATE,
-    phrases.LEADERBOARD_RANK_FIRST_MATE,
+    "LEADERBOARD_RANK_FIRST_MATE",
     Emoji.LEADERBOARD_FIRST_MATE,
     6,
     9,
@@ -132,7 +141,7 @@ FIRST_MATE = LeaderboardRank(
 
 SUPERNOVA = LeaderboardRank(
     LeaderboardRankIndex.SUPERNOVA,
-    phrases.LEADERBOARD_RANK_SUPERNOVA,
+    "LEADERBOARD_RANK_SUPERNOVA",
     Emoji.LEADERBOARD_SUPERNOVA,
     10,
     20,
@@ -143,7 +152,7 @@ SUPERNOVA = LeaderboardRank(
 
 ROOKIE = LeaderboardRank(
     LeaderboardRankIndex.ROOKIE,
-    phrases.LEADERBOARD_RANK_ROOKIE,
+    "LEADERBOARD_RANK_ROOKIE",
     Emoji.LEADERBOARD_ROOKIE,
     21,
     -1,
@@ -154,7 +163,7 @@ ROOKIE = LeaderboardRank(
 
 ADMIN = LeaderboardRank(
     LeaderboardRankIndex.ADMIN,
-    phrases.LEADERBOARD_RANK_ADMIN,
+    "LEADERBOARD_RANK_ADMIN",
     Emoji.LEADERBOARD_ADMIN,
     None,
     None,
@@ -165,7 +174,7 @@ ADMIN = LeaderboardRank(
 
 LEGENDARY_PIRATE = LeaderboardRank(
     LeaderboardRankIndex.LEGENDARY_PIRATE,
-    phrases.LEADERBOARD_RANK_LEGENDARY_PIRATE,
+    "LEADERBOARD_RANK_LEGENDARY_PIRATE",
     Emoji.LEADERBOARD_LEGENDARY_PIRATE,
     None,
     None,
@@ -176,7 +185,7 @@ LEGENDARY_PIRATE = LeaderboardRank(
 
 WARLORD = LeaderboardRank(
     LeaderboardRankIndex.WARLORD,
-    phrases.LEADERBOARD_RANK_WARLORD,
+    "LEADERBOARD_RANK_WARLORD",
     Emoji.LEADERBOARD_WARLORD,
     None,
     None,

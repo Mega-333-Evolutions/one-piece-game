@@ -179,6 +179,9 @@ from src.chat.private.screens.screen_settings_notifications_type_edit import (
 from src.chat.private.screens.screen_settings_timezone import (
     manage as manage_screen_settings_timezone,
 )
+from src.chat.private.screens.screen_settings_language import (
+    manage as manage_screen_settings_language,
+)
 from src.chat.private.screens.screen_start import manage as manage_screen_start
 from src.model.SystemUpdate import SystemUpdate
 from src.model.SystemUpdateUser import SystemUpdateUser
@@ -503,6 +506,9 @@ async def dispatch_screens(
 
             case Screen.PVT_SETTINGS_TIMEZONE:  # Settings Timezone
                 await manage_screen_settings_timezone(update, context, inbound_keyboard, user)
+
+            case Screen.PVT_SETTINGS_LANGUAGE:  # Settings Language
+                await manage_screen_settings_language(update, context, inbound_keyboard, user)
 
             case Screen.PVT_BOUNTY_LOAN:  # Bounty Loan
                 await manage_screen_bounty_loan(update, context, inbound_keyboard, user)

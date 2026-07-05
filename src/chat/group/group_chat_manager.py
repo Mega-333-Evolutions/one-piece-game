@@ -40,6 +40,9 @@ from src.chat.group.screens.screen_settings import manage as manage_screen_setti
 from src.chat.group.screens.screen_settings_auto_delete import (
     manage as manage_screen_settings_auto_delete,
 )
+from src.chat.group.screens.screen_settings_language import (
+    manage as manage_screen_settings_language,
+)
 from src.chat.group.screens.screen_settings_features import manage as manage_screen_features
 from src.chat.group.screens.screen_silence import manage as manage_screen_silence
 from src.chat.group.screens.screen_silence_end import manage as manage_screen_silence_end
@@ -251,6 +254,9 @@ async def dispatch_screens(
 
         case Screen.GRP_SETTINGS_AUTO_DELETE:  # Auto delete
             await manage_screen_settings_auto_delete(update, context, inbound_keyboard, group_chat)
+
+        case Screen.GRP_SETTINGS_LANGUAGE:  # Language
+            await manage_screen_settings_language(update, context, inbound_keyboard, group_chat)
 
         case _:  # Unknown screen
             if update.callback_query is not None:

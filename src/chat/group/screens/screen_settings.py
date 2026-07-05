@@ -20,6 +20,8 @@ async def manage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         [Keyboard(phrases.GRP_KEY_SETTINGS_FEATURES, screen=Screen.GRP_SETTINGS_FEATURES)],
         # Auto delete
         [Keyboard(phrases.GRP_KEY_SETTINGS_AUTO_DELETE, screen=Screen.GRP_SETTINGS_AUTO_DELETE)],
+        # Language
+        [Keyboard(phrases.GRP_KEY_SETTINGS_LANGUAGE, screen=Screen.GRP_SETTINGS_LANGUAGE)],
     ]
 
     await full_message_send(

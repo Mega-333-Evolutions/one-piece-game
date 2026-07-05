@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from resources import phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
 from src.model.enums.LogType import LogType
 
 
@@ -35,17 +35,19 @@ class IncomeTaxEventType(StrEnum):
         return INCOME_TAX_EVENT_TYPE_LOG_TYPE[self]
 
 
-INCOME_TAX_EVENT_TYPE_DESCRIPTIONS = {
-    IncomeTaxEventType.BOUNTY_GIFT: phrases.BOUNTY_GIFT_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-    IncomeTaxEventType.BOUNTY_LOAN: phrases.INCOME_TAX_EVENT_BOUNTY_LOAN,
-    IncomeTaxEventType.DEVIL_FRUIT_SELL: phrases.INCOME_TAX_EVENT_DEVIL_FRUIT_SELL,
-    IncomeTaxEventType.DOC_Q_GAME: phrases.DOC_Q_GAME_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-    IncomeTaxEventType.FIGHT: phrases.FIGHT_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-    IncomeTaxEventType.GAME: phrases.GAME_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-    IncomeTaxEventType.PREDICTION: phrases.PREDICTION_ITEM_TEXT_FILL_IN,
-    IncomeTaxEventType.PLUNDER: phrases.PLUNDER_LOG_ITEM_DETAIL_TEXT_FILL_IN,
-    IncomeTaxEventType.DAVY_BACK_FIGHT: phrases.CREW_DAVY_BACK_FIGHT_ITEM_TEXT_FILL_IN,
-}
+INCOME_TAX_EVENT_TYPE_DESCRIPTIONS = LazyPhraseDict(
+    {
+        IncomeTaxEventType.BOUNTY_GIFT: "BOUNTY_GIFT_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+        IncomeTaxEventType.BOUNTY_LOAN: "INCOME_TAX_EVENT_BOUNTY_LOAN",
+        IncomeTaxEventType.DEVIL_FRUIT_SELL: "INCOME_TAX_EVENT_DEVIL_FRUIT_SELL",
+        IncomeTaxEventType.DOC_Q_GAME: "DOC_Q_GAME_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+        IncomeTaxEventType.FIGHT: "FIGHT_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+        IncomeTaxEventType.GAME: "GAME_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+        IncomeTaxEventType.PREDICTION: "PREDICTION_ITEM_TEXT_FILL_IN",
+        IncomeTaxEventType.PLUNDER: "PLUNDER_LOG_ITEM_DETAIL_TEXT_FILL_IN",
+        IncomeTaxEventType.DAVY_BACK_FIGHT: "CREW_DAVY_BACK_FIGHT_ITEM_TEXT_FILL_IN",
+    }
+)
 
 INCOME_TAX_EVENT_TYPE_LOG_TYPE = {
     IncomeTaxEventType.BOUNTY_GIFT: LogType.BOUNTY_GIFT,

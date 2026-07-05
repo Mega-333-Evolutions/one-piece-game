@@ -1,8 +1,8 @@
 from enum import IntEnum
 
 import resources.Environment as Env
-from resources import phrases
 from src.model.enums.SavedMediaName import SavedMediaName
+from src.utils.LazyPhraseDict import LazyPhraseDict
 
 
 class GameType(IntEnum):
@@ -77,31 +77,39 @@ GAME_TYPE_SAVED_MEDIA_NAME_DICT = {
     GameType.PUNK_RECORDS: SavedMediaName.GAME_PUNK_RECORDS,
 }
 
-GAME_TYPE_NAME_DICT = {
-    GameType.ROCK_PAPER_SCISSORS: phrases.ROCK_PAPER_SCISSORS_GAME_NAME,
-    GameType.RUSSIAN_ROULETTE: phrases.RUSSIAN_ROULETTE_GAME_NAME,
-    GameType.WHOS_WHO: phrases.WHOS_WHO_GAME_NAME,
-    GameType.SHAMBLES: phrases.SHAMBLES_GAME_NAME,
-    GameType.GUESS_OR_LIFE: phrases.GUESS_OR_LIFE_GAME_NAME,
-    GameType.PUNK_RECORDS: phrases.PUNK_RECORDS_GAME_NAME,
-}
+GAME_TYPE_NAME_DICT = LazyPhraseDict(
+    {
+        GameType.ROCK_PAPER_SCISSORS: "ROCK_PAPER_SCISSORS_GAME_NAME",
+        GameType.RUSSIAN_ROULETTE: "RUSSIAN_ROULETTE_GAME_NAME",
+        GameType.WHOS_WHO: "WHOS_WHO_GAME_NAME",
+        GameType.SHAMBLES: "SHAMBLES_GAME_NAME",
+        GameType.GUESS_OR_LIFE: "GUESS_OR_LIFE_GAME_NAME",
+        GameType.PUNK_RECORDS: "PUNK_RECORDS_GAME_NAME",
+    }
+)
 
-GAME_TYPE_DESCRIPTION_DICT = {
-    GameType.ROCK_PAPER_SCISSORS: phrases.ROCK_PAPER_SCISSORS_GAME_DESCRIPTION,
-    GameType.RUSSIAN_ROULETTE: phrases.RUSSIAN_ROULETTE_GAME_DESCRIPTION,
-    GameType.WHOS_WHO: phrases.WHOS_WHO_GAME_DESCRIPTION.format(
-        Env.WHOS_WHO_NEXT_LEVEL_WAIT_TIME.get_int()
-    ),
-    GameType.SHAMBLES: phrases.SHAMBLES_GAME_DESCRIPTION.format(
-        Env.SHAMBLES_NEXT_LEVEL_WAIT_TIME.get_int()
-    ),
-    GameType.GUESS_OR_LIFE: phrases.GUESS_OR_LIFE_GAME_DESCRIPTION.format(
-        Env.GUESS_OR_LIFE_NEW_LIFE_WAIT_TIME.get_int()
-    ),
-    GameType.PUNK_RECORDS: phrases.PUNK_RECORDS_GAME_DESCRIPTION.format(
-        Env.PUNK_RECORDS_NEXT_DETAIL_WAIT_TIME.get_int()
-    ),
-}
+GAME_TYPE_DESCRIPTION_DICT = LazyPhraseDict(
+    {
+        GameType.ROCK_PAPER_SCISSORS: "ROCK_PAPER_SCISSORS_GAME_DESCRIPTION",
+        GameType.RUSSIAN_ROULETTE: "RUSSIAN_ROULETTE_GAME_DESCRIPTION",
+        GameType.WHOS_WHO: (
+            "WHOS_WHO_GAME_DESCRIPTION",
+            (Env.WHOS_WHO_NEXT_LEVEL_WAIT_TIME.get_int(),),
+        ),
+        GameType.SHAMBLES: (
+            "SHAMBLES_GAME_DESCRIPTION",
+            (Env.SHAMBLES_NEXT_LEVEL_WAIT_TIME.get_int(),),
+        ),
+        GameType.GUESS_OR_LIFE: (
+            "GUESS_OR_LIFE_GAME_DESCRIPTION",
+            (Env.GUESS_OR_LIFE_NEW_LIFE_WAIT_TIME.get_int(),),
+        ),
+        GameType.PUNK_RECORDS: (
+            "PUNK_RECORDS_GAME_DESCRIPTION",
+            (Env.PUNK_RECORDS_NEXT_DETAIL_WAIT_TIME.get_int(),),
+        ),
+    }
+)
 
 GAME_TYPE_WITH_DIFFICULTY = [
     GameType.GUESS_OR_LIFE,

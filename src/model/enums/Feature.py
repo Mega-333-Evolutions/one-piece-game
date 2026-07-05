@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from resources import phrases
+from src.utils.LazyPhraseDict import LazyPhraseDict
 
 
 class Feature(IntEnum):
@@ -140,20 +140,22 @@ class Feature(IntEnum):
         return self in Feature.get_pinned_by_default()
 
 
-FEATURE_DESCRIPTION_MAP = {
-    Feature.BOUNTY_GIFT: phrases.FEATURE_BOUNTY_GIFT,
-    Feature.CHALLENGE: phrases.FEATURE_CHALLENGE,
-    Feature.CREW: phrases.FEATURE_CREW,
-    Feature.DEVIL_FRUIT_APPEARANCE: phrases.FEATURE_DEVIL_FRUIT_APPEARANCE,
-    Feature.DOC_Q: phrases.FEATURE_DOC_Q,
-    Feature.FIGHT: phrases.FEATURE_FIGHT,
-    Feature.LEADERBOARD: phrases.FEATURE_LEADERBOARD,
-    Feature.MESSAGE_FILTER: phrases.FEATURE_MESSAGE_FILTER,
-    Feature.PREDICTION: phrases.FEATURE_PREDICTION,
-    Feature.SILENCE: phrases.FEATURE_SILENCE,
-    Feature.STATUS: phrases.FEATURE_STATUS,
-    Feature.DEVIL_FRUIT_SELL: phrases.FEATURE_DEVIL_FRUIT_SELL,
-    Feature.BOUNTY_LOAN: phrases.FEATURE_BOUNTY_LOAN,
-    Feature.PLUNDER: phrases.FEATURE_PLUNDER,
-    Feature.DAILY_REWARD: phrases.FEATURE_DAILY_REWARD,
-}
+FEATURE_DESCRIPTION_MAP = LazyPhraseDict(
+    {
+        Feature.BOUNTY_GIFT: "FEATURE_BOUNTY_GIFT",
+        Feature.CHALLENGE: "FEATURE_CHALLENGE",
+        Feature.CREW: "FEATURE_CREW",
+        Feature.DEVIL_FRUIT_APPEARANCE: "FEATURE_DEVIL_FRUIT_APPEARANCE",
+        Feature.DOC_Q: "FEATURE_DOC_Q",
+        Feature.FIGHT: "FEATURE_FIGHT",
+        Feature.LEADERBOARD: "FEATURE_LEADERBOARD",
+        Feature.MESSAGE_FILTER: "FEATURE_MESSAGE_FILTER",
+        Feature.PREDICTION: "FEATURE_PREDICTION",
+        Feature.SILENCE: "FEATURE_SILENCE",
+        Feature.STATUS: "FEATURE_STATUS",
+        Feature.DEVIL_FRUIT_SELL: "FEATURE_DEVIL_FRUIT_SELL",
+        Feature.BOUNTY_LOAN: "FEATURE_BOUNTY_LOAN",
+        Feature.PLUNDER: "FEATURE_PLUNDER",
+        Feature.DAILY_REWARD: "FEATURE_DAILY_REWARD",
+    }
+)

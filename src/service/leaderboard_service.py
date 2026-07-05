@@ -20,6 +20,7 @@ from src.model.enums.Feature import Feature
 from src.model.enums.LeaderboardRank import LeaderboardRankIndex
 from src.model.enums.Location import get_first_new_world, get_last_paradise
 from src.service.bounty_poster_service import reset_bounty_poster_limit
+from src.service.language_service import set_current_language
 from src.service.crew_service import warn_inactive_captains
 from src.service.date_service import (
     default_date_format,
@@ -227,6 +228,8 @@ async def create_and_send_leaderboard(
         raise ValueError(
             "In order to create a local leaderboard, a global leaderboard must be provided"
         )
+
+    set_current_language(group.get_language() if group is not None else None)
 
     # Local leaderboard checks
     if group is not None:
