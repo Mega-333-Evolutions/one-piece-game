@@ -20,6 +20,7 @@ from src.model.enums.Location import (
     is_paradise_by_level,
 )
 from src.model.enums.Screen import Screen
+from src.model.enums.Language import Language, LANGUAGE_DEFAULT
 from src.model.enums.crew.CrewRole import CrewRole
 from src.model.enums.income_tax.IncomeTaxBracket import IncomeTaxBracket
 from src.utils.context_utils import (
@@ -99,6 +100,7 @@ class User(BaseModel):
     can_collect_daily_reward: bool | BooleanField = BooleanField(default=True)
     fight_scout_count: int | IntegerField = IntegerField(default=0)
     plunder_scout_count: int | IntegerField = IntegerField(default=0)
+    language: str | CharField = CharField(max_length=5, default=LANGUAGE_DEFAULT.value)
 
     # Transient fields
     # The private screen step with which the user arrived to the current screen
@@ -751,6 +753,17 @@ class User(BaseModel):
 
         return ZoneInfo(self.timezone or Env.TZ.get())
 
+    def get_language(self) -> Language:
+        """
+        Returns the language of the user, used for texts sent in private chat
+        :return: The language of the user
+        """
+
+        try:
+            return Language(self.language)
+        except ValueError:
+            return LANGUAGE_DEFAULT
+
     def get_current_time(self) -> datetime.datetime:
         """
         Returns the current time of the user
@@ -931,3 +944,17 @@ try:
     )
 except Exception:
     pass  # Index already exists
+
+# Auto-migrate: add language column for the DM language setting
+try:
+    from playhouse.migrate import MySQLMigrator, migrate as pw_migrate
+    from src.model.BaseModel import db_obj
+
+    _migrator = MySQLMigrator(db_obj.get_db())
+    pw_migrate(
+        _migrator.add_column(
+            "user", "language", CharField(max_length=5, default=LANGUAGE_DEFAULT.value)
+        ),
+    )
+except Exception:
+    pass  # Column already exists
