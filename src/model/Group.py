@@ -4,6 +4,7 @@ from peewee import *
 
 from src.model.BaseModel import BaseModel
 from src.model.User import User
+from src.model.enums.Language import Language, LANGUAGE_DEFAULT
 
 
 class Group(BaseModel):
@@ -20,6 +21,7 @@ class Group(BaseModel):
     last_error_message = CharField(null=True)
     is_active = BooleanField(default=True)
     is_muted = BooleanField(default=False)
+    language = CharField(max_length=5, default=LANGUAGE_DEFAULT.value)
 
     # Backref
     group_chats = None
@@ -50,5 +52,30 @@ class Group(BaseModel):
 
         return [user.id for user in self.get_active_users()]
 
+    def get_language(self) -> Language:
+        """
+        Returns the language of the group, used for texts sent in this group's chat
+        :return: The language of the group
+        """
+
+        try:
+            return Language(self.language)
+        except ValueError:
+            return LANGUAGE_DEFAULT
+
 
 Group.create_table()
+
+# Auto-migrate: add language column for the group language setting
+try:
+    from playhouse.migrate import MySQLMigrator, migrate as pw_migrate
+    from src.model.BaseModel import db_obj
+
+    _migrator = MySQLMigrator(db_obj.get_db())
+    pw_migrate(
+        _migrator.add_column(
+            "group", "language", CharField(max_length=5, default=LANGUAGE_DEFAULT.value)
+        ),
+    )
+except Exception:
+    pass  # Column already exists
