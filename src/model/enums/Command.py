@@ -223,6 +223,8 @@ PVT_GCAST = Command(
     CommandName.GCAST,
     Screen.PVT_GCAST,
     allow_while_arrested=True,
+    allow_self_reply=True,
+    allow_reply_to_bot=True,
 )
 COMMANDS.append(PVT_GCAST)
 
@@ -230,6 +232,8 @@ PVT_PCAST = Command(
     CommandName.PCAST,
     Screen.PVT_PCAST,
     allow_while_arrested=True,
+    allow_self_reply=True,
+    allow_reply_to_bot=True,
 )
 COMMANDS.append(PVT_PCAST)
 
