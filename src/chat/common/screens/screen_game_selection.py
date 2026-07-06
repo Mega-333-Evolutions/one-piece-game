@@ -9,6 +9,7 @@ from src.chat.private.screens.screen_game_global_start_challenger import (
 )
 from src.model.User import User
 from src.model.enums.GameStatus import GameStatus
+from src.model.enums.ButtonStyle import ButtonStyle
 from src.model.enums.ReservedKeyboardKeys import ReservedKeyboardKeys
 from src.model.enums.Screen import Screen
 from src.model.game.GameType import GameType
@@ -121,6 +122,7 @@ async def manage(
                 phrases.KEYBOARD_OPTION_CANCEL,
                 info=button_delete_info,
                 screen=Screen.GRP_GAME_OPPONENT_CONFIRMATION,
+                style=ButtonStyle.PRIMARY,
             )
         ]
     )
