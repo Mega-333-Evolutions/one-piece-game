@@ -114,6 +114,8 @@ class Screen(StrEnum):
     PVT_CHANGE_REGION = "P78"
     PVT_OWNER_BOUNTY = "P79"
     PVT_SETTINGS_LANGUAGE = "P80"
+    PVT_GCAST = "P81"
+    PVT_PCAST = "P82"
 
 
 ONLY_BY_CAPTAIN = [

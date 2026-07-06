@@ -219,6 +219,20 @@ PVT_REVERT_PENDING_BOUNTY_ALL = Command(
 )
 COMMANDS.append(PVT_REVERT_PENDING_BOUNTY_ALL)
 
+PVT_GCAST = Command(
+    CommandName.GCAST,
+    Screen.PVT_GCAST,
+    allow_while_arrested=True,
+)
+COMMANDS.append(PVT_GCAST)
+
+PVT_PCAST = Command(
+    CommandName.PCAST,
+    Screen.PVT_PCAST,
+    allow_while_arrested=True,
+)
+COMMANDS.append(PVT_PCAST)
+
 PVT_GAME = Command(
     CommandName.GAME,
     Screen.PVT_GAME,

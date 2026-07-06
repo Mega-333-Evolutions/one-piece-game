@@ -2383,3 +2383,21 @@ AUTO_DELETE_SET = (
     "After how many minutes should the Bot's messages be deleted from the chat?"
     "\n\nCurrent setting: *{}*"
 )
+
+# Owner broadcast - gcast/pcast
+BROADCAST_REPLY_REQUIRED = "Please reply to the message you want to broadcast."
+BROADCAST_GROUPS_PROGRESS = f"{Emoji.HOURGLASS}Broadcasting message to all groups..."
+BROADCAST_PLAYERS_PROGRESS = f"{Emoji.HOURGLASS}Broadcasting message to all players..."
+BROADCAST_GROUPS_STATISTICS = (
+    "*Total Groups*: {}\n*Successful*: {}\n*Failed*: {}"
+)
+BROADCAST_PLAYERS_STATISTICS = (
+    "*Total Players*: {}\n*Successful*: {}\n*Failed*: {}"
+)
+BROADCAST_PIN_STATISTICS = "\n\n*Pin Statistics*\n\n*Successfully Pinned*: {}\n*Failed to Pin*: {}"
+BROADCAST_GROUPS_COMPLETED = (
+    f"{Emoji.ACCEPT}Group broadcast completed.\n\n*Broadcast Statistics*\n\n{{}}{{}}"
+)
+BROADCAST_PLAYERS_COMPLETED = (
+    f"{Emoji.ACCEPT}Player broadcast completed.\n\n*Broadcast Statistics*\n\n{{}}{{}}"
+)

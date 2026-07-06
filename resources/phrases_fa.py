@@ -2381,3 +2381,21 @@ AUTO_DELETE_SET = (
     "پیام‌های ربات پس از چند دقیقه باید از چت حذف شوند؟"
     "\n\nتنظیم فعلی: *{}*"
 )
+
+# Owner broadcast - gcast/pcast
+BROADCAST_REPLY_REQUIRED = "لطفاً به پیامی که می‌خواهید همگانی ارسال کنید پاسخ دهید."
+BROADCAST_GROUPS_PROGRESS = f"{Emoji.HOURGLASS}در حال ارسال پیام به همه گروه‌ها..."
+BROADCAST_PLAYERS_PROGRESS = f"{Emoji.HOURGLASS}در حال ارسال پیام به همه بازیکنان..."
+BROADCAST_GROUPS_STATISTICS = (
+    "*مجموع گروه‌ها*: {}\n*موفق*: {}\n*ناموفق*: {}"
+)
+BROADCAST_PLAYERS_STATISTICS = (
+    "*مجموع بازیکنان*: {}\n*موفق*: {}\n*ناموفق*: {}"
+)
+BROADCAST_PIN_STATISTICS = "\n\n*آمار سنجاق کردن*\n\n*با موفقیت سنجاق شد*: {}\n*سنجاق ناموفق*: {}"
+BROADCAST_GROUPS_COMPLETED = (
+    f"{Emoji.ACCEPT}ارسال همگانی به گروه‌ها تکمیل شد.\n\n*آمار ارسال همگانی*\n\n{{}}{{}}"
+)
+BROADCAST_PLAYERS_COMPLETED = (
+    f"{Emoji.ACCEPT}ارسال همگانی به بازیکنان تکمیل شد.\n\n*آمار ارسال همگانی*\n\n{{}}{{}}"
+)

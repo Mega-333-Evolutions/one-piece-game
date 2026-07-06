@@ -28,6 +28,8 @@ class CommandName(StrEnum):
     TAKE_BOUNTY = "take"
     REVERT_PENDING_BOUNTY = "rpending"
     REVERT_PENDING_BOUNTY_ALL = "rpendingall"
+    GCAST = "gcast"
+    PCAST = "pcast"
 
     def get_formatted(self):
         """

@@ -17,6 +17,7 @@ from src.chat.common.screens.screen_game_rps import manage as manage_screen_game
 from src.chat.common.screens.screen_game_rr import manage as manage_screen_game_rr
 from src.chat.common.screens.screen_game_selection import manage as manage_screen_game_selection
 from src.chat.common.screens.screen_owner_bounty import manage as manage_screen_owner_bounty
+from src.chat.common.screens.screen_broadcast import manage as manage_screen_broadcast
 from src.chat.common.screens.screen_status import manage as manage_screen_status
 from src.chat.private.screens.screen_bounty_loan import manage as manage_screen_bounty_loan
 from src.chat.private.screens.screen_bounty_loan_detail import (
@@ -601,6 +602,9 @@ async def dispatch_screens(
 
             case Screen.PVT_OWNER_BOUNTY:
                 await manage_screen_owner_bounty(update, context, command, user, inbound_keyboard)
+
+            case Screen.PVT_GCAST | Screen.PVT_PCAST:
+                await manage_screen_broadcast(update, context, command, user)
 
             case Screen.PVT_GAME_GLOBAL_LIST:
                 await manage_screen_game_global_list(update, context, inbound_keyboard, user)

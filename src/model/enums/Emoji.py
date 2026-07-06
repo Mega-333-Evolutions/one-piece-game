@@ -38,6 +38,7 @@ class Emoji(StrEnum):
     CLOSE = "❌"
     REJECT = "❌"
     SETTINGS = "⚙"
+    HOURGLASS = "⏳"
     BACK = "🔙"
     STATUS = "📈"
     PRISONER = "🚫"

@@ -371,7 +371,7 @@ async def manage_after_db(
             user.reset_private_screen()
 
         # Owner-only maintenance commands should be completely silent for everyone else.
-        if is_owner_bounty_command(command) and not user_is_owner(user):
+        if is_owner_only_command(command) and not user_is_owner(user):
             return
 
         # Check for spam only if a valid command or private chat
@@ -728,11 +728,11 @@ async def validate(
     return True
 
 
-def is_owner_bounty_command(command: Command.Command) -> bool:
+def is_owner_only_command(command: Command.Command) -> bool:
     """
-    Check if the command is an owner-only bounty management command.
+    Check if the command is an owner-only maintenance/broadcast command.
     :param command: The command
-    :return: True if owner bounty command
+    :return: True if owner-only command
     """
 
     return command is not None and command.name in (
@@ -740,6 +740,8 @@ def is_owner_bounty_command(command: Command.Command) -> bool:
         CommandName.TAKE_BOUNTY,
         CommandName.REVERT_PENDING_BOUNTY,
         CommandName.REVERT_PENDING_BOUNTY_ALL,
+        CommandName.GCAST,
+        CommandName.PCAST,
     )
 
 
