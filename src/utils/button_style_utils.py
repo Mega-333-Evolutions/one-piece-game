@@ -45,6 +45,7 @@ def _build_style_sets() -> tuple[set[str], set[str], set[str]]:
             p.KEYBOARD_OPTION_RETREAT,
             p.KEY_JOIN_A_CREW,
             p.PVT_KEY_CREW_SEARCH_JOIN,
+            p.KEYBOARD_OPTION_CHOOSE,
         )
         danger_texts |= _normalized_values(
             p.TEXT_NO,
