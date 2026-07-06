@@ -64,9 +64,9 @@ async def broadcast_to_groups(
     pinned = 0
     pin_failed = 0
 
-    groups: list[Group] = Group.select().where(Group.is_active == True)
+    groups: list[Group] = Group.select()
     for group in groups.iterator():
-        group_chats: list[GroupChat] = [gc for gc in group.group_chats if gc.is_active]
+        group_chats: list[GroupChat] = list(group.group_chats)
 
         for group_chat in group_chats:
             total += 1
@@ -153,7 +153,7 @@ async def broadcast_to_players(
     pinned = 0
     pin_failed = 0
 
-    players: list[User] = User.select().where(User.is_active == True)
+    players: list[User] = User.select()
     for player in players.iterator():
         total += 1
 
