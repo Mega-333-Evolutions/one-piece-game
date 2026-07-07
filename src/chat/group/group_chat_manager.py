@@ -104,6 +104,12 @@ async def manage(
         group.save()
         command = Command.GRP_SETTINGS_FEATURES
 
+    # Any message from the group means the Bot can still reach it - make sure it's not
+    # excluded from broadcasts (gcast) due to a past false-positive/stale failure.
+    elif not group.is_active:
+        group.is_active = True
+        group.save()
+
     # Insert or update user, with message count
     try:
         # Ignore self bot messages
