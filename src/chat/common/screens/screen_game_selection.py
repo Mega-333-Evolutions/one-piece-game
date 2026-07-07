@@ -116,16 +116,16 @@ async def manage(
         ReservedKeyboardKeys.AUTHORIZED_USERS: [challenger.id],
         GameSelectionReservedKeys.CANCEL: True,
     }
-    outbound_keyboard.append(
-        [
-            Keyboard(
-                phrases.KEYBOARD_OPTION_CANCEL,
-                info=button_delete_info,
-                screen=Screen.GRP_GAME_OPPONENT_CONFIRMATION,
-                style=ButtonStyle.PRIMARY,
-            )
-        ]
+    cancel_keyboard = Keyboard(
+        phrases.KEYBOARD_OPTION_CANCEL,
+        info=button_delete_info,
+        screen=Screen.GRP_GAME_OPPONENT_CONFIRMATION,
     )
+    if opponent is not None:
+        # Direct request to a specific opponent - no "Start immediately as global" button, so
+        # Cancel is styled Primary here as an intentional exception to the usual Danger default
+        cancel_keyboard.style = ButtonStyle.PRIMARY
+    outbound_keyboard.append([cancel_keyboard])
 
     await full_media_send(
         context,
