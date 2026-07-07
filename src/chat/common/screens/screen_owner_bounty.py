@@ -41,9 +41,10 @@ class OwnerBountyAction(StrEnum):
     REVERT_PENDING_ALL = "rpall"
 
 
-# Flag used with /add to add the full bounty amount without applying income tax to this
-# addition (the player receives the full amount, not a tax-reduced amount). Without it, /add
-# behaves as before: the added amount is subject to income tax like any other bounty gain.
+# Flag used with /add to add the full bounty amount as-is, bypassing income tax and any
+# automatic bounty distribution (e.g. expired bounty loan garnishment). The player receives
+# the full amount untouched. Without it, /add behaves as before: subject to tax/distributions
+# like any other bounty gain.
 EXEMPT_FLAG = "-e"
 
 
@@ -179,13 +180,14 @@ async def manage_add_or_take(
             update=update,
             should_save=True,
             should_tax=should_tax,
+            check_for_loan=should_tax,
         )
         if should_tax:
             text = "Added ฿{} Berries to {}.".format(
                 get_belly_formatted(amount), mention_markdown_user(target_user)
             )
         else:
-            text = "Added ฿{} Berries \\(exempt from income tax\\) to {}.".format(
+            text = "Added ฿{} Berries \\(exempt from income tax and bounty distributions\\) to {}.".format(
                 get_belly_formatted(amount), mention_markdown_user(target_user)
             )
     else:
