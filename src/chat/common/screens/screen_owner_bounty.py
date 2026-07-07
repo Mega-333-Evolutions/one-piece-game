@@ -41,6 +41,12 @@ class OwnerBountyAction(StrEnum):
     REVERT_PENDING_ALL = "rpall"
 
 
+# Flag used with /add to add the full bounty amount without applying income tax to this
+# addition (the player receives the full amount, not a tax-reduced amount). Without it, /add
+# behaves as before: the added amount is subject to income tax like any other bounty gain.
+EXEMPT_FLAG = "-e"
+
+
 async def manage(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -101,6 +107,9 @@ async def manage_add_or_take(
 
     add_delete_button = is_group
 
+    should_tax = EXEMPT_FLAG not in command.parameters
+    parameters = [p for p in command.parameters if p != EXEMPT_FLAG]
+
     if is_group:
         if target_user is None:
             await full_message_or_media_send_or_edit(
@@ -111,7 +120,7 @@ async def manage_add_or_take(
             )
             return
 
-        if len(command.parameters) == 0:
+        if len(parameters) == 0:
             await full_message_or_media_send_or_edit(
                 context,
                 get_missing_group_amount_text(command),
@@ -120,9 +129,9 @@ async def manage_add_or_take(
             )
             return
 
-        amount_text = command.parameters[0]
+        amount_text = parameters[0]
     else:
-        if len(command.parameters) == 0:
+        if len(parameters) == 0:
             await full_message_or_media_send_or_edit(
                 context,
                 "Please specify the bounty amount.",
@@ -130,9 +139,9 @@ async def manage_add_or_take(
             )
             return
 
-        amount_text = command.parameters[0]
+        amount_text = parameters[0]
 
-        if len(command.parameters) < 2:
+        if len(parameters) < 2:
             await full_message_or_media_send_or_edit(
                 context,
                 "Please specify a target user by username or Telegram user ID.",
@@ -140,7 +149,7 @@ async def manage_add_or_take(
             )
             return
 
-        target_user = get_target_user(command.parameters[1])
+        target_user = get_target_user(parameters[1])
         if target_user is None:
             await full_message_or_media_send_or_edit(
                 context,
@@ -169,10 +178,16 @@ async def manage_add_or_take(
             context=context,
             update=update,
             should_save=True,
+            should_tax=should_tax,
         )
-        text = "Added ฿{} Berries to {}.".format(
-            get_belly_formatted(amount), mention_markdown_user(target_user)
-        )
+        if should_tax:
+            text = "Added ฿{} Berries to {}.".format(
+                get_belly_formatted(amount), mention_markdown_user(target_user)
+            )
+        else:
+            text = "Added ฿{} Berries \\(exempt from income tax\\) to {}.".format(
+                get_belly_formatted(amount), mention_markdown_user(target_user)
+            )
     else:
         if target_user.bounty < amount:
             target_user.bounty = 0
