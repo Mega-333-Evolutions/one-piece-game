@@ -227,14 +227,16 @@ async def add_or_remove_bounty(
                 )
 
             if user.bounty < 0 and raise_error_if_negative_bounty:
-                logging.exception(
+                logging.warning(
                     f"User {user.id} has negative bounty: {user.bounty} after removing "
                     f"{amount} bounty in event "
                     f"{update.to_dict() if update is not None else 'None'}"
-                    f"\n{traceback.print_stack()}"
+                    f"\n{''.join(traceback.format_stack())}"
                 )
 
-                raise CommonChatException("Negative bounty after requested action")
+                raise CommonChatException(
+                    phrases.ACTION_INSUFFICIENT_BOUNTY.format(get_belly_formatted(amount))
+                )
 
             if should_save:
                 user.save()

@@ -50,9 +50,19 @@ async def get_user_profile_photo(
         last_set_photos: Sequence[PhotoSize] = user_profile_photos.photos[0]
         last_set_photo: PhotoSize = last_set_photos[-1]
         file: File = await last_set_photo.get_file()
-        photo_path: Path = await file.download_to_drive(
-            generate_temp_file_path(c.TG_PROFILE_PHOTO_EXTENSION)
-        )
+        try:
+            photo_path: Path = await file.download_to_drive(
+                generate_temp_file_path(c.TG_PROFILE_PHOTO_EXTENSION)
+            )
+        except TimedOut:
+            # One retry for a transient network hiccup - if it still fails, proceed without a
+            # photo rather than letting the whole command (e.g. the bounty poster) fail silently
+            try:
+                photo_path: Path = await file.download_to_drive(
+                    generate_temp_file_path(c.TG_PROFILE_PHOTO_EXTENSION)
+                )
+            except TimedOut as te:
+                logging.warning(f"Failed to download profile photo after retrying: {te}")
     except (AttributeError, IndexError):
         pass
 

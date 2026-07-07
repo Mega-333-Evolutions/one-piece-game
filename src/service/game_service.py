@@ -1194,6 +1194,15 @@ async def collect_game_wagers_and_set_in_progress(
             )
 
     if should_remove_bounty_opponent:
+        # Re-check with a fresh read: the opponent's bounty may have dropped (spent elsewhere,
+        # lost another bet, etc.) since this game was created/last validated, and blindly
+        # deducting could try to take more than they currently have.
+        current_opponent_bounty = User.get_by_id(opponent.id).bounty
+        if current_opponent_bounty < game.wager:
+            raise CommonChatException(
+                phrases.ACTION_INSUFFICIENT_BOUNTY.format(get_belly_formatted(game.wager))
+            )
+
         await add_or_remove_bounty(
             opponent,
             game.wager,
@@ -1212,6 +1221,13 @@ async def collect_game_wagers_and_set_in_progress(
         )
 
     if should_remove_bounty_challenger:
+        # Same fresh re-check as above, for the challenger
+        current_challenger_bounty = User.get_by_id(challenger.id).bounty
+        if current_challenger_bounty < game.wager:
+            raise CommonChatException(
+                phrases.ACTION_INSUFFICIENT_BOUNTY.format(get_belly_formatted(game.wager))
+            )
+
         await add_or_remove_bounty(
             challenger,
             game.wager,
