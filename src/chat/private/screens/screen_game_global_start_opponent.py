@@ -124,6 +124,22 @@ async def manage(
 
     # Confirmed (if "No" was pressed, the message would be deleted), collect opponent wager
     game.global_opponent_start_date = datetime.datetime.now()
+
+    # Atomically claim this Accept: only proceed if the game still has no opponent. Pressing
+    # Accept more than once in quick succession fires more than one callback for the same
+    # button before the first press has finished processing; without this claim, every one of
+    # those would independently pass the earlier "game.opponent is not None" check (all reading
+    # the same not-yet-updated game), then all deduct the wager and start the game - causing the
+    # message to flicker between the game starting, an error, and back again as they raced to
+    # edit it. Only the press that wins this claim proceeds; every other one is ignored.
+    claimed_rows = (
+        Game.update(opponent=user)
+        .where((Game.id == game.id) & (Game.opponent.is_null()))
+        .execute()
+    )
+    if claimed_rows == 0:
+        return
+
     await collect_game_wagers_and_set_in_progress(
         update,
         game,

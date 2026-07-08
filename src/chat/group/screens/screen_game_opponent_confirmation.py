@@ -5,6 +5,7 @@ from telegram.ext import ContextTypes
 
 import resources.phrases as phrases
 from src.chat.common.screens.screen_game_manage import dispatch_game
+from src.model.Game import Game
 from src.model.User import User
 from src.model.enums.GameStatus import GameStatus
 from src.model.enums.ReservedKeyboardKeys import ReservedKeyboardKeys
@@ -101,6 +102,21 @@ async def manage(
     # Wrong status
     if game.get_status() is not GameStatus.AWAITING_OPPONENT_CONFIRMATION:
         raise GroupChatException(GroupChatError.ITEM_IN_WRONG_STATUS)
+
+    # Atomically claim this Accept: only proceed if the game is still awaiting confirmation.
+    # Pressing Accept more than once in quick succession fires more than one callback for the
+    # same button before the first press has finished processing; without this claim, every
+    # one of those would independently pass the status check above (all reading the same
+    # not-yet-updated game), then all deduct the wager and start the game - causing the
+    # message to flicker between the game starting, an error, and back again as they raced to
+    # edit it. Only the press that wins this claim proceeds; every other one is ignored.
+    claimed_rows = (
+        Game.update(status=GameStatus.IN_PROGRESS)
+        .where((Game.id == game.id) & (Game.status == GameStatus.AWAITING_OPPONENT_CONFIRMATION))
+        .execute()
+    )
+    if claimed_rows == 0:
+        return
 
     # Will save game later to avoid doubling wager without actually starting game
     await collect_game_wagers_and_set_in_progress(
