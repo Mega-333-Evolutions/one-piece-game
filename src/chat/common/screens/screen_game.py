@@ -12,7 +12,6 @@ from src.model.GroupChat import GroupChat
 from src.model.User import User
 from src.model.enums.Command import Command
 from src.model.enums.ButtonStyle import ButtonStyle
-from src.model.enums.GameStatus import GameStatus
 from src.model.enums.MessageSource import MessageSource
 from src.model.enums.SavedMediaName import SavedMediaName
 from src.model.enums.Screen import Screen
@@ -27,7 +26,6 @@ from src.service.devil_fruit_service import get_ability_value
 from src.service.game_service import get_global_challenges_section_text
 from src.service.message_service import (
     full_message_send,
-    get_message_url,
     full_media_send,
     get_message_source,
 )
@@ -97,24 +95,8 @@ async def validate(
                     + global_challenges_text
                 )
 
-                outbound_keyboard: list[list[Keyboard]] = [[]]
-                pending_games: list[Game] = Game.select().where(
-                    (Game.challenger == challenger)
-                    & (Game.status.not_in(GameStatus.get_finished()))
-                    & (Game.group_chat.is_null(False))
-                )
-                for game in pending_games:
-                    outbound_keyboard.append(
-                        [
-                            Keyboard(
-                                phrases.GAME_PENDING_KEY,
-                                url=get_message_url(game.message_id, game.group_chat),
-                            )
-                        ]
-                    )
-
                 await full_message_send(
-                    context, ot_text, update=update, keyboard=outbound_keyboard, add_delete_button=True
+                    context, ot_text, update=update, add_delete_button=True
                 )
                 return False
         else:
