@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -220,15 +221,36 @@ async def restart_hint_thread_if_down(
     seconds_since_last_hint = get_elapsed_seconds(last_hint_date)
     hints_to_issue, hint_seconds_remaining = divmod(seconds_since_last_hint, hint_every_seconds)
 
+    # Atomically claim the restart with a single conditional UPDATE: only proceed if the hint
+    # date still matches what we just read. restart_hint_thread_if_down can be triggered from
+    # multiple places in quick succession for the same game (e.g. a user interaction and the
+    # scheduled recovery job overlapping, or the same interaction dispatched twice), and without
+    # this claim, more than one of those calls could all decide the thread is down and each
+    # spawn their own hint loop - resulting in hints arriving faster than intended, from two (or
+    # more) independent loops running for the same game/user at once.
+    is_opponent_hint = game.is_global() and user and game.is_opponent(user)
+    date_field = Game.last_hint_opponent_date if is_opponent_hint else Game.last_hint_date
+    date_field_name = "last_hint_opponent_date" if is_opponent_hint else "last_hint_date"
+
+    claimed_rows = (
+        Game.update(
+            **{date_field_name: datetime.now()},
+            thread_restart_count=Game.thread_restart_count + 1,
+        )
+        .where((Game.id == game.id) & (date_field == last_hint_date))
+        .execute()
+    )
+    if claimed_rows == 0:
+        return
+
+    game.thread_restart_count += 1
+
     # Issue all missing hints
     for _ in range(hints_to_issue):
         if not issue_hint_if_possible_function(game, user):
             if _ == 0:  # No hints were issued
                 return
             break
-
-    game.thread_restart_count += 1
-    game.save()
 
     logging.info(
         f"Restart hint thread for game {game.id} after {seconds_since_last_hint} seconds delay and {hints_to_issue} "
