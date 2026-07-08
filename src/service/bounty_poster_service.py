@@ -47,12 +47,18 @@ BOUNTY_POSTER_FALLBACK_NAME = "Unknown"
 # that script, e.g. "ARABIC LETTER SEEN" -> "ARABIC") to a font file that supports it and its
 # writing direction. The poster's own font (Playfair Display) only covers Latin, so showing any
 # of these scripts as-is means bypassing the poster library's name rendering for a custom one
-# (see _build_native_script_name_component). Not exhaustive -- add an entry here (and the
+# (see _build_mixed_script_name_component). Not exhaustive -- add an entry here (and the
 # matching font file under assets/fonts) to support more scripts
 NATIVE_SCRIPT_FONT_MAP = {
     "ARABIC": (os.path.join(c.ASSETS_FONTS_DIR, "NotoSansArabic-Bold.ttf"), "rtl"),
     "DEVANAGARI": (os.path.join(c.ASSETS_FONTS_DIR, "NotoSansDevanagari-Bold.ttf"), "ltr"),
 }
+
+# Used for the Latin/neutral portions of a name that also contains native-script text (see
+# _build_mixed_script_name_component), so that e.g. "apple سیب FARZIN" shows "apple"/"FARZIN" as
+# actual Latin glyphs instead of unsupported-glyph placeholder boxes (NotoSansArabic/Devanagari
+# don't cover Latin). Matches the poster library's own name font
+LATIN_NAME_FONT_PATH = os.path.join(c.ASSETS_FONTS_DIR, "Blogger_Sans-Bold.otf")
 
 
 # "Fancy font" generators (common for Discord/Telegram display names) often reuse characters
@@ -101,51 +107,132 @@ def get_native_script(name: str) -> str | None:
     return None
 
 
-def _build_native_script_name_component(text: str, script: str) -> Image.Image:
+def _segment_by_script(text: str) -> list[tuple[str, str | None]]:
     """
-    Builds the name texture component for a name in its original (non-Latin) script, with
-    proper text shaping (e.g. Arabic letter joining, Devanagari conjuncts) via Pillow's raqm
-    layout engine, and correct text direction.
+    Segments text into contiguous runs of a single native script (see NATIVE_SCRIPT_FONT_MAP) or
+    plain Latin/neutral characters (Latin letters, digits, punctuation, spaces), so a name that
+    mixes scripts (e.g. "apple سیب FARZIN") can have each part rendered with a font that actually
+    supports it, instead of forcing the whole string through a single script's font.
+    :param text: The text to segment
+    :return: A list of (segment_text, script) tuples in original order. script is a key of
+    NATIVE_SCRIPT_FONT_MAP for a native-script run, or None for a Latin/neutral run
+    """
 
-    The poster library can't be used directly for this: it always runs unidecode on the name
-    internally (which would transliterate it away), and it draws character-by-character for
-    kerning, which breaks shaped scripts since each character would be drawn in its isolated
-    form instead of in its correctly-joined form. This mirrors the library's own name component
-    logic (texture + alpha mask, auto-scaling if too wide) closely enough to paste directly over
-    the poster at the same position the library would have used
-    :param text: The name text, in its original script
-    :param script: The detected script, a key of NATIVE_SCRIPT_FONT_MAP
+    runs: list[tuple[str, str | None]] = []
+    current_text = ""
+    current_script: str | None = None
+
+    for char in text:
+        char_script = None
+
+        if unicodedata.category(char).startswith("M"):
+            # Combining mark (e.g. a Devanagari vowel sign) - not alphabetic on its own, but
+            # belongs with whatever script precedes it, not a separate "neutral" character.
+            # Otherwise it would be wrongly split into its own run and rendered with the Latin
+            # font (which doesn't have it), breaking the conjunct/shaping and showing a
+            # placeholder box instead
+            char_script = current_script
+        elif char.isalpha():
+            try:
+                char_name = unicodedata.name(char)
+            except ValueError:
+                char_name = ""
+
+            for script in NATIVE_SCRIPT_FONT_MAP:
+                if char_name.startswith(script):
+                    char_script = script
+                    break
+
+        if char_script == current_script:
+            current_text += char
+        else:
+            if current_text:
+                runs.append((current_text, current_script))
+            current_text = char
+            current_script = char_script
+
+    if current_text:
+        runs.append((current_text, current_script))
+
+    return runs
+
+
+def _build_mixed_script_name_component(text: str) -> Image.Image:
+    """
+    Builds the name texture component for a name that mixes native-script text (see
+    NATIVE_SCRIPT_FONT_MAP) with Latin/neutral text (e.g. "apple سیب FARZIN"), rendering each
+    part with a font that actually supports it, positioned side by side in their original
+    order. Without this, the whole string would be forced through a single native-script font
+    (e.g. NotoSansArabic), which doesn't cover Latin characters -- those would show up as
+    unsupported-glyph placeholder boxes instead of actual letters.
+
+    Uses a texture + alpha mask, auto-scaling if the combined text is too wide, but draws each
+    script run with its own font/direction instead of a single one for the whole string.
+    :param text: The full name text, in its original (possibly mixed) script
     :return: The name component image, ready to paste over the poster at
     (0, BOUNTY_POSTER_NAME_START_Y)
     """
 
-    font_path, direction = NATIVE_SCRIPT_FONT_MAP[script]
+    runs = _segment_by_script(text)
+
+    fonts_and_directions: dict[str | None, tuple[ImageFont.FreeTypeFont, str]] = {}
+    for _, script in runs:
+        if script in fonts_and_directions:
+            continue
+
+        if script is None:
+            fonts_and_directions[script] = (
+                ImageFont.truetype(LATIN_NAME_FONT_PATH, BOUNTY_POSTER_NAME_FONT_SIZE),
+                "ltr",
+            )
+        else:
+            font_path, direction = NATIVE_SCRIPT_FONT_MAP[script]
+            fonts_and_directions[script] = (
+                ImageFont.truetype(
+                    font_path, BOUNTY_POSTER_NAME_FONT_SIZE, layout_engine=ImageFont.Layout.RAQM
+                ),
+                direction,
+            )
 
     texture_background = Image.open(BOUNTY_POSTER_NAME_TEXTURE_PATH)
     texture_background_w, texture_background_h = texture_background.size
-    font = ImageFont.truetype(
-        font_path, BOUNTY_POSTER_NAME_FONT_SIZE, layout_engine=ImageFont.Layout.RAQM
-    )
 
-    alpha = Image.new("L", (texture_background_w, texture_background_h))
+    # Measure every run first (on a throwaway draw context) so the combined line can be
+    # centered/scaled as a single block, same as the single-script version
+    measuring_alpha = Image.new("L", (texture_background_w, texture_background_h))
+    measuring_draw = ImageDraw.Draw(measuring_alpha)
+    run_widths = [
+        measuring_draw.textlength(
+            run_text,
+            font=fonts_and_directions[script][0],
+            direction=fonts_and_directions[script][1],
+        )
+        for run_text, script in runs
+    ]
+    total_w = sum(run_widths)
+
+    should_scale = False
+    if total_w > BOUNTY_POSTER_NAME_MAX_W:
+        new_w = int((total_w * texture_background_w) / BOUNTY_POSTER_NAME_MAX_W)
+        alpha = Image.new("L", (new_w, texture_background_h))
+        should_scale = True
+    else:
+        alpha = Image.new("L", (texture_background_w, texture_background_h))
+
     draw = ImageDraw.Draw(alpha)
 
-    text_w = draw.textlength(text, font=font, direction=direction)
-    should_scale = False
-    if text_w > BOUNTY_POSTER_NAME_MAX_W:
-        new_w = int((text_w * texture_background_w) / BOUNTY_POSTER_NAME_MAX_W)
-        alpha = Image.new("L", (new_w, texture_background_h))
-        draw = ImageDraw.Draw(alpha)
-        should_scale = True
-
-    draw.text(
-        (alpha.size[0] / 2, BOUNTY_POSTER_NAME_H),
-        text,
-        font=font,
-        fill="white",
-        anchor="ms",
-        direction=direction,
-    )
+    current_x = (alpha.size[0] - total_w) / 2
+    for (run_text, script), run_w in zip(runs, run_widths):
+        font, direction = fonts_and_directions[script]
+        draw.text(
+            (current_x + run_w / 2, BOUNTY_POSTER_NAME_H),
+            run_text,
+            font=font,
+            fill="white",
+            anchor="ms",
+            direction=direction,
+        )
+        current_x += run_w
 
     if should_scale:
         alpha = alpha.resize((texture_background_w, texture_background_h))
@@ -350,9 +437,7 @@ async def get_bounty_poster(
     # Draw the real name in its original script over the placeholder used above
     if native_script:
         try:
-            name_component = _build_native_script_name_component(
-                native_script_text, native_script
-            )
+            name_component = _build_mixed_script_name_component(native_script_text)
             poster_image = Image.open(poster_path).convert("RGB")
             poster_image.paste(name_component, (0, BOUNTY_POSTER_NAME_START_Y), name_component)
             poster_image.save(poster_path)
