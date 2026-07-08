@@ -333,9 +333,13 @@ def get_bounty_poster_name(name: str) -> str:
                 kept_chars.append(homoglyph)
                 continue
 
-        # Keep it only if it's a clean, single "word" (letters/numbers, no spaces),
-        # discard descriptive multi-word transliterations and unsupported characters
-        if transliterated and " " not in transliterated:
+        # Keep it only if it's a clean, single alphanumeric "word" - discard descriptive
+        # multi-word transliterations as well as the bracket/punctuation placeholder-style
+        # output unidecode produces for many decorative/exotic characters it has no real
+        # letter equivalent for (e.g. "/XX/" for "༒", "(tm)" for "™", "[(" for "【"). Checking
+        # only for the absence of spaces isn't enough - none of those examples contain a space,
+        # but none of them are an actual transliteration either
+        if transliterated and transliterated.isalnum():
             kept_chars.append(transliterated)
 
     cleaned = re.sub(r"\s+", " ", "".join(kept_chars)).strip()
