@@ -711,7 +711,10 @@ async def enqueue_game_turn_notification(
     # Wait for N time
     await asyncio.sleep(Env.GAME_TURN_NOTIFICATION_TIME_SECONDS.get_int())
 
-    updated_game = Game.get_by_id(game.id)
+    try:
+        updated_game = Game.get_by_id(game.id)
+    except DoesNotExist:
+        return  # Game was deleted in the meantime (e.g. cancelled/expired)
 
     # Check if the game board is still the same
     if updated_game.board == game.board:
@@ -1379,7 +1382,10 @@ async def enqueue_auto_move(
     if extra_wait_time > 0:
         await asyncio.sleep(extra_wait_time)
 
-    updated_game = Game.get_by_id(game.id)
+    try:
+        updated_game = Game.get_by_id(game.id)
+    except DoesNotExist:
+        return  # Game was deleted in the meantime (e.g. cancelled/expired)
 
     # Game already ended
     if updated_game.is_finished():
@@ -1538,7 +1544,11 @@ async def enqueue_timeout_opponent_guess_game(
 
     # Wait for the remaining time, then try ending if game is not yet finished
     await asyncio.sleep(remaining_seconds)
-    updated_game = Game.get_by_id(game.id)
+
+    try:
+        updated_game = Game.get_by_id(game.id)
+    except DoesNotExist:
+        return  # Game was deleted in the meantime (e.g. cancelled/expired)
 
     # Game already ended
     if updated_game.is_finished():

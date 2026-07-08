@@ -1,5 +1,6 @@
 import asyncio
 
+from peewee import DoesNotExist
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -183,7 +184,10 @@ async def run_game(
     await asyncio.sleep(hint_wait_seconds)
 
     # Refresh game, resend only if it's still ongoing
-    game: Game = Game.get_by_id(game.id)
+    try:
+        game: Game = Game.get_by_id(game.id)
+    except DoesNotExist:
+        return  # Game was deleted in the meantime (e.g. cancelled/expired)
 
     if not await should_proceed_after_hint_sleep(context, game, user):
         return
