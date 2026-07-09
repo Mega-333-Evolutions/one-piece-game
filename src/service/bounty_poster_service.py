@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import re
@@ -361,7 +362,7 @@ async def get_bounty_poster(
     :return: The path to the poster
     """
 
-    from src.service.user_service import get_user_profile_photo, get_boss_type
+    from src.service.user_service import get_user_profile_photo
 
     raw_first_name = (user.tg_first_name or "").strip()
     raw_last_name = (user.tg_last_name or "").strip()
@@ -389,8 +390,44 @@ async def get_bounty_poster(
         if not poster_first_name and not poster_last_name:
             poster_first_name = BOUNTY_POSTER_FALLBACK_NAME
 
+    portrait = await get_user_profile_photo(update, telegram_user)
+
+    return await asyncio.to_thread(
+        _generate_poster_sync,
+        user,
+        portrait,
+        poster_first_name,
+        poster_last_name,
+        native_script,
+        native_script_text,
+        raw_first_name,
+        raw_last_name,
+    )
+
+
+def _generate_poster_sync(
+    user: User,
+    portrait,
+    poster_first_name: str,
+    poster_last_name: str,
+    native_script: str | None,
+    native_script_text: str | None,
+    raw_first_name: str,
+    raw_last_name: str,
+) -> str:
+    """
+    Does the actual CPU-bound poster generation (font loading/shaping, image compositing,
+    resizing, disk I/O) synchronously. Only ever called through asyncio.to_thread from
+    get_bounty_poster, so this blocking work runs on a separate thread instead of stalling the
+    single-threaded event loop (and with it, every other scheduled task in the Bot - e.g. a
+    game's start countdown - for however long generation takes) while it runs
+    :return: The path to the generated poster
+    """
+
+    from src.service.user_service import get_boss_type
+
     wanted_poster = WantedPoster(
-        portrait=await get_user_profile_photo(update, telegram_user),
+        portrait=portrait,
         first_name=poster_last_name,
         last_name=poster_first_name,
         bounty=user.bounty,
