@@ -410,6 +410,15 @@ async def auto_delete_process(
     """
 
     group_chat: GroupChat = auto_delete_item.group_chat
+
+    if _is_message_for_active_challenge(group_chat, auto_delete_item.message_id):
+        # Don't delete a challenge message while players are still in the 30-second
+        # accept/reject cooldown or actively playing it - defer and check again on the next
+        # auto delete run (run_minute_tasks -> auto_delete(), roughly once a minute) instead
+        auto_delete_item.delete_date = datetime.now() + timedelta(minutes=1)
+        auto_delete_item.save()
+        return
+
     try:
         await delete_message(
             context=context,
@@ -421,3 +430,37 @@ async def auto_delete_process(
         save_group_chat_error(group_chat, str(te))
 
     auto_delete_item.delete_instance()
+
+
+def _is_message_for_active_challenge(group_chat: GroupChat, message_id: int) -> bool:
+    """
+    Check if a message is the group invite for a challenge that shouldn't be auto-deleted yet:
+    still waiting to be accepted/rejected (or its 30-second confirmation window to expire), or
+    still being actively played.
+
+    An open/global challenge (no specific opponent, "Challenge anyone") is the one exception:
+    once the challenger uses "Start immediately as global", the game moves to being played in
+    private chat, so this group message is safe to delete right away without waiting for that
+    game to finish - global_challenger_start_date is only ever set by that action, so its
+    presence is used as the signal here
+    :param group_chat: The group chat the message is in
+    :param message_id: The message id
+    :return: True if the message should NOT be auto-deleted yet
+    """
+
+    from src.model.Game import Game
+
+    game: Game | None = Game.get_or_none(
+        (Game.group_chat == group_chat) & (Game.message_id == message_id)
+    )
+
+    if game is None:
+        return False
+
+    if game.is_finished():
+        return False
+
+    if game.global_challenger_start_date is not None:
+        return False
+
+    return True
