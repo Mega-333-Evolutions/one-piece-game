@@ -46,6 +46,7 @@ def _build_style_sets() -> tuple[set[str], set[str], set[str]]:
             p.KEY_JOIN_A_CREW,
             p.PVT_KEY_CREW_SEARCH_JOIN,
             p.KEYBOARD_OPTION_CHOOSE,
+            p.GRP_KEY_DAILY_REWARD_PRIZE_RANDOM,
         )
         danger_texts |= _normalized_values(
             p.TEXT_NO,
@@ -60,6 +61,7 @@ def _build_style_sets() -> tuple[set[str], set[str], set[str]]:
             p.KEY_CLOSE,
             p.KEYBOARD_OPTION_FIGHT,
             p.KEYBOARD_OPTION_PLUNDER,
+            p.PVT_KEY_CREW_DAVY_BACK_FIGHT,
         )
         primary_texts |= _normalized_values(
             p.KEYBOARD_OPTION_BACK,
