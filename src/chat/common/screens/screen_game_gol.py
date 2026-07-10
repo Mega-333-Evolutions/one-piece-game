@@ -30,6 +30,7 @@ from src.service.game_service import (
     get_global_share_keyboard,
 )
 from src.service.message_service import full_message_send, escape_valid_markdown_chars
+from src.service.language_service import get_current_language, set_current_language
 
 
 def get_specific_text(
@@ -408,19 +409,33 @@ async def validate_answer(
     user.should_update_model = False  # To avoid re-writing bounty
     loser = challenger if user == opponent else opponent
 
+    # winner_text/loser_text/group_text are each shown to a different party (the winner, the
+    # loser, and the group chat respectively), who may each have a different language set - so
+    # each one must be built under that specific party's language, not whichever language
+    # happens to be active from this player's own DM interaction
+    player_language = get_current_language()
+
+    set_current_language(user.get_language())
     specific_winner_text = get_specific_text(
         game, board, is_finished=True, player_type=player_type
     )
+    winner_text, _ = get_winner_loser_text(game, specific_winner_text)
+
+    set_current_language(loser.get_language())
     specific_loser_text = get_specific_text(
         game, board, is_finished=True, player_type=get_player_type(game, loser)
     )
-    winner_text, loser_text = get_winner_loser_text(
-        game, specific_winner_text, specific_loser_text=specific_loser_text
-    )
+    _, loser_text = get_winner_loser_text(game, specific_loser_text)
 
-    group_text = get_specific_text(
-        game, board, is_finished=True, outcome=outcome, is_for_group=True
-    )
+    group_text = None
+    if game.group_chat is not None:
+        set_current_language(game.group_chat.group.get_language())
+        group_text = get_specific_text(
+            game, board, is_finished=True, outcome=outcome, is_for_group=True
+        )
+
+    set_current_language(player_language)
+
     await end_text_based_game(
         context, game, outcome, user, winner_text, loser, loser_text, group_text
     )

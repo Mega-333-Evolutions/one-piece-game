@@ -25,6 +25,7 @@ from src.service.date_service import (
 )
 from src.service.list_service import get_options_keyboard
 from src.service.message_service import full_message_send, get_yes_no_keyboard, get_deeplink
+from src.service.language_service import get_current_language, set_current_language
 
 
 class StepEdit(IntEnum):
@@ -361,6 +362,7 @@ async def send_request_to_captain(
     davy_back_fight.save()
 
     captain: User = opponent_crew.get_captain()
+    challenger_language = get_current_language()
 
     # Auto accept
     if (
@@ -369,6 +371,9 @@ async def send_request_to_captain(
     ):
         davy_back_fight.is_auto_accepted = True
         davy_back_fight.save()
+
+        # Sent to the opponent captain, so it must use their own language
+        set_current_language(captain.get_language())
 
         ot_text_for_captain = phrases.CREW_DAVY_BACK_FIGHT_CAPTAIN_REQUEST_AUTO_ACCEPT.format(
             challenger_crew.get_name_with_deeplink(add_level=True),
@@ -400,14 +405,17 @@ async def send_request_to_captain(
                 keyboard=inline_keyboard,
             )
         except TelegramError as te:
+            set_current_language(challenger_language)
             davy_back_fight.delete_instance()
             logging.exception(te)
             raise PrivateChatException(text=phrases.CREW_SEARCH_JOIN_CAPTAIN_ERROR)
 
+        set_current_language(challenger_language)
         await accept(context, davy_back_fight)
         return
 
-    # Manual accept
+    # Manual accept - also sent to the opponent captain, same as above
+    set_current_language(captain.get_language())
     ot_text_for_captain = phrases.CREW_DAVY_BACK_FIGHT_CAPTAIN_REQUEST.format(
         challenger_crew.get_name_with_deeplink(add_level=True),
         davy_back_fight.participants_count,
@@ -433,6 +441,9 @@ async def send_request_to_captain(
             keyboard=inline_keyboard,
         )
     except TelegramError as te:
+        set_current_language(challenger_language)
         davy_back_fight.delete_instance()
         logging.exception(te)
         raise PrivateChatException(text=phrases.CREW_SEARCH_JOIN_CAPTAIN_ERROR)
+
+    set_current_language(challenger_language)

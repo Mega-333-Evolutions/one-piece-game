@@ -15,6 +15,7 @@ from src.model.enums.ReservedKeyboardKeys import ReservedKeyboardKeys
 from src.model.enums.Screen import Screen
 from src.model.error.CustomException import CrewValidationException
 from src.model.error.PrivateChatError import PrivateChatException
+from src.service.language_service import get_current_language, set_current_language
 from src.model.pojo.Keyboard import Keyboard
 from src.service.date_service import (
     get_remaining_duration,
@@ -190,10 +191,17 @@ async def send_request_to_captain(
     join_request.crew = crew
     join_request.save()
 
+    captain: User = crew.get_captain()
+    joining_user_language = get_current_language()
+
     # Auto accept join
     if crew.auto_accept_join:
-        captain: User = crew.get_captain()
         try:
+            # The message below is sent to the captain, so it must use the captain's own DM
+            # language, not the joining user's (whose language is active by default here since
+            # they're the one who triggered this request)
+            set_current_language(captain.get_language())
+
             ot_text = phrases.CREW_SEARCH_JOIN_CAPTAIN_ACCEPTED.format(
                 join_request.user.get_markdown_mention()
             )
@@ -216,12 +224,17 @@ async def send_request_to_captain(
             await full_message_send(
                 context, ot_text, chat_id=captain.tg_user_id, keyboard=inline_keyboard
             )
+            set_current_language(joining_user_language)
             await accept(context, join_request)
             return
         except TelegramError:
+            # Restore before building this text: it's shown to the joining user, not the captain
+            set_current_language(joining_user_language)
             join_request.delete_instance()
             raise PrivateChatException(text=phrases.CREW_SEARCH_JOIN_CAPTAIN_ERROR)
 
+    # Same as above: this message is sent to the captain, so it must use their own language
+    set_current_language(captain.get_language())
     ot_text_for_captain = phrases.CREW_SEARCH_JOIN_CAPTAIN_REQUEST.format(
         user.get_markdown_mention(), user.get_bounty_formatted()
     )
@@ -235,8 +248,6 @@ async def send_request_to_captain(
         )
     ]
 
-    captain: User = crew.get_captain()
-
     try:
         await full_message_send(
             context,
@@ -245,5 +256,8 @@ async def send_request_to_captain(
             keyboard=inline_keyboard,
         )
     except TelegramError:
+        set_current_language(joining_user_language)
         join_request.delete_instance()
         raise PrivateChatException(text=phrases.CREW_SEARCH_JOIN_CAPTAIN_ERROR)
+
+    set_current_language(joining_user_language)

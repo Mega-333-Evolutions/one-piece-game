@@ -67,6 +67,7 @@ from src.model.game.russianroulette.RussianRouletteChamberStatus import (
     RussianRouletteChamberStatus as RRChamberStatus,
 )
 from src.service.message_service import get_message_source
+from src.service.language_service import get_current_language, set_current_language
 from src.model.enums.MessageSource import MessageSource
 from src.model.enums.SavedMediaName import SavedMediaName
 from src.service.game_service import (
@@ -215,14 +216,25 @@ async def manage(
         # failed, so the other player still gets the result of the auto-move.
         if game.is_global():
             other_player = game.get_other_player(user)
+            player_language = get_current_language()
+            set_current_language(game.challenger.get_language())
+            challenger_text = get_specific_text(
+                game, challenger_board, game.challenger, opponent_board
+            )
+            set_current_language(game.opponent.get_language())
+            opponent_text = get_specific_text(
+                game, opponent_board, game.opponent, challenger_board
+            )
+            set_current_language(player_language)
+
             context.application.create_task(
                 edit_other_player_message(
                     context,
                     game,
                     user,
                     sent_message_id,
-                    get_specific_text(game, challenger_board, game.challenger, opponent_board),
-                    get_specific_text(game, opponent_board, game.opponent, challenger_board),
+                    challenger_text,
+                    opponent_text,
                     get_outbound_keyboard(context, game, other_board, update, other_player),
                 )
             )
@@ -247,14 +259,21 @@ async def manage(
 
     # Global game, modify opponent message
     if game.is_global():
+        player_language = get_current_language()
+        set_current_language(game.challenger.get_language())
+        challenger_text = get_specific_text(game, challenger_board, game.challenger, opponent_board)
+        set_current_language(game.opponent.get_language())
+        opponent_text = get_specific_text(game, opponent_board, game.opponent, challenger_board)
+        set_current_language(player_language)
+
         context.application.create_task(
             edit_other_player_message(
                 context,
                 game,
                 user,
                 message.id if message else None,
-                get_specific_text(game, challenger_board, game.challenger, opponent_board),
-                get_specific_text(game, opponent_board, game.opponent, challenger_board),
+                challenger_text,
+                opponent_text,
                 get_outbound_keyboard(context, game, other_board, update, user),
             )
         )

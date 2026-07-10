@@ -34,6 +34,7 @@ from src.service.message_service import (
     get_message_source,
 )
 from src.utils.string_utils import get_belly_formatted
+from src.service.language_service import get_current_language, set_current_language
 
 
 class GameRPSReservedKeys(StrEnum):
@@ -143,14 +144,21 @@ async def manage(
         # failed, so the other player still gets the result of the auto-move.
         if game.is_global():
             other_player = game.get_other_player(user)
+            player_language = get_current_language()
+            set_current_language(game.challenger.get_language())
+            challenger_text = get_text(game, rock_paper_scissors, game.challenger)
+            set_current_language(game.opponent.get_language())
+            opponent_text = get_text(game, rock_paper_scissors, game.opponent)
+            set_current_language(player_language)
+
             context.application.create_task(
                 edit_other_player_message(
                     context,
                     game,
                     user,
                     sent_message_id,
-                    get_text(game, rock_paper_scissors, game.challenger),
-                    get_text(game, rock_paper_scissors, game.opponent),
+                    challenger_text,
+                    opponent_text,
                     get_outbound_keyboard(context, game, update, other_player),
                 )
             )
@@ -171,14 +179,21 @@ async def manage(
 
         # Modify other player message and save current message id
         if game.is_global():
+            player_language = get_current_language()
+            set_current_language(game.challenger.get_language())
+            challenger_text = get_text(game, rock_paper_scissors, game.challenger)
+            set_current_language(game.opponent.get_language())
+            opponent_text = get_text(game, rock_paper_scissors, game.opponent)
+            set_current_language(player_language)
+
             context.application.create_task(
                 edit_other_player_message(
                     context,
                     game,
                     user,
                     message.id,
-                    get_text(game, rock_paper_scissors, game.challenger),
-                    get_text(game, rock_paper_scissors, game.opponent),
+                    challenger_text,
+                    opponent_text,
                     get_outbound_keyboard(context, game, update, user),
                 )
             )

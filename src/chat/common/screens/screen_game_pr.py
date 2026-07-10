@@ -24,6 +24,7 @@ from src.service.game_service import (
     guess_game_should_end_after_answer,
 )
 from src.service.message_service import full_message_send, escape_valid_markdown_chars
+from src.service.language_service import get_current_language, set_current_language
 
 
 def get_recap_details(
@@ -226,8 +227,20 @@ async def validate_answer(
     user.should_update_model = False  # To avoid re-writing bounty
     loser = challenger if user == opponent else opponent
 
-    details_text = phrases.PUNK_RECORDS_GAME_RECAP.format(get_recap_details(game, user), "")
-    winner_text, loser_text = get_winner_loser_text(game, details_text)
+    # winner_text/loser_text are shown to two different people (the winner and the loser), who
+    # may each have a different language set - so each must be built under that specific
+    # person's language, not whichever language happens to be active from this player's own DM
+    player_language = get_current_language()
+
+    set_current_language(user.get_language())
+    winner_details_text = phrases.PUNK_RECORDS_GAME_RECAP.format(get_recap_details(game, user), "")
+    winner_text, _ = get_winner_loser_text(game, winner_details_text)
+
+    set_current_language(loser.get_language())
+    loser_details_text = phrases.PUNK_RECORDS_GAME_RECAP.format(get_recap_details(game, user), "")
+    _, loser_text = get_winner_loser_text(game, loser_details_text)
+
+    set_current_language(player_language)
 
     await end_text_based_game(context, game, outcome, user, winner_text, loser, loser_text)
 

@@ -54,6 +54,7 @@ from src.service.message_service import (
     get_deeplink,
 )
 from src.service.notification_service import send_notification
+from src.service.language_service import set_current_language
 from src.utils.context_utils import (
     get_bot_context_data,
     set_bot_context_data,
@@ -232,6 +233,7 @@ async def end_game(
 
     # Edit message in group, if global and started from a group
     if game.is_global() and game.group_chat is not None:
+        set_current_language(game.group_chat.group.get_language())
         ot_text = get_text(game, True, game_outcome=game_outcome, is_for_group_global=True)
         context.application.create_task(
             full_media_send(
@@ -1134,10 +1136,14 @@ async def end_text_based_game(
 
     # Update group message
     if game.group_chat is not None:
-        if group_text is None:
-            group_text = get_text(game, True, game_outcome=outcome, terminology=terminology)
-
         group_chat: GroupChat = game.group_chat
+
+        if group_text is None:
+            player_language = get_current_language()
+            set_current_language(group_chat.group.get_language())
+            group_text = get_text(game, True, game_outcome=outcome, terminology=terminology)
+            set_current_language(player_language)
+
         await full_media_send(
             context,
             caption=group_text,
