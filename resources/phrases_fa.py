@@ -1815,7 +1815,8 @@ DEVIL_FRUIT_REVOKE_NOTIFICATION_KEY = "لغو میوه شیطانی"
 # Notification - Devil Fruit revoke warning
 DEVIL_FRUIT_REVOKE_WARNING_NOTIFICATION = (
     "شما در آخرین"
-    f" {Env.DEVIL_FRUIT_MAINTAIN_MIN_LATEST_LEADERBOARD_APPEARANCE.get_int() - 1} جدول امتیازات ظاهر نشده‌اید."
+    f" {Env.DEVIL_FRUIT_MAINTAIN_MIN_LATEST_LEADERBOARD_APPEARANCE.get_int() - 1}"
+    " [جدول امتیازات جهانی]({}) ظاهر نشده‌اید."
     "\nاگر در جدول امتیازات بعدی نیز ظاهر نشوید، میوه شیطانی *{}* شما لغو خواهد شد."
 )
 DEVIL_FRUIT_REVOKE_WARNING_NOTIFICATION_DESCRIPTION = (

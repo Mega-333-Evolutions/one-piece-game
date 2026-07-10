@@ -1816,7 +1816,8 @@ DEVIL_FRUIT_REVOKE_NOTIFICATION_KEY = "Devil Fruit revoked"
 # Notification - Devil Fruit revoke warning
 DEVIL_FRUIT_REVOKE_WARNING_NOTIFICATION = (
     "You have not appeared in the last"
-    f" {Env.DEVIL_FRUIT_MAINTAIN_MIN_LATEST_LEADERBOARD_APPEARANCE.get_int() - 1} leaderboards."
+    f" {Env.DEVIL_FRUIT_MAINTAIN_MIN_LATEST_LEADERBOARD_APPEARANCE.get_int() - 1}"
+    " [global leaderboards]({})."
     "\nIf you do not appear in the next leaderboard, your Devil Fruit *{}* will be revoked."
 )
 DEVIL_FRUIT_REVOKE_WARNING_NOTIFICATION_DESCRIPTION = (
