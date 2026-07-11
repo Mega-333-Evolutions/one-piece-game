@@ -1462,8 +1462,13 @@ async def edit_other_player_message(
                 f"(message_id {other_player_message_id}): {e}"
             )
     elif other_player is not None:
-        logging.warning(
-            f"Cannot edit other player's message for game {game.id}: no message id stored yet"
+        # Normal/expected for an open global challenge: the other player simply hasn't sent
+        # their own first message yet, so there's nothing to edit for them. Not actionable, and
+        # it recurs on every single move made before that happens - debug level so it doesn't
+        # flood the logs at the deployment's normal (INFO) level, but is still there if needed
+        logging.debug(
+            f"Skipped editing other player's message for game {game.id}: "
+            "no message id stored yet"
         )
 
     game.save()
