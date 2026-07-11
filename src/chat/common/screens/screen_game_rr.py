@@ -213,8 +213,9 @@ async def manage(
             )
 
         # Global game, modify opponent message. Always attempt this, even if the call above
-        # failed, so the other player still gets the result of the auto-move.
-        if game.is_global():
+        # failed, so the other player still gets the result of the auto-move. There's nothing
+        # to do here yet if no one has accepted this open/global challenge (opponent is None).
+        if game.is_global() and game.opponent is not None:
             other_player = game.get_other_player(user)
             player_language = get_current_language()
             set_current_language(game.challenger.get_language())
@@ -257,8 +258,9 @@ async def manage(
         ignore_bad_request_exception=True,
     )
 
-    # Global game, modify opponent message
-    if game.is_global():
+    # Global game, modify opponent message. Nothing to do yet if no one has accepted this
+    # open/global challenge (opponent is None).
+    if game.is_global() and game.opponent is not None:
         player_language = get_current_language()
         set_current_language(game.challenger.get_language())
         challenger_text = get_specific_text(game, challenger_board, game.challenger, opponent_board)

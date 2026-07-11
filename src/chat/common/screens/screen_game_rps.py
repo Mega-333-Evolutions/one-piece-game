@@ -141,8 +141,9 @@ async def manage(
             )
 
         # Global game, modify opponent message. Always attempt this, even if the call above
-        # failed, so the other player still gets the result of the auto-move.
-        if game.is_global():
+        # failed, so the other player still gets the result of the auto-move. There's nothing
+        # to do here yet if no one has accepted this open/global challenge (opponent is None).
+        if game.is_global() and game.opponent is not None:
             other_player = game.get_other_player(user)
             player_language = get_current_language()
             set_current_language(game.challenger.get_language())
@@ -177,8 +178,9 @@ async def manage(
             edit_message_id=edit_message_id,
         )
 
-        # Modify other player message and save current message id
-        if game.is_global():
+        # Modify other player message and save current message id. Nothing to do yet if no
+        # one has accepted this open/global challenge (opponent is None).
+        if game.is_global() and game.opponent is not None:
             player_language = get_current_language()
             set_current_language(game.challenger.get_language())
             challenger_text = get_text(game, rock_paper_scissors, game.challenger)
