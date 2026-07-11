@@ -627,16 +627,26 @@ async def fight_validate(
         await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True)
         return False
 
-    # User does not have enough amount to scout
-    scout_fee = get_scout_fee(user, is_group, ScoutType.FIGHT)
-    if user.bounty < scout_fee:
-        ot_text = (
-            phrases.FIGHT_PLUNDER_GROUP_INSUFFICIENT_SCOUT_BOUNTY
-            if is_group
-            else phrases.FIGHT_PLUNDER_PRIVATE_INSUFFICIENT_SCOUT_BOUNTY
-        ).format(get_belly_formatted(scout_fee), user.get_bounty_formatted())
-        await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True)
-        return False
+    # User does not have enough amount to scout - only relevant right when a scout fee is about
+    # to actually be charged: pressing Scout/New Scout. Once that's already happened (private:
+    # an opponent has already been found/selected; group: a Fight item already exists), the fee
+    # was already paid, so re-checking it here using the now-reduced bounty would incorrectly
+    # block Choose/Fight/Plunder for an opponent that was already successfully scouted.
+    about_to_charge_scout_fee = (
+        (keyboard is None or not keyboard.has_key(FightPlunderReservedKeys.ITEM_ID))
+        if is_group
+        else not keyboard.has_key(FightPlunderReservedKeys.OPPONENT_ID)
+    )
+    if about_to_charge_scout_fee:
+        scout_fee = get_scout_fee(user, is_group, ScoutType.FIGHT)
+        if user.bounty < scout_fee:
+            ot_text = (
+                phrases.FIGHT_PLUNDER_GROUP_INSUFFICIENT_SCOUT_BOUNTY
+                if is_group
+                else phrases.FIGHT_PLUNDER_PRIVATE_INSUFFICIENT_SCOUT_BOUNTY
+            ).format(get_belly_formatted(scout_fee), user.get_bounty_formatted())
+            await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True)
+            return False
 
     # Opponent not yet available
     if not is_group and not keyboard.has_key(FightPlunderReservedKeys.OPPONENT_ID):
@@ -1085,16 +1095,26 @@ async def plunder_validate(
         await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True)
         return False
 
-    # User does not have enough amount to scout
-    scout_fee = get_scout_fee(user, is_group, ScoutType.PLUNDER)
-    if user.bounty < scout_fee:
-        ot_text = (
-            phrases.FIGHT_PLUNDER_GROUP_INSUFFICIENT_SCOUT_BOUNTY
-            if is_group
-            else phrases.FIGHT_PLUNDER_PRIVATE_INSUFFICIENT_SCOUT_BOUNTY
-        ).format(get_belly_formatted(scout_fee), user.get_bounty_formatted())
-        await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True)
-        return False
+    # User does not have enough amount to scout - only relevant right when a scout fee is about
+    # to actually be charged: pressing Scout/New Scout. Once that's already happened (private:
+    # an opponent has already been found/selected; group: a Plunder item already exists), the
+    # fee was already paid, so re-checking it here using the now-reduced bounty would incorrectly
+    # block Choose/Fight/Plunder for an opponent that was already successfully scouted.
+    about_to_charge_scout_fee = (
+        (keyboard is None or not keyboard.has_key(FightPlunderReservedKeys.ITEM_ID))
+        if is_group
+        else not keyboard.has_key(FightPlunderReservedKeys.OPPONENT_ID)
+    )
+    if about_to_charge_scout_fee:
+        scout_fee = get_scout_fee(user, is_group, ScoutType.PLUNDER)
+        if user.bounty < scout_fee:
+            ot_text = (
+                phrases.FIGHT_PLUNDER_GROUP_INSUFFICIENT_SCOUT_BOUNTY
+                if is_group
+                else phrases.FIGHT_PLUNDER_PRIVATE_INSUFFICIENT_SCOUT_BOUNTY
+            ).format(get_belly_formatted(scout_fee), user.get_bounty_formatted())
+            await full_message_or_media_send_or_edit(context, ot_text, update, add_delete_button=True, ignore_bad_request_exception=True)
+            return False
 
     # Opponent not yet available
     if not is_group and not keyboard.has_key(FightPlunderReservedKeys.OPPONENT_ID):
