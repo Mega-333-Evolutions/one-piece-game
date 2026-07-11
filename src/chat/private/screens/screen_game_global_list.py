@@ -26,7 +26,7 @@ class GameGlobalListPage(ListPage):
         self.object = Game.get(Game.id == object_id)
 
     def get_items(self, page, limit=ListPage.DEFAULT_LIMIT) -> list[Game]:
-        return Game.get_global_games()
+        return Game.get_global_games().paginate(page, limit)
 
     def get_item_text(self) -> str:
         return get_global_game_item_text_deeplink(self.object, self.user)
