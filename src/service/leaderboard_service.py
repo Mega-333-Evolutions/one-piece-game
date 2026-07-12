@@ -202,11 +202,19 @@ async def manage_leaderboard(context: ContextTypes.DEFAULT_TYPE, is_bounty_reset
     # Get all active groups
     groups: list[Group] = Group.select().where(Group.is_active == True).order_by(Group.id.asc())
 
-    # Create and send local leaderboards
+    # Create and send local leaderboards one at a time, not all at once: spawning a concurrent
+    # task per group meant every group's leaderboard data (DB query results, formatted
+    # text/images, pending Telegram requests) was all held in memory simultaneously, which is
+    # what caused the RAM spike (and the process being killed) with a large number of groups.
+    # Processing sequentially trades some total wall-clock time for a roughly constant memory
+    # footprint regardless of how many groups there are.
     for group in groups:
-        context.application.create_task(
-            create_and_send_leaderboard(context, is_bounty_reset, group, global_leaderboard)
-        )
+        try:
+            await create_and_send_leaderboard(context, is_bounty_reset, group, global_leaderboard)
+        except Exception as e:
+            logging.exception(
+                f"Failed to send local leaderboard for group {group.id}: {e}"
+            )
 
 
 async def create_and_send_leaderboard(
