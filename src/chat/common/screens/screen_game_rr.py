@@ -535,6 +535,22 @@ async def auto_move(
     if board.get_as_json_string() != previous_board.get_as_json_string():
         return
 
+    # Atomically claim this auto-move: only proceed if last_interaction_date still matches what
+    # was just read. The board-unchanged check above isn't by itself atomic - a manual move can
+    # race in during the small window between that check and actually processing the auto-move
+    # below, silently overriding the player's real (possibly winning) choice with the
+    # auto-picked one (always the bullet's chamber - the worst possible move), and leaving the
+    # player's own move rejected afterward as "the game has ended". Claiming a fresh
+    # last_interaction_date closes that window: if a manual move already landed, this update
+    # affects 0 rows and the auto-move is abandoned instead of overriding it.
+    claimed_rows = (
+        Game.update(last_interaction_date=datetime.now())
+        .where((Game.id == game.id) & (Game.last_interaction_date == game.last_interaction_date))
+        .execute()
+    )
+    if claimed_rows == 0:
+        return
+
     # Craft a mock input and call manage, with the coordinates of the bullet
     mock_keyboard: Keyboard = Keyboard(
         "",
