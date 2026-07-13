@@ -60,4 +60,5 @@ async def manage(
         update=update,
         keyboard=inline_keyboard,
         inbound_keyboard=inbound_keyboard,
+        ignore_bad_request_exception=True,
     )

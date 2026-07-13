@@ -55,4 +55,5 @@ async def manage(
         keyboard=inline_keyboard,
         inbound_keyboard=inbound_keyboard,
         previous_screens=user.get_private_screen_list()[:-1],
+        ignore_bad_request_exception=True,
     )

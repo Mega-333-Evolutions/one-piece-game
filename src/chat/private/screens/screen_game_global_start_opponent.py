@@ -183,6 +183,7 @@ async def manage(
                 edit_only_caption_and_keyboard=True,
                 group_chat=game.group_chat,
                 authorized_users=[game.challenger],
+                ignore_bad_request_exception=True,
             )
         )
 
