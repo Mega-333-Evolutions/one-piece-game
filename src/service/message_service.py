@@ -319,6 +319,25 @@ def get_reply_to_message_id(
         return update.effective_message.message_id
 
 
+async def _call_with_timeout_retry(coroutine_func, *args, **kwargs):
+    """
+    Calls a Telegram Bot API method, retrying once if it times out. Network hiccups causing
+    TimedOut are common and usually transient - retrying once here, in the one place every
+    full_message_send/full_media_send call goes through, means every caller benefits without
+    needing to handle it individually (previously, a single timeout on a critical send - e.g.
+    the first message a player sees when starting a game - meant that player got nothing back
+    at all, with no automatic second attempt).
+    :param coroutine_func: The bound Telegram Bot API method to call, e.g. context.bot.send_photo
+    :return: Whatever the call returns
+    """
+
+    try:
+        return await coroutine_func(*args, **kwargs)
+    except TimedOut:
+        logging.warning(f"Timed out calling {coroutine_func.__name__}, retrying once")
+        return await coroutine_func(*args, **kwargs)
+
+
 async def full_message_send(
     context: ContextTypes.DEFAULT_TYPE,
     text: str,
@@ -482,7 +501,8 @@ async def full_message_send(
         )
 
         try:
-            message: Message = await context.bot.send_message(
+            message: Message = await _call_with_timeout_retry(
+                context.bot.send_message,
                 text=text,
                 chat_id=chat_id,
                 reply_markup=keyboard_markup,
@@ -530,7 +550,8 @@ async def full_message_send(
     )
     
     try:
-        message: Message = await context.bot.edit_message_text(
+        message: Message = await _call_with_timeout_retry(
+            context.bot.edit_message_text,
             text=text,
             chat_id=chat_id,
             reply_markup=keyboard_markup,
@@ -760,7 +781,8 @@ async def full_media_send(
             match saved_media.type:
                 # Photo
                 case SavedMediaType.PHOTO:  # Photo
-                    message: Message = await context.bot.send_photo(
+                    message: Message = await _call_with_timeout_retry(
+                        context.bot.send_photo,
                         chat_id=chat_id,
                         photo=saved_media.media_id,
                         caption=caption,
@@ -776,7 +798,8 @@ async def full_media_send(
                     )
 
                 case SavedMediaType.VIDEO:  # Video
-                    message: Message = await context.bot.send_video(
+                    message: Message = await _call_with_timeout_retry(
+                        context.bot.send_video,
                         chat_id=chat_id,
                         video=saved_media.media_id,
                         caption=caption,
@@ -792,7 +815,8 @@ async def full_media_send(
                     )
 
                 case SavedMediaType.ANIMATION:  # Animation
-                    message: Message = await context.bot.send_animation(
+                    message: Message = await _call_with_timeout_retry(
+                        context.bot.send_animation,
                         chat_id=chat_id,
                         animation=saved_media.media_id,
                         caption=caption,
@@ -848,7 +872,8 @@ async def full_media_send(
 
         # Edit only keyboard
         if edit_only_keyboard:
-            message: Message = await context.bot.edit_message_reply_markup(
+            message: Message = await _call_with_timeout_retry(
+                context.bot.edit_message_reply_markup,
                 chat_id=chat_id, message_id=edit_message_id, reply_markup=keyboard_markup
             )
             # Enqueue for auto deletion
@@ -859,7 +884,8 @@ async def full_media_send(
 
         # Edit only caption and keyboard
         if edit_only_caption_and_keyboard:
-            message: Message = await context.bot.edit_message_caption(
+            message: Message = await _call_with_timeout_retry(
+                context.bot.edit_message_caption,
                 chat_id=chat_id,
                 message_id=edit_message_id,
                 caption=caption,
@@ -875,7 +901,8 @@ async def full_media_send(
         input_media: InputMedia = get_input_media_from_saved_media(
             saved_media=saved_media, caption=caption
         )
-        message: Message = await context.bot.edit_message_media(
+        message: Message = await _call_with_timeout_retry(
+            context.bot.edit_message_media,
             chat_id=chat_id,
             message_id=edit_message_id,
             media=input_media,
@@ -1379,10 +1406,15 @@ async def delete_message(
         group: Group = group_chat.group
         chat_id = group.tg_group_id
 
-    if update is None and (context is None or chat_id is None or message_id is None):
-        logging.error(
-            "update or context and chat_id and message_id must be specified to delete message"
-        )
+    if update is None and message_id is None:
+        # Nothing to delete - e.g. a game/message that never got a message_id because its
+        # original send never actually completed (network error, etc.). Not a misuse of this
+        # function, so no error-level log for it, unlike the case below
+        logging.debug("delete_message: no message_id available, nothing to delete")
+        return
+
+    if update is None and (context is None or chat_id is None):
+        logging.error("update or context and chat_id must be specified to delete message")
         return
 
     try:
