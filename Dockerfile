@@ -18,5 +18,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of your bot's source code into the container
 COPY . .
 
-# Run the script that starts your bot (change "main.py" to your actual entry file)
-CMD ["python", "main.py"]
+# Start a dummy web server on Render's assigned port to keep the free tier alive, 
+# then start the bot in the foreground.
+# (If your main file is named something else, like bot.py, change main.py below)
+CMD python -m http.server $PORT & python main.py
